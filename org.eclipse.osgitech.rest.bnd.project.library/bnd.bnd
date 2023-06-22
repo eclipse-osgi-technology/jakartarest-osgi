@@ -11,10 +11,10 @@ Provide-Capability: \
 		icon="${icondata}"; \
 		help=help.xml
 
-icondata: data:image/gif;base64,${base64;icons/icon.gif}
-category: ccc/OSGi Technology Standard Templates
 
 dataurl: data:image/gif;base64
+icondata: ${dataurl},${base64;icons/icon.gif}
+category: ccc/OSGi Technology Standard Templates
 jakartarest-icon: ${dataurl},${base64;icons/jakartarest.ico}
 
 project-template-rest-no-config:\
