@@ -42,6 +42,7 @@ header:
     - 'org.eclipse.osgitech.rest.tck/**'
     - 'org.eclipse.osgitech.rest.tests/**'
     - '.gradle-wrapper/gradle-wrapper.properties'
+    - '.mvn/wrapper/maven-wrapper.properties'
     - '.licenserc.yaml'
     - '**/.project'
     - '**/.settings/**'
@@ -50,6 +51,8 @@ header:
     - 'gradle.properties'
     - 'gradlew'
     - 'gradlew.bat'
+    - 'mvnw.cmd'
+    - 'mvnw'
     - 'settings.gradle'
  
   comment: always
