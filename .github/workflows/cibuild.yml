@@ -1,0 +1,72 @@
+name: CI Build
+on:
+  push:
+    branches-ignore:
+    - 'dependabot/**'
+    paths-ignore:
+    - 'docs/**'
+    - '.github/**/*docs*'
+    - '.github/**/*codeql*'
+    - '.github/*.yml'
+  pull_request:
+    paths-ignore:
+    - 'docs/**'
+    - '.github/**/*docs*'
+    - '.github/**/*codeql*'
+    - '.github/*.yml'
+
+env:
+  LC_ALL: en_US.UTF-8
+  MAVEN_OPTS: >-
+    -Dhttp.keepAlive=false
+    -Dmaven.wagon.http.pool=false
+    -Dmaven.wagon.http.retryHandler.count=3
+
+defaults:
+  run:
+    shell: bash
+    
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        java:
+        - '11'
+        - '17'
+        os:
+        - 'ubuntu-latest'
+        include:
+        - os: 'windows-latest'
+          java: '17'
+        - os: 'ubuntu-latest'
+          java: '17'
+          canonical: ${{ (github.repository == 'osgi/jakartarest-osgi') && ((github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/release')) && (github.event_name != 'pull_request') }}
+        - os: 'ubuntu-latest'
+          java: '17'
+          experimental: true
+          mavenopts: '-Pbnd-next'
+    name: JDK${{ matrix.java }} ${{ matrix.os }} ${{ matrix.mavenopts }}
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845
+      with:
+        egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+        
+    - name: Git Checkout
+      uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+    - name: Set up Java ${{ matrix.java }}
+      uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2
+      with:
+        distribution: 'temurin'
+        java-version: java-version: ${{ matrix.java }}
+        cache: maven
+    - name: Build Maven
+      id: build
+      continue-on-error: ${{ matrix.experimental }}
+      run: |
+        ./.github/scripts/build.sh ${{ matrix.mavenopts }}
+
