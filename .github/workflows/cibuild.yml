@@ -46,8 +46,6 @@ jobs:
           canonical: ${{ (github.repository == 'osgi/jakartarest-osgi') && ((github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/release')) && (github.event_name != 'pull_request') }}
         - os: 'ubuntu-latest'
           java: '17'
-          experimental: true
-          mavenopts: '-Pbnd-next'
     name: JDK${{ matrix.java }} ${{ matrix.os }} ${{ matrix.mavenopts }}
     runs-on: ${{ matrix.os }}
     steps:
