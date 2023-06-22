@@ -1,0 +1,3 @@
+<form>
+	<p>Creates a bundle providing a example Jakarta REST Resource and a configuration for a JakartaRs Runtime based on a OSGi HTTP Whiteboard. Here, we use the Apache Felix Jetty.</p>
+</form>

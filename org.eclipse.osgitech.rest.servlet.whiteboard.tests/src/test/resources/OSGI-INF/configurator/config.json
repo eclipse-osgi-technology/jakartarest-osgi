@@ -1,0 +1,18 @@
+{
+  ":configurator:resource-version": 1,
+
+	"org.apache.felix.http~test":
+	{
+		"org.osgi.service.http.port": "8185",
+		"org.osgi.service.http.host": "localhost",
+		"org.apache.felix.http.context_path": "swb",
+		"org.apache.felix.http.name": "SWB",
+		"org.apache.felix.http.runtime.init.id": "SWB"
+	},
+	"JakartarsServletWhiteboardRuntimeComponent~JRSWB":
+	{
+		"jersey.jakartars.whiteboard.name" : "JRSWB",
+		"jersey.context.path" : "test",
+		"osgi.http.whiteboard.target" : "(id=SWB)"
+	}  
+}

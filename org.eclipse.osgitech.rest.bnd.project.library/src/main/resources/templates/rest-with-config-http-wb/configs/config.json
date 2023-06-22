@@ -1,0 +1,18 @@
+{
+  ":configurator:resource-version": 1,
+  
+	"org.apache.felix.http~{{httpWhiteboardId}}":
+	{
+		"org.osgi.service.http.port": "{{port}}",
+		"org.osgi.service.http.host": "{{host}}",
+		"org.apache.felix.http.context_path": "{{httpWhiteboarContextPath}}",
+		"org.apache.felix.http.name": "{{httpWhiteboardName}}",
+		"org.apache.felix.http.runtime.init.id": "{{httpWhiteboardId}}"
+	},
+	"JakartarsServletWhiteboardRuntimeComponent~{{jakartarsWhiteboardId}}":
+	{
+		"jersey.jakartars.whiteboard.name" : "{{jakartarsWhiteboardName}}",
+		"jersey.context.path" : "{{jakartarsContextPath}}",
+		"osgi.http.whiteboard.target" : "(id={{httpWhiteboardId}})"
+	}
+}

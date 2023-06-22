@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metatype:MetaData xmlns:metatype="http://www.osgi.org/xmlns/metatype/v1.2.0">
+  <OCD id="org.eclipse.osgitech.rest.project-with-http-whiteboard" name="Jakarta REST Resource Project Template with HTTP Whiteboard configuration" description="OSGi Technology Jakarta REST Whiteboard Resource with HTTP Whiteboard configuration project template">
+    <AD id="host" type="String" name="HTTP Whiteboard Host" description="The hostname where the HTTP Whiteboard will run on." default="localhost"/>
+    <AD id="port" type="String" name="HTTP Whiteboard Port" description="The port the HTTP Whiteboard will run on." default="8082"/>
+    <AD id="httpWhiteboardName" type="String" name="HTTP Whiteboard Name" description="The name of the HTTP Whiteboard." default="HTTPWB"/>
+    <AD id="httpWhiteboarContextPath" type="String" name="HTTP Whiteboard Context-Path" description="The context path, the HTTP Whiteboard will be available under." default="/"/>
+    <AD id="httpWhiteboardId" type="String" name="HTTP Whiteboards ID" description="An ID for the HTTP Whiteboard. Whitespaces should be avoided here!" default="httpId"/>
+
+    <AD id="jakartarsWhiteboardName" type="String" name="Jakarta REST Whiteboard Name" description="The name of the Jakarta REST Whiteboard." default="JakartaRs"/>
+    <AD id="jakartarsContextPath" type="String" name="Jakarta REST Whiteboard Context-Path" description="The context path the REST application will be available under. It is the segment after the HTTP Whiteboard context-path." default="rest"/>
+    <AD id="jakartarsWhiteboardId" type="String" name="JakartaRs Whiteboards ID" description="An ID for the Jakarta REST Whiteboard. Whitespaces should be avoided here!" default="JakartaRsId"/>
+  </OCD>
+</metatype:MetaData>

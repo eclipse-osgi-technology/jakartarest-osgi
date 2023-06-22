@@ -1,0 +1,55 @@
+header:
+  license:
+    spdx-id: EPL-2.0
+    copyright-owner: Eclipse Foundation
+    content: |
+      This program and the accompanying materials are made available under the terms of the
+      Eclipse Public License v2.0 which accompanies this distribution, and is available at
+      http://www.eclipse.org/legal/epl-v20.html
+
+    pattern: |
+      This program and the accompanying materials are made available under the terms of the
+      Eclipse Public License v2.0 which accompanies this distribution, and is available at
+      http://www.eclipse.org/legal/epl-v20.html
+
+  paths-ignore:
+    - 'dist'
+    - 'licenses'
+    - '**/package-info.java'
+    - '**/packageinfo'
+    - '**/org/freshvanilla/**'
+    - '**/permissions.perm'
+    - '**/*.json'
+    - '**/*.bnd'
+    - '**/*.bndrun'
+    - '**/*.xml'
+    - '**/*.ecore'
+    - '**/*.genmodel'
+    - '**/*.md'
+    - '**/*.MD'
+    - '**/.classpath'
+    - '**/.keep'
+    - 'LICENSE'
+    - 'NOTICE'
+    - '.gitattributes'
+    - '.github/**'
+    - '.gitignore'
+    - 'cnf/**'
+    - 'build/**'
+    - 'gradle/**'
+    - 'org.eclipse.osgitech.rest.bnd.project.library/**'
+    - 'org.eclipse.osgitech.rest.bnd.library/**'
+    - 'org.eclipse.osgitech.rest.tck/**'
+    - 'org.eclipse.osgitech.rest.tests/**'
+    - '.gradle-wrapper/gradle-wrapper.properties'
+    - '.licenserc.yaml'
+    - '**/.project'
+    - '**/.settings/**'
+    - '**/*.prefs'
+    - 'build.gradle'
+    - 'gradle.properties'
+    - 'gradlew'
+    - 'gradlew.bat'
+    - 'settings.gradle'
+ 
+  comment: always

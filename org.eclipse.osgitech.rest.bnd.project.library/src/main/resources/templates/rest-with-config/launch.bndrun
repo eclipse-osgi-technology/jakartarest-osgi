@@ -1,0 +1,24 @@
+-runfw: org.apache.felix.framework
+
+-runee: JavaSE-11
+
+-runsystemcapabilities: ${native_capability}
+
+-resolve.effective: active;skip:="osgi.service"
+
+-runtrace: true
+
+# enabled the runbundles for the Jersey dependencies
+# This sets -runbundles.jersey: ${jersey.deps}  
+-library: enableJakartaREST
+
+-runrequires: \
+	bnd.identity;id='{{projectName}}',\
+
+# we need to run our project
+-runbundles.project: \
+	org.eclipse.osgitech.rest.jetty;version=latest,\
+	{{projectName}};version=snapshot
+
+-runblacklist: \
+	bnd.identity;id='org.osgi.service.cm'

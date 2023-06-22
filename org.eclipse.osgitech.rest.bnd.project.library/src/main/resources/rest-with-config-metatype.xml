@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metatype:MetaData xmlns:metatype="http://www.osgi.org/xmlns/metatype/v1.2.0" >
+  <OCD id="org.eclipse.osgitech.rest.project-with-config" name="Jakarta REST Project Template with configuration" description="OSGi Technology Jakarta REST Whiteboard project with configuration template">
+    <AD id="host" type="String" name="JakartaREST Server Host" description="The hostname under which the Jersey REST Server will run." default="localhost"/>
+    <AD id="port" type="String" name="JakartaREST Server Port" description="The port the JakartaREST Whiteboard will run" default="8082"/>
+    <AD id="whiteboardName" type="String" name="JakartaREST Whiteboard Name" description="The name of the JakartaREST whiteboard instance" default="Demo"/>
+    <AD id="contextPath" type="String" name="Context-Path" description="The root context, the JakartaREST Whiteboard will be available for" default="rest"/>
+  </OCD>
+</metatype:MetaData>

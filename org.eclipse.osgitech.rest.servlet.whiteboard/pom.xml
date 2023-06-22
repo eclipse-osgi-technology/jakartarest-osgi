@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+	        <groupId>org.eclipse.osgitech.rest</groupId>
+	        <artifactId>parent</artifactId>
+	        <version>1.0.0-SNAPSHOT</version>
+			<relativePath>../pom.xml</relativePath>
+	</parent>
+    
+	<artifactId>org.eclipse.osgitech.rest.servlet.whiteboard</artifactId>
+	<name>JakartaREST / Jersey Servlet Whiteboard Adapter</name>
+	<description>Adapter to run the JakartaREST Whiteboard with the Servlet Whiteboard</description>
+    
+	<dependencies>
+		<dependency>
+    			<groupId>org.eclipse.osgitech.rest</groupId>
+    			<artifactId>org.eclipse.osgitech.rest</artifactId>
+    			<version>1.0.0-SNAPSHOT</version>
+    	</dependency>
+		<dependency>
+    			<groupId>org.apache.felix</groupId>
+    			<artifactId>org.apache.felix.http.servlet-api</artifactId>
+    	</dependency>
+		<dependency>
+    			<groupId>org.osgi</groupId>
+    			<artifactId>org.osgi.service.cm</artifactId>
+    	</dependency>
+		<dependency>
+    			<groupId>org.osgi</groupId>
+    			<artifactId>org.osgi.service.component</artifactId>
+    	</dependency>
+		<dependency>
+    			<groupId>org.osgi</groupId>
+    			<artifactId>org.osgi.service.component.annotations</artifactId>
+    	</dependency>
+		<dependency>
+    			<groupId>org.osgi</groupId>
+    			<artifactId>org.osgi.service.jakartars</artifactId>
+    	</dependency>
+		<dependency>
+    			<groupId>org.osgi</groupId>
+    			<artifactId>org.osgi.service.servlet</artifactId>
+    	</dependency>
+		<dependency>
+    			<groupId>org.osgi</groupId>
+    			<artifactId>org.osgi.service.condition</artifactId>
+    	</dependency>
+		<dependency>
+    			<groupId>org.osgi</groupId>
+    			<artifactId>org.osgi.util.tracker</artifactId>
+    	</dependency>
+	</dependencies>
+
+</project>

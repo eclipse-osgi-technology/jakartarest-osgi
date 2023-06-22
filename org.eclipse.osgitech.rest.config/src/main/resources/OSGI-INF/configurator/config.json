@@ -1,0 +1,10 @@
+{
+  ":configurator:resource-version": 1,
+  
+	"JakartarsWhiteboardComponent": 
+  	{
+	    "jersey.port": 8181,
+		"jersey.jakartars.whiteboard.name" : "Default",
+		"jersey.context.path" : "rest" 
+	}
+}
