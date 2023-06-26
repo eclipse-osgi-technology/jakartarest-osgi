@@ -726,6 +726,42 @@
 				</snapshotRepository>
 			</distributionManagement>
 		</profile>
+		<profile>
+			<id>eclipse-licenses-check</id>
+			<activation>
+				<property>
+					<name>licenses-check</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<pluginRepositories>
+				<pluginRepository>
+					<id>dash-licenses-snapshots</id>
+					<url>https://repo.eclipse.org/content/repositories/dash-licenses-releases/</url>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</pluginRepository>
+			</pluginRepositories>
+			<build>
+				<plugins>
+					<!-- https://github.com/eclipse/dash-licenses/blob/master/README.md#maven-plugin-options -->
+					<plugin>
+						<groupId>org.eclipse.dash</groupId>
+						<artifactId>license-tool-plugin</artifactId>
+						<version>1.0.2</version>
+						<executions>
+							<execution>
+								<id>license-check</id>
+								<goals>
+									<goal>license-check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
 	
 </project>
