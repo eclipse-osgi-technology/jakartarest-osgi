@@ -83,6 +83,7 @@
 		<module>org.eclipse.osgitech.rest.sse</module>
 		<module>org.eclipse.osgitech.rest.tck</module>
 		<module>org.eclipse.osgitech.rest.tests</module>
+		<module>org.eclipse.osgitech.rest.archetype</module>
 	</modules>
 	
 	<dependencyManagement>
