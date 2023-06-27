@@ -16,6 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check License Header
-        uses: apache/skywalking-eyes@v0.4.0      # always prefer to use a revision instead of `main`.
+        uses: apache/skywalking-eyes@438e4ea5682269933ea2c8b5608662e52af26959  # always prefer to use a hash instead of `main` or `v0.0.4`.
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # needed only when you want License-Eye to comment on the pull request.
