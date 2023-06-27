@@ -160,7 +160,26 @@ With the `@RequireJakartarsWhiteboard` annotation, you define the requirement to
 
 Please note, that you only need to define `@RequireJakartarsWhiteboard` once in your bundle!
 
-## Gradle Library Support
+## Maven Example Archetype
+
+The module *org.eclipse.osgitech.rest.archetype* contains a Maven template to create a sample project.
+
+To create a sample project call:
+
+```bash
+mvn archetype:generate 
+-DarchetypeGroupId=org.eclipse.osgitech.rest 
+-DarchetypeArtifactId=org.eclipse.osgitech.rest.archetype 
+-DarchetypeVersion=1.0.0-SNAPSHOT 
+-DgroupId=<your-group-id> 
+-DartifactId=<your-artifact-id>
+
+```
+
+The generated project contains a ready to run [example](org.eclipse.osgitech.rest.archetype/src/main/resources/archetype-resources/readme.md).
+
+
+## Gradle Bnd Library Support
 
 When adding the Jakarta REST Library to you dependencies:
 ```
