@@ -21,6 +21,6 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn -B org.eclipse.dash:license-tool-plugin:license-check -Dlicenses-check -Ddash.fail=true -Ddash.summary=DEPENDENCIES -DexcludeArtifactIds=$EXCLUDED_ARTIFACTS -Peclipse-licenses-check
+      run: ./.github/scripts/ip-check.sh
       env:
         EXCLUDED_ARTIFACTS: 'bugsnag'
