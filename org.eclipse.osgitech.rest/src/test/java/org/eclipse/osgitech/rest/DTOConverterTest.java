@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -54,9 +55,15 @@ import org.osgi.service.jakartars.runtime.dto.ResourceMethodInfoDTO;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Tests the DTO converter
@@ -412,4 +419,147 @@ public class DTOConverterTest {
 		assertEquals(4, cnt);
 	}
 
+	@Test
+	public void testToResourceMethodInfoDTOs_WithInheritance() throws NoSuchMethodException, SecurityException {
+		TestResource resource = new ChildTestResource();
+		ResourceMethodInfoDTO[] methodInfoDTOsParsed = DTOConverter.getResourceMethodInfoDTOs(resource.getClass());
+		assertNotNull(methodInfoDTOsParsed);
+		assertEquals(4, methodInfoDTOsParsed.length);
+		
+		ResourceMethodInfoDTO dto = Arrays.stream(methodInfoDTOsParsed)
+				.filter(rm -> "test/pdf".equals(rm.path)).findFirst().get();
+		assertEquals("POST", dto.method);
+		assertEquals(1, dto.consumingMimeType.length);
+		assertEquals("pdf", dto.consumingMimeType[0]);
+		assertEquals(1, dto.producingMimeType.length);
+		assertEquals("text", dto.producingMimeType[0]);
+		
+		dto = Arrays.stream(methodInfoDTOsParsed)
+				.filter(rm -> "test".equals(rm.path) && rm.method.contains("POST")).findFirst().get();
+		assertTrue(dto.method.contains("POST"));
+		assertTrue(dto.method.contains("PUT"));
+		assertFalse(dto.method.contains("DELETE"));
+		assertFalse(dto.method.contains("HEAD"));
+		assertFalse(dto.method.contains("GET"));
+		assertFalse(dto.method.contains("OPTION"));
+		assertEquals(1, dto.consumingMimeType.length);
+		assertEquals("yaml", dto.consumingMimeType[0]);
+		assertEquals(1, dto.producingMimeType.length);
+		assertEquals("text", dto.producingMimeType[0]);
+
+		dto = Arrays.stream(methodInfoDTOsParsed)
+				.filter(rm -> "test".equals(rm.path) && "GET".equals(rm.method)).findFirst().get();
+		assertEquals("GET", dto.method);
+		assertEquals(1, dto.consumingMimeType.length);
+		assertEquals("yaml", dto.consumingMimeType[0]);
+		assertEquals(2, dto.producingMimeType.length);
+		assertEquals("xml", dto.producingMimeType[0]);
+		assertEquals("json", dto.producingMimeType[1]);
+
+		// Path is not inherited
+		dto = Arrays.stream(methodInfoDTOsParsed)
+				.filter(rm -> "{id}".equals(rm.path)).findFirst().get();
+		assertNotNull(dto);
+		assertEquals("DELETE", dto.method);
+		assertEquals(1, dto.consumingMimeType.length);
+		assertEquals("yaml", dto.consumingMimeType[0]);
+		assertEquals(2, dto.producingMimeType.length);
+		assertEquals("xml", dto.producingMimeType[0]);
+		assertEquals("json", dto.producingMimeType[1]);
+		
+	}
+
+	@Test
+	public void testToResourceMethodInfoDTOs_WithInterface() throws NoSuchMethodException, SecurityException {
+		ResourceInterface resource = new ResourceInterfaceImpl();
+		ResourceMethodInfoDTO[] methodInfoDTOsParsed = DTOConverter.getResourceMethodInfoDTOs(resource.getClass());
+		assertNotNull(methodInfoDTOsParsed);
+		assertEquals(3, methodInfoDTOsParsed.length);
+		
+		ResourceMethodInfoDTO dto = Arrays.stream(methodInfoDTOsParsed)
+				.filter(rm -> "test/pdf".equals(rm.path)).findFirst().get();
+		assertEquals("POST", dto.method);
+		assertEquals(1, dto.consumingMimeType.length);
+		assertEquals("pdf", dto.consumingMimeType[0]);
+		assertEquals(1, dto.producingMimeType.length);
+		assertEquals("text", dto.producingMimeType[0]);
+		
+		dto = Arrays.stream(methodInfoDTOsParsed)
+				.filter(rm -> "test".equals(rm.path) && rm.method.contains("POST")).findFirst().get();
+		assertTrue(dto.method.contains("POST"));
+		assertTrue(dto.method.contains("PUT"));
+		assertFalse(dto.method.contains("DELETE"));
+		assertFalse(dto.method.contains("HEAD"));
+		assertFalse(dto.method.contains("GET"));
+		assertFalse(dto.method.contains("OPTION"));
+		assertEquals(1, dto.consumingMimeType.length);
+		assertEquals("yaml", dto.consumingMimeType[0]);
+		assertEquals(1, dto.producingMimeType.length);
+		assertEquals("text", dto.producingMimeType[0]);
+		
+		dto = Arrays.stream(methodInfoDTOsParsed)
+				.filter(rm -> "test".equals(rm.path) && "GET".equals(rm.method)).findFirst().get();
+		assertEquals("GET", dto.method);
+		assertEquals(1, dto.consumingMimeType.length);
+		assertEquals("yaml", dto.consumingMimeType[0]);
+		assertEquals(2, dto.producingMimeType.length);
+		assertEquals("xml", dto.producingMimeType[0]);
+		assertEquals("json", dto.producingMimeType[1]);
+		
+	}
+	
+	public static class ChildTestResource extends TestResource {
+		
+		@DELETE
+		@Path("{id}")
+		public void remove(@PathParam("id") String id) {
+			return;
+		}
+	}
+	
+	@Path("test")
+	@Consumes({"yaml"})
+	@Produces({"xml", "json"})
+	public static interface ResourceInterface {
+		
+		@POST
+		@PUT
+		@Produces("text")
+		public Response postAndOut();
+		
+		@POST
+		@Path("pdf")
+		@Consumes("pdf")
+		@Produces("text")
+		public Response postMe(String text);
+		
+		@GET
+		public Map<String, Integer> getValue(Map<String, Integer> input);
+
+		public String helloWorld();
+		
+	}
+	
+	public static class ResourceInterfaceImpl implements ResourceInterface {
+
+		@Override
+		public Response postAndOut() {
+			return null;
+		}
+
+		@Override
+		public Response postMe(String text) {
+			return null;
+		}
+
+		@Override
+		public Map<String, Integer> getValue(Map<String, Integer> input) {
+			return null;
+		}
+
+		@Override
+		public String helloWorld() {
+			return null;
+		}
+	}
 }

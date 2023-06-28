@@ -15,6 +15,7 @@ package org.eclipse.osgitech.rest.dto;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
 import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
@@ -355,15 +357,25 @@ public class DTOConverter {
 	 * @param resource the object class to parse
 	 * @return an array of method objects or <code>null</code>
 	 */
-	public static <T> ResourceMethodInfoDTO[] getResourceMethodInfoDTOs(Class<T> clazz) {
+	public static <T> ResourceMethodInfoDTO[] getResourceMethodInfoDTOs(Class<?> clazz) {
+
+		return Stream.<Class<?>>iterate(clazz, c -> c.getSuperclass())
+			.takeWhile(c -> c != Object.class)
+			.flatMap(c -> Stream.concat(Arrays.stream(c.getInterfaces()), Stream.of(c)))
+			.flatMap(c -> getResourceMethodInfoDTOsForType(c))
+			.toArray(ResourceMethodInfoDTO[]::new);
+	}
+
+	private static <T> Stream<ResourceMethodInfoDTO> getResourceMethodInfoDTOsForType(Class<?> clazz) {
 		Path resPath = clazz.getAnnotation(Path.class);
 		Consumes resConsumes = clazz.getAnnotation(Consumes.class);
 		Produces resProduces = clazz.getAnnotation(Produces.class);
-		return Arrays.stream(clazz.getMethods())
+		return Arrays.stream(clazz.isInterface() ? clazz.getMethods() : clazz.getDeclaredMethods())
+				.filter(m -> Modifier.isPublic(m.getModifiers()) && !m.isSynthetic())
 				.map(m -> toResourceMethodInfoDTO(m, resPath, resProduces, resConsumes))
-				.filter(Objects::nonNull)
-				.toArray(ResourceMethodInfoDTO[]::new);
+				.filter(Objects::nonNull);
 	}
+	
 
 	/**
 	 * Creates a {@link ResourceMethodInfoDTO} from a given {@link Method}. An object will only be created,
