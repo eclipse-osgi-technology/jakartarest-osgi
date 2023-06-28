@@ -21,8 +21,31 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
+import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
+import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
+import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
+import org.eclipse.osgitech.rest.runtime.application.JerseyApplication;
+import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider;
+import org.eclipse.osgitech.rest.runtime.application.JerseyResourceProvider;
+import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.dto.ServiceReferenceDTO;
+import org.osgi.service.jakartars.runtime.dto.ApplicationDTO;
+import org.osgi.service.jakartars.runtime.dto.BaseDTO;
+import org.osgi.service.jakartars.runtime.dto.ExtensionDTO;
+import org.osgi.service.jakartars.runtime.dto.FailedApplicationDTO;
+import org.osgi.service.jakartars.runtime.dto.FailedExtensionDTO;
+import org.osgi.service.jakartars.runtime.dto.FailedResourceDTO;
+import org.osgi.service.jakartars.runtime.dto.ResourceDTO;
+import org.osgi.service.jakartars.runtime.dto.ResourceMethodInfoDTO;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -46,27 +69,6 @@ import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.ParamConverterProvider;
 import jakarta.ws.rs.ext.ReaderInterceptor;
 import jakarta.ws.rs.ext.WriterInterceptor;
-
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
-import org.eclipse.osgitech.rest.runtime.application.JerseyApplication;
-import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider;
-import org.eclipse.osgitech.rest.runtime.application.JerseyResourceProvider;
-import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.Constants;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.dto.ServiceReferenceDTO;
-import org.osgi.service.jakartars.runtime.dto.ApplicationDTO;
-import org.osgi.service.jakartars.runtime.dto.BaseDTO;
-import org.osgi.service.jakartars.runtime.dto.ExtensionDTO;
-import org.osgi.service.jakartars.runtime.dto.FailedApplicationDTO;
-import org.osgi.service.jakartars.runtime.dto.FailedExtensionDTO;
-import org.osgi.service.jakartars.runtime.dto.FailedResourceDTO;
-import org.osgi.service.jakartars.runtime.dto.ResourceDTO;
-import org.osgi.service.jakartars.runtime.dto.ResourceMethodInfoDTO;
 
 
 /**
@@ -353,103 +355,59 @@ public class DTOConverter {
 	 * @param resource the object class to parse
 	 * @return an array of method objects or <code>null</code>
 	 */
-//	public static <T> ResourceMethodInfoDTO[] getResourceMethodInfoDTOs(Class<T> clazz) {
-//		Method[] methods = clazz.getDeclaredMethods();
-//		List<ResourceMethodInfoDTO> dtos = new ArrayList<>(methods.length);
-//		
-//		for (Method method : methods) {
-//			ResourceMethodInfoDTO dto = toResourceMethodInfoDTO(method);
-//			if (dto != null) {
-//				dtos.add(dto);
-//			}
-//		}
-//		return dtos.isEmpty() ? null : dtos.toArray(new ResourceMethodInfoDTO[dtos.size()]);
-//	}
-	
 	public static <T> ResourceMethodInfoDTO[] getResourceMethodInfoDTOs(Class<T> clazz) {
-		Method[] methods = clazz.getMethods();
-		List<ResourceMethodInfoDTO> dtos = new ArrayList<>(methods.length);
 		Path resPath = clazz.getAnnotation(Path.class);
-		for (Method method : methods) {
-			ResourceMethodInfoDTO dto = toResourceMethodInfoDTO(method, resPath);
-			if (dto != null) {
-				dtos.add(dto);
-			}
-		}
-		return dtos.isEmpty() ? null : dtos.toArray(new ResourceMethodInfoDTO[dtos.size()]);
+		Consumes resConsumes = clazz.getAnnotation(Consumes.class);
+		Produces resProduces = clazz.getAnnotation(Produces.class);
+		return Arrays.stream(clazz.getMethods())
+				.map(m -> toResourceMethodInfoDTO(m, resPath, resProduces, resConsumes))
+				.filter(Objects::nonNull)
+				.toArray(ResourceMethodInfoDTO[]::new);
 	}
 
 	/**
 	 * Creates a {@link ResourceMethodInfoDTO} from a given {@link Method}. An object will only be created,
 	 * if at least one of the fields is set.
 	 * @param method the {@link Method} to parse
+	 * @param resPath the resource level path
+	 * @param resProduces the resource level produces
+	 * @param resConsumes the resource level consumes
 	 * @return an DTO or <code>null</code>
 	 */
-	public static <T> ResourceMethodInfoDTO toResourceMethodInfoDTO(Method method) {
+	public static <T> ResourceMethodInfoDTO toResourceMethodInfoDTO(Method method, Path resPath,
+			Produces resProduces, Consumes resConsumes) {
 		if (method == null) {
 			throw new IllegalArgumentException("Expected a method instance to introspect annpotations and create a ResourceMethodInfoDTO");
 		}
-		boolean empty = true;
 		ResourceMethodInfoDTO dto = new ResourceMethodInfoDTO();
-		Consumes consumes = method.getAnnotation(Consumes.class);
-		if (consumes != null) {
-			dto.consumingMimeType = consumes.value();
-			empty = false;
-		}
-		Produces produces = method.getAnnotation(Produces.class);
-		if (produces != null) {
-			dto.producingMimeType = produces.value();
-			empty = false;
-		}
+
 		String methodString = getMethodStrings(method);
 		if (methodString != null) {
 			dto.method = methodString;
-			empty = false;
+		} else {
+			return null;
 		}
-		Path path = method.getAnnotation(Path.class);
-		if (path != null) {			
-			dto.path = path.value();
-			empty = false;
-		}
-		return empty ? null : dto;
-	}
-	
-	public static <T> ResourceMethodInfoDTO toResourceMethodInfoDTO(Method method, Path resPath) {
-		if (method == null) {
-			throw new IllegalArgumentException("Expected a method instance to introspect annpotations and create a ResourceMethodInfoDTO");
-		}
-		boolean empty = true;
-		ResourceMethodInfoDTO dto = new ResourceMethodInfoDTO();
 		
 //		Added nameBindings to ResourceDTO
-		List<String> nbList = new LinkedList<String>();
-		for(Annotation a : method.getAnnotations()) {					
-			NameBinding nb = a.annotationType().getAnnotation(NameBinding.class);		
-			if(nb != null) {
-				if(!nbList.contains(a.annotationType().getName())) {
-					nbList.add(a.annotationType().getName());	
-				}				
-			}
-		}		
-		if(nbList.size() > 0) {
-			dto.nameBindings = nbList.toArray(new String[0]);
-		}				
+		String[] bindings = Arrays.stream(method.getAnnotations())
+			.filter(a -> a.annotationType().isAnnotationPresent(NameBinding.class))
+			.map(a -> a.annotationType().getName())
+			.distinct()
+			.toArray(String[]::new);
+		dto.nameBindings = bindings.length == 0 ? null : bindings;
 		
-		Consumes consumes = method.getAnnotation(Consumes.class);
+		Consumes consumes = Optional.ofNullable(method.getAnnotation(Consumes.class))
+				.orElse(resConsumes);
 		if (consumes != null) {
 			dto.consumingMimeType = consumes.value();
-			empty = false;
 		}
-		Produces produces = method.getAnnotation(Produces.class);
+		
+		Produces produces = Optional.ofNullable(method.getAnnotation(Produces.class))
+				.orElse(resProduces);
 		if (produces != null) {
 			dto.producingMimeType = produces.value();
-			empty = false;
 		}
-		String methodString = getMethodStrings(method);
-		if (methodString != null) {
-			dto.method = methodString;
-			empty = false;
-		}
+		
 		Path path = method.getAnnotation(Path.class);
 		if (path != null) {		
 			if(resPath != null) {
@@ -458,13 +416,14 @@ public class DTOConverter {
 			else {
 				dto.path = path.value();
 			}			
-			empty = false;
 		}
 		else if(resPath != null && methodString != null) {
 			dto.path = resPath.value();
-			empty = false;
+		} else {
+			dto.path = "";
 		}
-		return empty ? null : dto;
+		
+		return dto;
 	}
 
 	/**
