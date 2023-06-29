@@ -145,7 +145,7 @@ public class JakartarsServletWhiteboardRuntimeComponent extends AbstractWhiteboa
 
 	@Reference(service = AnyService.class, target = "(" + JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION	+ "=true)", cardinality = MULTIPLE, policy = DYNAMIC)
 	public void bindJakartarsExtension(ServiceReference<Object> jakartarsExtensionSR, Map<String, Object> properties) {
-		unbindJakartarsExtension(jakartarsExtensionSR,properties);
+		updatedJakartarsExtension(jakartarsExtensionSR,properties);
 	}
 
 	public void updatedJakartarsExtension(ServiceReference<Object> jakartarsExtensionSR, Map<String, Object> properties) {
