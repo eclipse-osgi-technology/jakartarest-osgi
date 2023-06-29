@@ -15,18 +15,16 @@ package org.eclipse.osgitech.rest.runtime.common;
 
 import java.util.concurrent.ExecutorService;
 
+import org.osgi.service.jakartars.client.PromiseRxInvoker;
+
 import jakarta.ws.rs.client.RxInvokerProvider;
 import jakarta.ws.rs.client.SyncInvoker;
-
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.jakartars.client.PromiseRxInvoker;
 
 /**
  * 
  * @author ilenia
  * @since Jun 12, 2020
  */
-@Component(service = RxInvokerProvider.class)
 public class RxInvokerProviderImpl implements RxInvokerProvider<PromiseRxInvoker> {
 	
 	/* 

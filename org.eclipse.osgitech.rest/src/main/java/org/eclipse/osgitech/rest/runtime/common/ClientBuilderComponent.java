@@ -15,11 +15,13 @@ package org.eclipse.osgitech.rest.runtime.common;
 
 import static org.osgi.namespace.service.ServiceNamespace.CAPABILITY_OBJECTCLASS_ATTRIBUTE;
 import static org.osgi.namespace.service.ServiceNamespace.SERVICE_NAMESPACE;
+import static org.osgi.service.serviceloader.ServiceLoaderNamespace.SERVICELOADER_NAMESPACE;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
+import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -36,7 +38,6 @@ import org.osgi.service.jakartars.client.PromiseRxInvoker;
 import org.osgi.service.jakartars.client.SseEventSourceFactory;
 
 import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.RxInvokerProvider;
 
 /**
  * 
@@ -64,14 +65,18 @@ import jakarta.ws.rs.client.RxInvokerProvider;
 				"service.scope=bundle"
 		}
 )
+@Capability(
+		namespace = SERVICELOADER_NAMESPACE,
+		name = "jakarta.ws.rs.client.ClientBuilder",
+		attribute = "register:=\"\"",
+		uses = ClientBuilder.class
+)
 public class ClientBuilderComponent {
 
 	/** ECLIPSE_OS_GI_TECHNOLOGY */
 	private static final String SERVICE_VENDOR = "Eclipse OSGi Technology";
 	private ServiceRegistration<ClientBuilder> registerClientBuilderService;
 	private ServiceRegistration<SseEventSourceFactory> registerSseService;
-	@Reference
-	private RxInvokerProvider<PromiseRxInvoker> rxInvokerProvider;
 
 	@Activate
 	public void activate(BundleContext ctx) {
@@ -88,7 +93,7 @@ public class ClientBuilderComponent {
 			 */
 			@Override
 			public ClientBuilder getService(Bundle bundle, ServiceRegistration<ClientBuilder> registration) {
-				ClientBuilderService clientBuilder = new ClientBuilderService(rxInvokerProvider);
+				ClientBuilder clientBuilder = new JerseyClientBuilder().register(RxInvokerProviderImpl.class);
 				return clientBuilder;
 			}
 
