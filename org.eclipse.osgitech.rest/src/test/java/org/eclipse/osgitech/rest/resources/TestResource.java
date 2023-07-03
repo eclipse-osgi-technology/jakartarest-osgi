@@ -13,7 +13,10 @@
  */
 package org.eclipse.osgitech.rest.resources;
 
+import java.util.Map;
+
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -26,6 +29,7 @@ import jakarta.ws.rs.core.Response;
  * @since 14.07.2017
  */
 @Path("test")
+@Consumes({"yaml"})
 @Produces({"xml", "json"})
 public class TestResource {
 	
@@ -42,6 +46,11 @@ public class TestResource {
 	@Produces("text")
 	public Response postMe(String text) {
 		return Response.ok().build();
+	}
+	
+	@GET
+	public Map<String, Integer> getValue(Map<String, Integer> input) {
+		return Map.of("test", input.getOrDefault("input", 42));
 	}
 
 	protected String helloWorld() {

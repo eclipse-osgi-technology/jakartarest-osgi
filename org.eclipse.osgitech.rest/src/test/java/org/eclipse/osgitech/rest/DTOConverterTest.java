@@ -25,8 +25,6 @@ import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Map;
 
-import jakarta.ws.rs.core.Application;
-
 import org.eclipse.osgitech.rest.dto.DTOConverter;
 import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
 import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
@@ -54,6 +52,11 @@ import org.osgi.service.jakartars.runtime.dto.FailedResourceDTO;
 import org.osgi.service.jakartars.runtime.dto.ResourceDTO;
 import org.osgi.service.jakartars.runtime.dto.ResourceMethodInfoDTO;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Application;
 
 /**
  * Tests the DTO converter
@@ -186,7 +189,7 @@ public class DTOConverterTest {
 		assertEquals(-1, dto.serviceId);
 		ResourceMethodInfoDTO[] methodInfoDTOs = dto.resourceMethods;
 		assertNotNull(methodInfoDTOs);
-		assertEquals(2, methodInfoDTOs.length);
+		assertEquals(3, methodInfoDTOs.length);
 		
 		properties.put(Constants.SERVICE_ID, Long.valueOf(12));
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "Myresource");
@@ -199,7 +202,7 @@ public class DTOConverterTest {
 		assertEquals(12, dto.serviceId);
 		methodInfoDTOs = dto.resourceMethods;
 		assertNotNull(methodInfoDTOs);
-		assertEquals(2, methodInfoDTOs.length);
+		assertEquals(3, methodInfoDTOs.length);
 		
 		properties = new Hashtable<>();
 		properties.put(ComponentConstants.COMPONENT_ID, Long.valueOf(13));
@@ -213,7 +216,23 @@ public class DTOConverterTest {
 		assertEquals(13, dto.serviceId);
 		methodInfoDTOs = dto.resourceMethods;
 		assertNotNull(methodInfoDTOs);
-		assertEquals(2, methodInfoDTOs.length);
+		assertEquals(3, methodInfoDTOs.length);
+	}
+	
+	@Test
+	public void testToEmptyResourceDTO() {
+		Object resource = new Object();
+		Map<String, Object> properties = new Hashtable<>();
+		when(serviceObject.getService()).thenReturn(resource);
+		JakartarsResourceProvider resourceProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		
+		ResourceDTO dto = DTOConverter.toResourceDTO(resourceProvider);
+		assertNotNull(dto);
+		assertTrue(dto.name.startsWith("."));
+		assertEquals(-1, dto.serviceId);
+		ResourceMethodInfoDTO[] methodInfoDTOs = dto.resourceMethods;
+		assertNotNull(methodInfoDTOs);
+		assertEquals(0, methodInfoDTOs.length);
 	}
 	
 	/**
@@ -301,7 +320,7 @@ public class DTOConverterTest {
 		TestResource resource = new TestResource();
 		ResourceMethodInfoDTO[] methodInfoDTOsParsed = DTOConverter.getResourceMethodInfoDTOs(resource.getClass());
 		assertNotNull(methodInfoDTOsParsed);
-		assertEquals(2, methodInfoDTOsParsed.length);
+		assertEquals(3, methodInfoDTOsParsed.length);
 	}
 	
 	/**
@@ -312,7 +331,7 @@ public class DTOConverterTest {
 	@Test
 	public void testToResourceMethodInfoDTO() throws NoSuchMethodException, SecurityException {
 		Method method = TestResource.class.getDeclaredMethod("postMe", new Class[] {String.class});
-		ResourceMethodInfoDTO dto = DTOConverter.toResourceMethodInfoDTO(method);
+		ResourceMethodInfoDTO dto = DTOConverter.toResourceMethodInfoDTO(method, null, null, null);
 		assertNotNull(dto);
 		assertEquals("pdf", dto.path);
 		assertEquals("POST", dto.method);
@@ -322,7 +341,7 @@ public class DTOConverterTest {
 		assertEquals("text", dto.producingMimeType[0]);
 		
 		method = TestResource.class.getDeclaredMethod("postAndOut", new Class[0]);
-		dto = DTOConverter.toResourceMethodInfoDTO(method);
+		dto = DTOConverter.toResourceMethodInfoDTO(method, null, null, null);
 		assertNotNull(dto);
 		assertTrue(dto.method.contains("POST"));
 		assertTrue(dto.method.contains("PUT"));
@@ -333,9 +352,20 @@ public class DTOConverterTest {
 		assertNull(dto.consumingMimeType);
 		assertEquals(1, dto.producingMimeType.length);
 		assertEquals("text", dto.producingMimeType[0]);
+
+		method = TestResource.class.getDeclaredMethod("getValue", new Class[] {Map.class});
+		dto = DTOConverter.toResourceMethodInfoDTO(method, TestResource.class.getAnnotation(Path.class), 
+				TestResource.class.getAnnotation(Produces.class), TestResource.class.getAnnotation(Consumes.class));
+		assertNotNull(dto);
+		assertEquals("GET", dto.method);
+		assertEquals(1, dto.consumingMimeType.length);
+		assertEquals("yaml", dto.consumingMimeType[0]);
+		assertEquals(2, dto.producingMimeType.length);
+		assertEquals("xml", dto.producingMimeType[0]);
+		assertEquals("json", dto.producingMimeType[1]);
 		
 		method = TestResource.class.getDeclaredMethod("helloWorld", new Class[0]);
-		dto = DTOConverter.toResourceMethodInfoDTO(method);
+		dto = DTOConverter.toResourceMethodInfoDTO(method, null, null, null);
 		assertNull(dto);
 		
 	}
@@ -348,7 +378,7 @@ public class DTOConverterTest {
 	@Test
 	public void testCheckMethodString() throws NoSuchMethodException, SecurityException {
 		Class<TestResource> clazz = TestResource.class;
-		assertEquals(3, clazz.getDeclaredMethods().length);
+		assertEquals(4, clazz.getDeclaredMethods().length);
 		int cnt = 0;
 		for (Method m : clazz.getDeclaredMethods()) {
 			String result = DTOConverter.getMethodStrings(m);
@@ -370,12 +400,16 @@ public class DTOConverterTest {
 				assertEquals("POST", result);
 				cnt++;
 				break;
+			case "getValue":
+				assertEquals("GET", result);
+				cnt++;
+				break;
 			default:
 				fail("Not tested operation found in test stub TestResource");
 				break;
 			}
 		}
-		assertEquals(3, cnt);
+		assertEquals(4, cnt);
 	}
 
 }
