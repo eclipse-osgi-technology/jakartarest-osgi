@@ -198,7 +198,7 @@ public class JerseyExtensionProvider<T> extends JerseyApplicationContentProvider
 		 */
 		public Map<Class<?>, Integer> getContractPriorities() {
 			Integer priority = Arrays.stream(delegate.getClass().getAnnotations())
-				.filter(a -> a.annotationType().getName().equals("javax.annotation.Priority"))
+				.filter(a -> a.annotationType().getName().equals("jakarta.annotation.Priority"))
 				.findFirst()
 				.map(a -> {
 					try {
