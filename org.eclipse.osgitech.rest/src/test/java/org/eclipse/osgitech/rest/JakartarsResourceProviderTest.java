@@ -67,7 +67,7 @@ public class JakartarsResourceProviderTest {
 		BaseApplicationDTO dto = provider.getApplicationDTO();
 		assertFalse(dto instanceof FailedApplicationDTO);
 		
-		assertEquals("/test/*", provider.getPath());
+		assertEquals("/test", provider.getPath());
 		assertEquals("test", provider.getName());
 		
 		Map<String, Object> resourceProperties = new HashMap<>();

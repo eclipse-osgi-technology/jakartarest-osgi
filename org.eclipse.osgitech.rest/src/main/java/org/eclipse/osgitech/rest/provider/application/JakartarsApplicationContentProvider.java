@@ -101,10 +101,7 @@ public interface JakartarsApplicationContentProvider extends JakartarsProvider, 
 	 */
 	public boolean validateApplications(Collection<JakartarsApplicationProvider> applications);
 	
-	/**
-	 * @return a clone of the Object
-	 * @throws CloneNotSupportedException
-	 */
-	Object clone() throws CloneNotSupportedException;
+	@Override
+	public JakartarsApplicationContentProvider cleanCopy();
 	
 }

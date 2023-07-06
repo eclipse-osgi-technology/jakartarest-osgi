@@ -40,7 +40,7 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  * @param <T>
  * @since 09.10.2017
  */
-public class JerseyApplicationContentProvider<T> extends AbstractJakartarsProvider<ServiceObjects<T>> implements JakartarsApplicationContentProvider {
+public abstract class JerseyApplicationContentProvider<T> extends AbstractJakartarsProvider<ServiceObjects<T>> implements JakartarsApplicationContentProvider {
 
 	private static final Logger logger = Logger.getLogger("jersey.contentProvider");
 	private List<Filter> applicationFilter;
@@ -90,14 +90,6 @@ public class JerseyApplicationContentProvider<T> extends AbstractJakartarsProvid
 		return false;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#clone()
-	 */
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		return super.clone();
-	}
-	
 	/* 
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgitech.rest.provider.JakartarsRandEProvider#getObjectClass()

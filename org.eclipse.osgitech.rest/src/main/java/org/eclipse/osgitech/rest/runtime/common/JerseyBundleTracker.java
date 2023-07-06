@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
+import org.eclipse.osgitech.rest.provider.jakartars.RuntimeDelegateService;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -30,6 +31,7 @@ import org.osgi.util.tracker.BundleTracker;
 import org.osgi.util.tracker.BundleTrackerCustomizer;
 
 import aQute.bnd.annotation.service.ServiceCapability;
+import jakarta.ws.rs.ext.RuntimeDelegate;
 
 /**
  * Checker that ensures that all Jersey bundles are started properly
@@ -163,6 +165,7 @@ public class JerseyBundleTracker implements BundleTrackerCustomizer<Boolean>{
 			if (jerseyRuntimeCondition != null) {
 				logger.info(()->"Jersey runtime condition is already registered! This should not happen! Doing nothing ...");
 			}
+			RuntimeDelegate.setInstance(new RuntimeDelegateService());
 			Dictionary<String, Object> properties = new Hashtable<String, Object>();
 			properties.put(Condition.CONDITION_ID, JerseyConstants.JERSEY_RUNTIME);
 			properties.put(JerseyConstants.JERSEY_CLIENT_ONLY, isClientOnly);

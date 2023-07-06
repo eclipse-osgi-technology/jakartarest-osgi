@@ -183,6 +183,10 @@
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
 		 </dependency>
+		 <dependency>
+			 <groupId>org.osgi</groupId>
+			 <artifactId>org.osgi.test.cases.jakartars</artifactId>
+		 </dependency>
 	</dependencies>
 	<build>
 		<plugins>

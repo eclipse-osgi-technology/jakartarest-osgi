@@ -19,13 +19,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.eclipse.osgitech.rest.annotations.RequireJerseyServlet;
 import org.eclipse.osgitech.rest.binder.PromiseResponseHandlerBinder;
-import org.eclipse.osgitech.rest.helper.DestroyListener;
 import org.eclipse.osgitech.rest.provider.jakartars.RuntimeDelegateService;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.api.ServiceLocatorFactory;
@@ -36,6 +31,10 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
 import org.glassfish.jersey.servlet.async.AsyncContextDelegateProviderImpl;
 import org.glassfish.jersey.servlet.init.FilterUrlMappingsProviderImpl;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * As Wrapper for the {@link ServletContainer} that locks the Servlet while its configuration is reloaded.
@@ -56,23 +55,13 @@ public class WhiteboardServletContainer extends ServletContainer {
 
 	private ResourceConfig initialConfig = null;;
 
-	private AtomicBoolean initialized = new AtomicBoolean();
-	private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+	private final AtomicBoolean initialized = new AtomicBoolean();
+	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-	private DestroyListener destroyListener;
-
-	private ResourceConfigWrapper wrapper;
-	
 	private final ServiceLocator locator;
 
-	public WhiteboardServletContainer(ResourceConfigWrapper configWrapper, DestroyListener destroyListener) {
-		this(configWrapper.config, destroyListener);
-		this.wrapper = configWrapper;
-	}
-
-	public WhiteboardServletContainer(ResourceConfig config, DestroyListener destroyListener) {
+	public WhiteboardServletContainer(ResourceConfig config) {
 		initialConfig = config;
-		this.destroyListener = destroyListener;
 		
 		// Ensure that promise types can be returned by resource methods
 		locator = ServiceLocatorFactory.getInstance()
@@ -110,7 +99,6 @@ public class WhiteboardServletContainer extends ServletContainer {
 				initialized.set(true);
 				if (initialConfig != null) {
 					this.reload(initialConfig);
-					wrapper.setInjectionManager(getApplicationHandler().getInjectionManager());
 					initialConfig = null;
 				}
 			} catch (Exception e) {
@@ -135,7 +123,20 @@ public class WhiteboardServletContainer extends ServletContainer {
 		lock.writeLock().lock();
 		try {
 			if (initialized.get()) {
-				super.reload(configuration);
+				try {
+					super.reload(configuration);
+				} catch (IllegalStateException ise) {
+					// TODO can we avoid this completely
+					// Sometimes when reloading we find the application is in a bad state
+					if(getApplicationHandler().getInjectionManager().isShutdown()) {
+						try {
+							this.initialConfig = configuration;
+							init();
+						} catch (ServletException e) {
+							throw ise;
+						}
+					}
+				}
 			} else {
 				initialConfig = configuration;
 			}
@@ -164,25 +165,30 @@ public class WhiteboardServletContainer extends ServletContainer {
 	 */
 	@Override
 	public void destroy() {
-		super.destroy();
-		if(destroyListener != null) {
-			destroyListener.servletContainerDestroyed(this);
+		lock.writeLock().lock();
+		try {
+			initialized.set(false);
+			super.destroy();
+		} finally {
+			lock.writeLock().unlock();
 		}
-		locator.shutdown();
+	}
+	
+	@Override
+	public ResourceConfig getConfiguration() {
+		lock.readLock().lock();
+		try {
+			if(initialConfig != null) {
+				return initialConfig;
+			} else {
+				return super.getConfiguration();
+			}
+		} finally {
+			lock.readLock().unlock();
+		}
 	}
 
-	/**
-	 * @param config2
-	 */
-	public void reloadWrapper(ResourceConfigWrapper wrapper) {
-		initialConfig = wrapper.config;
-		this.wrapper = wrapper;
-		if (!initialized.get()) {
-			return;
-		}
-		reload(initialConfig);
-		if(getApplicationHandler() != null) {
-			wrapper.setInjectionManager(getApplicationHandler().getInjectionManager());
-		}
+	public void dispose() {
+		locator.shutdown();
 	}
 }

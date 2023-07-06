@@ -92,7 +92,8 @@ public class ResourceDTOTests {
 		
 		Semaphore semaphore = tracker.waitForService(5000);
 		assertNotNull(semaphore);
-		semaphore.drainPermits();
+		
+		while(semaphore.tryAcquire(200, TimeUnit.MILLISECONDS));
 		
 		ServiceRegistration<Object> registration = ctx.registerService(Object.class, new Object(), resourceProps());
 		

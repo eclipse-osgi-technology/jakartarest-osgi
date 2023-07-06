@@ -148,14 +148,11 @@ public class JerseyExtensionProvider<T> extends JerseyApplicationContentProvider
 		return contracts;
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#clone()
-	 */
 	@Override
-	public Object clone() throws CloneNotSupportedException {
+	public JakartarsExtensionProvider cleanCopy() {
 		return new JerseyExtensionProvider<T>(getProviderObject(), getProviderProperties());
 	}
-	
+
 	/**
 	 * Returns the {@link JakartarsWhiteboardConstants} for this resource type 
 	 * @return the {@link JakartarsWhiteboardConstants} for this resource type

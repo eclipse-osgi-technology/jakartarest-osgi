@@ -37,4 +37,7 @@ public interface JakartarsResourceProvider extends JakartarsApplicationContentPr
 	 */
 	public BaseDTO getResourceDTO();
 	
+	@Override
+	public JakartarsResourceProvider cleanCopy();
+	
 }

@@ -41,13 +41,16 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.dto.ServiceReferenceDTO;
 import org.osgi.service.jakartars.runtime.dto.ApplicationDTO;
+import org.osgi.service.jakartars.runtime.dto.BaseApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.BaseDTO;
+import org.osgi.service.jakartars.runtime.dto.BaseExtensionDTO;
 import org.osgi.service.jakartars.runtime.dto.ExtensionDTO;
 import org.osgi.service.jakartars.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.FailedExtensionDTO;
 import org.osgi.service.jakartars.runtime.dto.FailedResourceDTO;
 import org.osgi.service.jakartars.runtime.dto.ResourceDTO;
 import org.osgi.service.jakartars.runtime.dto.ResourceMethodInfoDTO;
+import org.osgi.service.jakartars.runtime.dto.RuntimeDTO;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -157,9 +160,9 @@ public class DTOConverter {
 		}
 			
 		
-		if (applicationProvider.getContentProviers() != null) {
+		if (applicationProvider.getContentProviders() != null) {
 
-			for (JakartarsApplicationContentProvider contentProvider : applicationProvider.getContentProviers()) {
+			for (JakartarsApplicationContentProvider contentProvider : applicationProvider.getContentProviders()) {
 
 				if (contentProvider instanceof JerseyResourceProvider) {
 					ResourceDTO resDTO = toResourceDTO((JakartarsResourceProvider) contentProvider);
@@ -502,5 +505,96 @@ public class DTOConverter {
 		}
 		return dto;
 	}
+	
+	public static RuntimeDTO deepCopy(RuntimeDTO dto) {
+		RuntimeDTO copy = new RuntimeDTO();
+		copy.applicationDTOs = dto.applicationDTOs == null ? null : Arrays.stream(dto.applicationDTOs).map(DTOConverter::deepCopy).toArray(ApplicationDTO[]::new);
+		copy.defaultApplication = dto.defaultApplication == null ? null : DTOConverter.deepCopy(dto.defaultApplication);
+		copy.failedApplicationDTOs = dto.failedApplicationDTOs == null ? null : Arrays.stream(dto.failedApplicationDTOs).map(DTOConverter::deepCopy).toArray(FailedApplicationDTO[]::new);
+		copy.failedExtensionDTOs = dto.failedExtensionDTOs == null ? null : Arrays.stream(dto.failedExtensionDTOs).map(DTOConverter::deepCopy).toArray(FailedExtensionDTO[]::new);
+		copy.failedResourceDTOs = dto.failedResourceDTOs == null ? null : Arrays.stream(dto.failedResourceDTOs).map(DTOConverter::deepCopy).toArray(FailedResourceDTO[]::new);
+		copy.serviceDTO = dto.serviceDTO == null ? null : DTOConverter.deepCopy(dto.serviceDTO);
+		
+		return copy;
+	}
 
+	public static ApplicationDTO deepCopy(ApplicationDTO dto) {
+		ApplicationDTO copy = new ApplicationDTO();
+		copyBaseApplication(dto, copy);
+		copy.resourceMethods = dto.resourceMethods == null ? null : Arrays.stream(dto.resourceMethods).map(DTOConverter::deepCopy).toArray(ResourceMethodInfoDTO[]::new);
+		return copy;
+	}
+
+	private static void copyBaseApplication(BaseApplicationDTO dto, BaseApplicationDTO copy) {
+		copy.base = dto.base;
+		copy.extensionDTOs = dto.extensionDTOs == null ? null : Arrays.stream(dto.extensionDTOs).map(DTOConverter::deepCopy).toArray(ExtensionDTO[]::new);
+		copy.name = dto.name;
+		copy.resourceDTOs = dto.resourceDTOs == null ? null : Arrays.stream(dto.resourceDTOs).map(DTOConverter::deepCopy).toArray(ResourceDTO[]::new);
+		copy.serviceId = dto.serviceId;
+	}
+	
+	public static FailedApplicationDTO deepCopy(FailedApplicationDTO dto) {
+		FailedApplicationDTO copy = new FailedApplicationDTO();
+		copyBaseApplication(dto, copy);
+		copy.failureReason = dto.failureReason;
+		return copy;
+	}
+	
+	public static ExtensionDTO deepCopy(ExtensionDTO dto) {
+		ExtensionDTO copy = new ExtensionDTO();
+		copyBaseExtension(dto, copy);
+		copy.consumes = dto.consumes == null ? null : dto.consumes.clone();
+		copy.filteredByName = dto.filteredByName == null ? null : Arrays.stream(dto.filteredByName).map(DTOConverter::deepCopy).toArray(ResourceDTO[]::new);
+		copy.nameBindings = dto.nameBindings == null ? null : dto.nameBindings.clone();
+		copy.produces = dto.produces == null ? null : dto.produces.clone();
+		return copy;
+	}
+	
+	private static void copyBaseExtension(BaseExtensionDTO dto, BaseExtensionDTO copy) {
+		copy.extensionTypes = dto.extensionTypes == null ? null : dto.extensionTypes.clone();
+		copy.name = dto.name;
+		copy.serviceId = dto.serviceId;
+	}
+
+	public static FailedExtensionDTO deepCopy(FailedExtensionDTO dto) {
+		FailedExtensionDTO copy = new FailedExtensionDTO();
+		copyBaseExtension(dto, copy);
+		copy.failureReason = dto.failureReason;
+		return copy;
+	}
+
+	public static ResourceDTO deepCopy(ResourceDTO dto) {
+		ResourceDTO copy = new ResourceDTO();
+		copy.name = dto.name;
+		copy.resourceMethods = dto.resourceMethods == null ? null : Arrays.stream(dto.resourceMethods).map(DTOConverter::deepCopy).toArray(ResourceMethodInfoDTO[]::new);
+		copy.serviceId = dto.serviceId;
+		return copy;
+	}
+	
+	public static FailedResourceDTO deepCopy(FailedResourceDTO dto) {
+		FailedResourceDTO copy = new FailedResourceDTO();
+		copy.name = dto.name;
+		copy.serviceId = dto.serviceId;
+		copy.failureReason = dto.failureReason;
+		return copy;
+	}
+	
+	public static ServiceReferenceDTO deepCopy(ServiceReferenceDTO dto) {
+		ServiceReferenceDTO copy = new ServiceReferenceDTO();
+		copy.bundle = dto.bundle;
+		copy.id = dto.id;
+		copy.properties = dto.properties == null ? null : new HashMap<>(dto.properties);
+		copy.usingBundles = dto.usingBundles == null ? null : dto.usingBundles.clone();
+		return copy;
+	}
+
+	public static ResourceMethodInfoDTO deepCopy(ResourceMethodInfoDTO dto) {
+		ResourceMethodInfoDTO copy = new ResourceMethodInfoDTO();
+		copy.consumingMimeType = dto.consumingMimeType == null ? null : dto.consumingMimeType.clone();
+		copy.method = dto.method;
+		copy.nameBindings = dto.nameBindings == null ? null : dto.nameBindings.clone();
+		copy.path = dto.path;
+		copy.producingMimeType = dto.producingMimeType == null ? null : dto.producingMimeType.clone();
+		return copy;
+	}
 }

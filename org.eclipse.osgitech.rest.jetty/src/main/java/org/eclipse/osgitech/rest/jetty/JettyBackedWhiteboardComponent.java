@@ -13,29 +13,41 @@
  */
 package org.eclipse.osgitech.rest.jetty;
 
-import static org.osgi.service.component.annotations.ReferenceCardinality.MULTIPLE;
-import static org.osgi.service.component.annotations.ReferencePolicy.DYNAMIC;
-import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION;
-import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE;
+import static org.eclipse.osgitech.rest.provider.JerseyConstants.JERSEY_DISABLE_SESSION;
+import static org.eclipse.osgitech.rest.provider.JerseyConstants.WHITEBOARD_DEFAULT_CONTEXT_PATH;
+import static org.eclipse.osgitech.rest.provider.JerseyConstants.WHITEBOARD_DEFAULT_HOST;
+import static org.eclipse.osgitech.rest.provider.JerseyConstants.WHITEBOARD_DEFAULT_PORT;
+import static org.eclipse.osgitech.rest.provider.JerseyConstants.WHITEBOARD_DEFAULT_SCHEMA;
+import static org.osgi.service.jakartars.runtime.JakartarsServiceRuntimeConstants.JAKARTA_RS_SERVICE_ENDPOINT;
 
+import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.eclipse.osgitech.rest.runtime.AbstractWhiteboard;
-import org.osgi.framework.ServiceObjects;
-import org.osgi.framework.ServiceReference;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.osgitech.rest.annotations.ProvideRuntimeAdapter;
+import org.eclipse.osgitech.rest.helper.JakartarsHelper;
+import org.eclipse.osgitech.rest.helper.JerseyHelper;
+import org.eclipse.osgitech.rest.provider.JerseyConstants;
+import org.eclipse.osgitech.rest.runtime.JerseyServiceRuntime;
+import org.eclipse.osgitech.rest.runtime.WhiteboardServletContainer;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.osgi.framework.BundleContext;
 import org.osgi.service.cm.ConfigurationException;
-import org.osgi.service.component.AnyService;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
-
-import jakarta.ws.rs.core.Application;
 
 /**
  * A configurable component, that establishes a whiteboard
@@ -43,10 +55,25 @@ import jakarta.ws.rs.core.Application;
  * @since 11.10.2017
  */
 
+@ProvideRuntimeAdapter("jetty")
 @Component(name = "JakartarsWhiteboardComponent", configurationPolicy = ConfigurationPolicy.REQUIRE)
-public class JettyBackedWhiteboardComponent extends AbstractWhiteboard {
+public class JettyBackedWhiteboardComponent {
 
 	Logger logger = Logger.getLogger(JettyBackedWhiteboardComponent.class.getName());
+	
+	private JerseyServiceRuntime<WhiteboardServletContainer> serviceRuntime;
+
+	public enum State {
+		INIT, STARTED, STOPPED, EXCEPTION
+	}
+	private volatile Server jettyServer;
+	private Integer port = JerseyConstants.WHITEBOARD_DEFAULT_PORT;
+	private String contextPath = JerseyConstants.WHITEBOARD_DEFAULT_CONTEXT_PATH;
+	private String[] uris = {WHITEBOARD_DEFAULT_SCHEMA + "://" + WHITEBOARD_DEFAULT_HOST 
+			+ ":" + WHITEBOARD_DEFAULT_PORT + WHITEBOARD_DEFAULT_CONTEXT_PATH};
+	private boolean disableSession;
+	private final Map<String, ServletContextHandler> handlerMap = new HashMap<>();
+	private final HandlerList handlers = new HandlerList();
 
 	/**
 	 * Called on component activation
@@ -54,19 +81,24 @@ public class JettyBackedWhiteboardComponent extends AbstractWhiteboard {
 	 * @throws ConfigurationException 
 	 */
 	@Activate
-	public void activate(ComponentContext componentContext) throws ConfigurationException {
-		updateProperties(componentContext);
+	public void activate(BundleContext context, Map<String, Object> properties) throws ConfigurationException {
 		
-		if (whiteboard != null) {
-			whiteboard.teardown();
-		}
-		whiteboard = new JerseyServiceRuntime();
-		// activate and start server
-		whiteboard.initialize(componentContext);
-//		dispatcher.setBatchMode(true);
-		dispatcher.setWhiteboardProvider(whiteboard);
-		dispatcher.dispatch();
-		whiteboard.startup();
+		serviceRuntime = new JerseyServiceRuntime<>(context, this::createContainerForPath, 
+				this::destroyContainer);
+		
+		doUpdateProperties(properties);
+		
+		createServerAndContext();
+		startServer();
+		
+		
+		serviceRuntime.start(getServiceRuntimeProperties(properties));
+	}
+
+	private Map<String, Object> getServiceRuntimeProperties(Map<String, Object> properties) {
+		Map<String, Object> runtimeProperties = new HashMap<>(properties);
+		runtimeProperties.put(JAKARTA_RS_SERVICE_ENDPOINT, uris);
+		return runtimeProperties;
 	}
 
 	/**
@@ -75,11 +107,25 @@ public class JettyBackedWhiteboardComponent extends AbstractWhiteboard {
 	 * @throws ConfigurationException 
 	 */
 	@Modified
-	public void modified(ComponentContext context) throws ConfigurationException {
-		updateProperties(context);
-		dispatcher.dispatch();
-		whiteboard.modified(context);
+	public void modified(Map<String, Object> props) throws ConfigurationException {
+		
+		
+		Integer oldPort = port;
+		String oldContextPath = contextPath;
+		doUpdateProperties(props);
+		boolean portChanged = !this.port.equals(oldPort);
+		boolean pathChanged = !this.contextPath.equals(oldContextPath);
+		
+		if (pathChanged || portChanged) {
+			stopContextHandlers();
+			stopServer();
+			createServerAndContext();
+			startServer();
+		}
+		serviceRuntime.update(getServiceRuntimeProperties(props));
 	}
+
+
 
 	/**
 	 * Called on component de-activation
@@ -87,77 +133,219 @@ public class JettyBackedWhiteboardComponent extends AbstractWhiteboard {
 	 */
 	@Deactivate
 	public void deactivate(ComponentContext context) {
-		if (dispatcher != null) {
-			dispatcher.deactivate();
+		serviceRuntime.teardown(5, TimeUnit.SECONDS);
+		stopContextHandlers();
+		stopServer();
+	}
+
+	private String[] getURLs(Map<String, Object> props) {
+		StringBuilder sb = new StringBuilder();
+		String schema = JerseyHelper.getPropertyWithDefault(props, JerseyConstants.JERSEY_SCHEMA,
+				JerseyConstants.WHITEBOARD_DEFAULT_SCHEMA);
+		sb.append(schema);
+		sb.append("://");
+		String host = JerseyHelper.getPropertyWithDefault(props, JerseyConstants.JERSEY_HOST,
+				JerseyConstants.WHITEBOARD_DEFAULT_HOST);
+		sb.append(host);
+		Object port = JerseyHelper.getPropertyWithDefault(props, JerseyConstants.JERSEY_PORT, null);
+		if (port != null) {
+			sb.append(":");
+			sb.append(port.toString());
 		}
-		if (whiteboard != null) {
-			whiteboard.teardown();
-			whiteboard = null;
+		String path = JerseyHelper.getPropertyWithDefault(props, JerseyConstants.JERSEY_CONTEXT_PATH,
+				JerseyConstants.WHITEBOARD_DEFAULT_CONTEXT_PATH);
+		path = JakartarsHelper.toServletPath(path);
+		sb.append(path);
+		return new String[] { sb.substring(0, sb.length() - 1) };
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#
+	 * doRegisterServletContainer(org.glassfish.jersey.servlet.ServletContainer,
+	 * org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider)
+	 */
+	private WhiteboardServletContainer createContainerForPath(String path, ResourceConfig config) {
+		WhiteboardServletContainer container = new WhiteboardServletContainer(config);
+		ServletHolder servlet = new ServletHolder(container);
+		servlet.setAsyncSupported(true);
+		ServletContextHandler handler = createContext(path);
+		handler.addServlet(servlet, "/*");
+		if ("/".equals(path)) {
+			handlers.addHandler(handler);
+		} else {
+			handlers.prependHandler(handler);
+		}
+		try {
+			handler.start();
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Cannot start server context handler for context: " + path, e);
+		}
+		return container;
+	}
+
+	private void destroyContainer(String path, WhiteboardServletContainer container) {
+		removeContextHandler(path);
+		container.dispose();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#
+	 * doUpdateProperties(org.osgi.service.component.ComponentContext)
+	 */
+	private void doUpdateProperties(Map<String, Object> props) {
+		this.disableSession = JerseyHelper.getPropertyWithDefault(props, JERSEY_DISABLE_SESSION, true);
+		this.uris = getURLs(props);
+		// This validates all of the supplied uris
+		URI[] uris = new URI[this.uris.length];
+		for (int i = 0; i < uris.length; i++) {
+			uris[i] = URI.create(this.uris[i]);
+		}
+		URI uri = uris[0];
+		if (uri.getPort() > 0) {
+			port = uri.getPort();
+		}
+		if (uri.getPath() != null) {
+			contextPath = uri.getPath();
 		}
 	}
 	
-	/**
-	 * Adds a new application
-	 * @param application the application to add
-	 * @param properties the service properties
-	 */
-	@Reference(service = Application.class, cardinality = MULTIPLE, policy = DYNAMIC, target = "(" + JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE + "=*)")
-	public void bindApplication(Application application, Map<String, Object> properties) {
-		dispatcher.addApplication(application, properties);
-	
+	private String getContextPath(String path) {
+		String thisPath = path == null ? "" : path;
+		thisPath = thisPath.replace("/*", "");
+		thisPath = thisPath.endsWith("/") ? thisPath.substring(0, thisPath.length() -1) : thisPath;
+		thisPath = thisPath.startsWith("/") ? thisPath.substring(1) : thisPath;
+		String ctx = contextPath;
+		ctx = ctx.endsWith("/") ? ctx.substring(0, ctx.length() -1) : ctx;
+		if (!thisPath.isEmpty()) {
+			ctx = ctx + "/" + thisPath;
+		}
+		return ctx;
 	}
 	
+	private ServletContextHandler createContext(String path) {
+		ServletContextHandler contextHandler = new ServletContextHandler();
+		String ctxPath = getContextPath(path);
+		if(disableSession == false) {
+			contextHandler.setSessionHandler(new SessionHandler());
+		}
+		contextHandler.setServer(jettyServer);
+		contextHandler.setContextPath(ctxPath);
+		if (!handlerMap.containsKey(path)) {
+			handlerMap.put(path, contextHandler);
+		}
+		logger.fine("Created white-board server context handler for context: " + path);
+		return contextHandler;
+	}
+
 	/**
-	 * Adds a new application
-	 * @param application the application to add
-	 * @param properties the service properties
+	 * Stopps the Jetty context handler for the given context path;
 	 */
-	public void updatedApplication(Application application, Map<String, Object> properties) {
-		dispatcher.removeApplication(application, properties);
-		dispatcher.addApplication(application, properties);
+	private void removeContextHandler(String path) {
+		ServletContextHandler handler = handlerMap.remove(path);
+		if (handler == null) {
+			logger.log(Level.WARNING, "Try to stop Jetty context handler for path " + path + ", but there is none");
+			return;
+		}
+		if (handler.isStopped()) {
+			logger.log(Level.WARNING, "Try to stop Jetty context handler for path " + path + ", but it was already stopped");
+			return;
+		}
+		try {
+			handlers.removeHandler(handler);
+			handler.stop();
+			handler.destroy();
+			handler = null;
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Error stopping Jetty context handler for path " + path, e);
+		}
 	}
 	
+	private void stopContextHandlers() {
+		handlerMap.keySet().forEach(this::removeContextHandler);
+	}
+
 	/**
-	 * Removes a application 
-	 * @param application the application to remove
-	 * @param properties the service properties
+	 * Creates the Jetty server and initializes the current context handler
 	 */
-	public void unbindApplication(Application application, Map<String, Object> properties) {
-		dispatcher.removeApplication(application, properties);
+	private void createServerAndContext() {
+		try {
+			if (jettyServer != null && !jettyServer.isStopped()) {
+				logger.log(Level.WARNING,
+						"Stopping Jakartars whiteboard server on startup, but it wasn't exepected to run");
+				stopContextHandlers();
+				stopServer();
+			}
+			jettyServer = new Server(port);
+			jettyServer.setHandler(handlers);
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Error starting Jakartars whiteboard because of an exception", e);
+		}
 	}
 
-	@Reference(service = AnyService.class, target = "(" + JAKARTA_RS_EXTENSION
-			+ "=true)", cardinality = MULTIPLE, policy = DYNAMIC)
-	public void bindJakartarsExtension(ServiceReference<Object> jakartarsExtensionSR, Map<String, Object> properties) {
+	/**
+	 * Starts the Jetty server
+	 */
+	private void startServer() {
+		if (jettyServer != null && !jettyServer.isRunning()) {
 
-		updatedJakartarsExtension(jakartarsExtensionSR, properties);
+			JettyServerRunnable jettyServerRunnable = new JettyServerRunnable(jettyServer, port);
+
+			Executors.newSingleThreadExecutor().submit(jettyServerRunnable);
+			if (jettyServerRunnable.isStarted(5, TimeUnit.SECONDS)) {
+
+				logger.info("Started Jakartars whiteboard server for port: " + port + " and context: " + contextPath);
+
+			} else {
+				switch (jettyServerRunnable.getState()) {
+				case INIT:
+
+					logger.severe("Started Jakartars whiteboard server for port: " + port + " and context: " + contextPath
+							+ " took to long");
+					throw new IllegalStateException("Server Startup took too long");
+				case STARTED:
+					// finished in last second
+					break;
+				case STOPPED:
+
+					logger.info("Started Jakartars whiteboard server for port: " + port + " and context: " + contextPath
+							+ " was stopped with unknown reasons");
+					throw new IllegalStateException("Server Startup was stopped with unknown reasons");
+
+				case EXCEPTION:
+					logger.severe("Started Jakartars whiteboard server for port: " + port + " and context: " + contextPath
+							+ " throws exception");
+					throw new IllegalStateException("Server Startup was stopped with exception",
+							jettyServerRunnable.getThrowable());
+
+				default:
+					throw new IllegalStateException("Server Startup - has unknown state ");
+				}
+			}
+		}
 	}
 
-	public void updatedJakartarsExtension(ServiceReference<Object> jakartarsExtensionSR, Map<String, Object> properties) {
-		logger.fine("Handle extension " + jakartarsExtensionSR + " properties: " + properties);
-		ServiceObjects<?> so = getServiceObjects(jakartarsExtensionSR);
-		dispatcher.addExtension(so, properties);
-
-	}
-
-	public void unbindJakartarsExtension(ServiceReference<Object> jakartarsExtensionSR, Map<String, Object> properties) {
-		dispatcher.removeExtension(properties);
-	}
-
-	@Reference(service = AnyService.class, target = "(" + JAKARTA_RS_RESOURCE
-			+ "=true)", cardinality = MULTIPLE, policy = DYNAMIC)
-	public void bindJakartarsResource(ServiceReference<Object> jakartarsExtensionSR, Map<String, Object> properties) {
-		updatedJakartarsResource(jakartarsExtensionSR, properties);
-	}
-
-	public void updatedJakartarsResource(ServiceReference<Object> jakartarsResourceSR, Map<String, Object> properties) {
-		logger.fine("Handle resource " + jakartarsResourceSR + " properties: " + properties);
-		ServiceObjects<?> so = getServiceObjects(jakartarsResourceSR);
-		dispatcher.addResource(so, properties);
-
-	}
-
-	public void unbindJakartarsResource(ServiceReference<Object> jakartarsResourceSR, Map<String, Object> properties) {
-		dispatcher.removeResource(properties);
+	/**
+	 * Stopps the Jetty server;
+	 */
+	private void stopServer() {
+		if (jettyServer == null) {
+			logger.log(Level.WARNING, "Try to stop Jakartars whiteboard server, but there is none");
+			return;
+		}
+		if (jettyServer.isStopped()) {
+			logger.log(Level.WARNING, "Try to stop Jakartars whiteboard server, but it was already stopped");
+			return;
+		}
+		try {
+			jettyServer.stop();
+			jettyServer.destroy();
+			jettyServer = null;
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Error stopping Jetty server", e);
+		}
 	}
 }

@@ -30,6 +30,7 @@ import java.util.Hashtable;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,8 +57,6 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 @ExtendWith(ServiceExtension.class)
 public class ServletWhiteboardTest {
 	
-private BundleContext ctx;
-	
 	private ServiceTracker<JakartarsServiceRuntime, Semaphore> tracker;
 
 	private static HttpClient httpClient;
@@ -71,9 +70,7 @@ private BundleContext ctx;
 	}
 	
 	@BeforeEach
-	public void before(@InjectBundleContext BundleContext ctx) {
-		this.ctx = ctx;
-		
+	public void before(@InjectBundleContext BundleContext ctx) throws InterruptedException {
 		this.tracker = new ServiceTracker<>(ctx, JakartarsServiceRuntime.class, null) {
 
 			@Override
@@ -93,10 +90,20 @@ private BundleContext ctx;
 		};
 		
 		tracker.open();
+		
+		Semaphore semaphore = tracker.waitForService(5000);
+		assertNotNull(semaphore);
+		// Wait for the whiteboard to be in a steady state
+		while(semaphore.tryAcquire(500, TimeUnit.MILLISECONDS));
+	}
+	
+	@AfterEach
+	public void after() {
+		this.tracker.close();
 	}
 	
 	@Test
-	public void testWhiteboard() throws Exception {
+	public void testWhiteboard(@InjectBundleContext BundleContext ctx) throws Exception {
 		
 		Semaphore semaphore = tracker.waitForService(5000);
 		assertNotNull(semaphore);
@@ -107,11 +114,8 @@ private BundleContext ctx;
 
 		ctx.registerService(WhiteboardResource.class, new WhiteboardResource(), properties);
 
-		assertTrue(semaphore.tryAcquire(2, 5, TimeUnit.SECONDS));
+		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
 
-		// This is required due to the impl not updating at the correct time
-		Thread.sleep(1000);
-		
 		String baseURI = getBaseURI(tracker.getServiceReference());
 		
 		HttpRequest request = HttpRequest.newBuilder()
@@ -125,7 +129,7 @@ private BundleContext ctx;
 	}
 
 	@Test
-	public void testWhiteboardExtension() throws Exception {
+	public void testWhiteboardExtension(@InjectBundleContext BundleContext ctx) throws Exception {
 		
 		Semaphore semaphore = tracker.waitForService(5000);
 		assertNotNull(semaphore);
@@ -152,7 +156,7 @@ private BundleContext ctx;
 		}, properties);
 		
 		
-		assertTrue(semaphore.tryAcquire(6, 5, TimeUnit.SECONDS));
+		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
 		
 		String baseURI = getBaseURI(tracker.getServiceReference());
 		

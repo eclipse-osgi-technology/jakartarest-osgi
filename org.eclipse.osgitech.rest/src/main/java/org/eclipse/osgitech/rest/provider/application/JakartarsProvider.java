@@ -24,7 +24,7 @@ import org.osgi.framework.Filter;
  * @author Mark Hoffmann
  * @since 11.10.2017
  */
-public interface JakartarsProvider extends Cloneable, Comparable<JakartarsProvider> {
+public interface JakartarsProvider extends Comparable<JakartarsProvider> {
 	
 	/**
 	 * Returns the primary identifier for the provider, which is usually the service id
@@ -89,5 +89,15 @@ public interface JakartarsProvider extends Cloneable, Comparable<JakartarsProvid
 	 * @return <code>true</code>, if this provider is failed provider, which will result in a failed DTO
 	 */
 	public boolean isFailed();
+	
+	/**
+	 * Returns a "clean copy" which is reset to be newly constructed, ready for
+	 * matching against the appropriate whiteboard/application
+	 * @return
+	 */
+	public JakartarsProvider cleanCopy();
+	
+
+	public void updateStatus(int reason);
 
 }
