@@ -23,6 +23,17 @@ import jakarta.ws.rs.core.Application;
  */
 public class JakartarsHelper {
 
+	public static String getFullApplicationPath(Application application, String applicationBase) {
+		String strippedBase = stripApplicationPath(applicationBase);
+		if (application != null) {
+			ApplicationPath applicationPathAnnotation = application.getClass().getAnnotation(ApplicationPath.class);
+			if (applicationPathAnnotation != null) {
+				return strippedBase + stripApplicationPath(applicationPathAnnotation.value());
+			}
+		}
+		return strippedBase;
+	}
+	
 	/**
 	 * Returns a servlet registration path from the given application. For that, the {@link ApplicationPath} annotation
 	 * will be read. If present the value is taken and transformed into a valid Servlet spec format with

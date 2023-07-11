@@ -13,15 +13,22 @@
  */
 package org.eclipse.osgitech.rest.runtime.application;
 
+import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
+import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.V11;
+import static org.objectweb.asm.Type.VOID_TYPE;
+import static org.objectweb.asm.Type.getDescriptor;
+import static org.objectweb.asm.Type.getInternalName;
+import static org.objectweb.asm.Type.getMethodDescriptor;
+import static org.objectweb.asm.Type.getType;
+
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import jakarta.ws.rs.core.Application;
 
 import org.eclipse.osgitech.rest.dto.DTOConverter;
 import org.eclipse.osgitech.rest.helper.JakartarsHelper;
@@ -31,11 +38,17 @@ import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationConten
 import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
 import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
 import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
-import org.glassfish.jersey.servlet.ServletContainer;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.osgi.service.jakartars.runtime.dto.BaseApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.DTOConstants;
 import org.osgi.service.jakartars.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
+
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 /**
  * Implementation of the Application Provider
@@ -45,47 +58,75 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
 public class JerseyApplicationProvider extends AbstractJakartarsProvider<Application> implements JakartarsApplicationProvider {
 
 	private static final Logger logger = Logger.getLogger("jersey.applicationProvider");
-	private List<ServletContainer> applicationContainers = new LinkedList<>();
 	private String applicationBase;
-	private boolean changed = true;
-	private JerseyApplication wrappedApplication = null;
+	private final JerseyApplication wrappedApplication;
 
 	public JerseyApplicationProvider(Application application, Map<String, Object> properties) {
 		super(application, properties);
 		// create name after validation, because some fields are needed eventually
-		if(application != null) {
+		if(application == null) {
+			wrappedApplication = null;
+		} else if (application.getClass().isAnnotationPresent(ApplicationPath.class)) {
+			// Dynamic subclass with the annotation value
+			wrappedApplication = createDynamicSubclass(applicationBase, application, properties);
+		} else {
 			wrappedApplication = new JerseyApplication(getProviderName(), application, properties);
+			
 		}
 		validateProperties();
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#addServletContainer(org.glassfish.jersey.servlet.ServletContainer)
-	 */
-	@Override
-	public void addServletContainer(ServletContainer applicationContainer) {
-		applicationContainers.add(applicationContainer);
-	}
+	private static class DynamicSubClassLoader extends ClassLoader {
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#removeServletContainer(org.glassfish.jersey.servlet.ServletContainer)
-	 */
-	@Override
-	public void removeServletContainer(ServletContainer applicationContainer) {
-		applicationContainers.remove(applicationContainer);
+		public DynamicSubClassLoader() {
+			super(JerseyApplication.class.getClassLoader());
+		}
+		
+		public Class<? extends JerseyApplication> getSubClass(byte[] bytes) {
+			return (Class<? extends JerseyApplication>) defineClass("org.eclipse.osgitech.rest.runtime.application.JerseyApplicationWithPath", bytes, 0, bytes.length);
+		}
 	}
+	
+	private JerseyApplication createDynamicSubclass(String name, Application application, Map<String, Object> properties) {
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#getServletContainers()
-	 */
-	@Override
-	public List<ServletContainer> getServletContainers() {
-		return applicationContainers;
+		ApplicationPath pathInfo = application.getClass().getAnnotation(ApplicationPath.class);
+		String superName = getInternalName(JerseyApplication.class);
+
+		// Write the class header, with JerseyApplication as the superclass
+		ClassWriter writer = new ClassWriter(COMPUTE_FRAMES);
+		writer.visit(V11, ACC_PUBLIC, "org/eclipse/osgitech/rest/runtime/application/JerseyApplicationWithPath", null, 
+				superName, null);
+		// Write the application path annotation
+		AnnotationVisitor av = writer.visitAnnotation(getDescriptor(ApplicationPath.class), true);
+		av.visit("value", pathInfo.value());
+		av.visitEnd();
+		
+		// Write a constructor which directly calls super and nothing else
+		String constructorDescriptor = getMethodDescriptor(VOID_TYPE, getType(String.class), 
+				getType(Application.class), getType(Map.class));
+		
+		MethodVisitor mv = writer.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null);
+		mv.visitCode();
+		mv.visitVarInsn(Opcodes.ALOAD, 0);
+		mv.visitVarInsn(Opcodes.ALOAD, 1);
+		mv.visitVarInsn(Opcodes.ALOAD, 2);
+		mv.visitVarInsn(Opcodes.ALOAD, 3);
+		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "<init>", constructorDescriptor, false);
+		mv.visitInsn(RETURN);
+		mv.visitMaxs(4, 4);
+		mv.visitEnd();
+		writer.visitEnd();
+		
+		DynamicSubClassLoader loader = new DynamicSubClassLoader();
+		Class<? extends JerseyApplication> clazz = loader.getSubClass(writer.toByteArray());
+		try {
+			return clazz.getConstructor(String.class, Application.class, Map.class).newInstance(name, application, properties);
+		} catch (Exception e) {
+			logger.severe("Unable to create a subclass of the JerseyApplication " + e.getMessage());
+		}
+		return null;
 	}
-
+	
 	/* 
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#getPath()
@@ -95,7 +136,7 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		if (wrappedApplication == null) {
 			throw new IllegalStateException("This application provider does not contain an application, but should have one to create a context path");
 		}
-		return applicationBase == null ? null : JakartarsHelper.getServletPath(wrappedApplication.getSourceApplication() , applicationBase);
+		return JakartarsHelper.getFullApplicationPath(wrappedApplication.getSourceApplication(), applicationBase == null ? "" : applicationBase);
 	}
 
 	/* 
@@ -160,24 +201,6 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	@Override
 	public boolean isEmpty() {
 		return JerseyHelper.isEmpty(wrappedApplication);
-	}
-
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#isChanged()
-	 */
-	@Override
-	public boolean isChanged() {
-		return changed;
-	}
-
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#markUnchanged()
-	 */
-	@Override
-	public void markUnchanged() {
-		changed = false;
 	}
 
 	/* 
@@ -297,15 +320,7 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		if(getApplicationDTO() instanceof FailedApplicationDTO) {
 			return false;
 		}
-		boolean filterValid = true; 
-		if (filterValid) {
-			JerseyApplication jerseyApplication = wrappedApplication;
-			boolean added = jerseyApplication.addContent(provider);
-			if (!changed && added) {
-				changed = added;
-			}
-		}
-		return filterValid;
+		return wrappedApplication.addContent(provider);
 	}
 	
 	/**
@@ -314,18 +329,14 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	 * @return <code>true</code>, if removal was successful, otherwise <code>false</code>
 	 */
 	private boolean doRemoveContent(JakartarsApplicationContentProvider provider) {
-		boolean removed = wrappedApplication.removeContent(provider);
-		if (!changed && removed) {
-			changed = removed;
-		}
-		return removed;
+		return wrappedApplication.removeContent(provider);
 	}
 	
 	/* (non-Javadoc)
 	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#getContentProviers()
 	 */
 	@Override
-	public Collection<JakartarsApplicationContentProvider> getContentProviers() {
+	public Collection<JakartarsApplicationContentProvider> getContentProviders() {
 		return wrappedApplication.getContentProviders();
 	}
 	
@@ -337,23 +348,15 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		doValidateProperties(Collections.singletonMap(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, applicationBase));
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.runtime.servlet.DestroyListener#servletContainerDestroyed(org.glassfish.jersey.servlet.ServletContainer)
-	 */
 	@Override
-	public void servletContainerDestroyed(ServletContainer container) {
-		applicationContainers.remove(container);
-	}
-	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.AbstractJakartarsProvider#updateStatus(int)
-	 */
-	@Override
-	public void updateStatus(int newStatus) {
-		super.updateStatus(newStatus);
+	public boolean isChanged(Application application) {
+		// TODO optimise this by checking to see if the underlying application is the same
+		return true;
 	}
 
+	@Override
+	public JakartarsApplicationProvider cleanCopy() {
+		return new JerseyApplicationProvider(getProviderObject(), getProviderProperties());
+	}
 
 }

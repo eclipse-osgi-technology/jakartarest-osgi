@@ -32,7 +32,7 @@ public class JettyServerRunnable implements Runnable {
 	private final int port;
 	private CountDownLatch awaitStart = new CountDownLatch(1);;
 	private Throwable throwable;
-	private JerseyServiceRuntime.State state = JerseyServiceRuntime.State.INIT;
+	private JettyBackedWhiteboardComponent.State state = JettyBackedWhiteboardComponent.State.INIT;
 	private Logger logger = Logger.getLogger("o.g.r.j.JettyServerRunnable");
 
 	public JettyServerRunnable(Server server, int port) {
@@ -49,7 +49,7 @@ public class JettyServerRunnable implements Runnable {
 	public void run() {
 		if (server == null) {
 			throwable = new RuntimeException("No server available to start");
-			state = JerseyServiceRuntime.State.EXCEPTION;
+			state = JettyBackedWhiteboardComponent.State.EXCEPTION;
 			return;
 		}
 		try {
@@ -65,7 +65,7 @@ public class JettyServerRunnable implements Runnable {
 				
 				@Override
 				public void lifeCycleStopped(LifeCycle lifeCycle) {
-					state = JerseyServiceRuntime.State.STARTED;
+					state = JettyBackedWhiteboardComponent.State.STARTED;
 					logger.info("lifeCycleStopped");
 					
 				}
@@ -78,7 +78,7 @@ public class JettyServerRunnable implements Runnable {
 				@Override
 				public void lifeCycleStarted(LifeCycle lifeCycle) {
 					logger.info("lifeCycleStarted");
-					state = JerseyServiceRuntime.State.STARTED;
+					state = JettyBackedWhiteboardComponent.State.STARTED;
 					awaitStart.countDown();
 					
 				}
@@ -86,7 +86,7 @@ public class JettyServerRunnable implements Runnable {
 				@Override
 				public void lifeCycleFailure(LifeCycle lifeCycle, Throwable throwable) {
 					logger.info("lifeCycleFailure");
-					state = JerseyServiceRuntime.State.EXCEPTION;
+					state = JettyBackedWhiteboardComponent.State.EXCEPTION;
 					JettyServerRunnable.this.throwable = throwable;
 				}
 			});
@@ -95,7 +95,7 @@ public class JettyServerRunnable implements Runnable {
 		} catch (Exception e) {
 
 			throwable = new RuntimeException("Error starting Jersey server on port " + port, e);
-			state = JerseyServiceRuntime.State.EXCEPTION;
+			state = JettyBackedWhiteboardComponent.State.EXCEPTION;
 		} finally {
 			server.destroy();
 		}
@@ -115,7 +115,7 @@ public class JettyServerRunnable implements Runnable {
 	 * 
 	 * @return the state
 	 */
-	public JerseyServiceRuntime.State getState() {
+	public JettyBackedWhiteboardComponent.State getState() {
 		return state;
 	}
 
@@ -128,7 +128,7 @@ public class JettyServerRunnable implements Runnable {
 			}
 			return started;
 		} catch (InterruptedException e) {
-			if (JerseyServiceRuntime.State.STARTED.equals(state)) {
+			if (JettyBackedWhiteboardComponent.State.STARTED.equals(state)) {
 				// InterruptedException did not hit the jettyServerRunnable
 				return true;
 			}

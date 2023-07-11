@@ -109,7 +109,7 @@ public class ExtensionPriorityTests {
 
 		ctx.registerService(Object.class, new BamBamResource(), resourceProps());
 		
-		assertTrue(semaphore.tryAcquire(8, 5, TimeUnit.SECONDS));
+		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
 		
 		assertEquals("WhamBoom", cb.build().target("http://localhost:8080/bam")
 			.request().get(String.class));

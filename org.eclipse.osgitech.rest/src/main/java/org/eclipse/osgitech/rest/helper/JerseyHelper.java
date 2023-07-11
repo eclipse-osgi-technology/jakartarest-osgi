@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.osgi.framework.ServiceReference;
-import org.osgi.service.component.ComponentContext;
 
 import jakarta.ws.rs.core.Application;
 
@@ -38,11 +37,11 @@ public class JerseyHelper {
 	 * @return the value or defaultValue or <code>null</code>
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T getPropertyWithDefault(ComponentContext context, String key, T defaultValue) {
-		if (context == null) {
+	public static <T> T getPropertyWithDefault(Map<String, Object> props, String key, T defaultValue) {
+		if (props == null) {
 			throw new IllegalStateException("Cannot call getProperties in a state, where the component context is not available");
 		}
-		Object value = context.getProperties().get(key);
+		Object value = props.get(key);
 		return value == null ? defaultValue : (T)value;
 	}
 

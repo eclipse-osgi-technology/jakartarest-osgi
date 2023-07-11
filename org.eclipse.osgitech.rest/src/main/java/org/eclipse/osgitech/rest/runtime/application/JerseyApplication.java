@@ -102,10 +102,24 @@ public class JerseyApplication extends Application {
 	}
 
 	
-	public void resetForReload() {
+	public void dispose() {
 		if(whiteboardFeature != null) {
 			whiteboardFeature.dispose();
 			whiteboardFeature = null;
+			singletons.forEach((k,v) -> {
+				JakartarsApplicationContentProvider provider = contentProviders.get(k);
+				Object providerObj = provider.getProviderObject();
+				if(providerObj instanceof ServiceObjects) {
+					@SuppressWarnings("unchecked")
+					ServiceObjects<Object> serviceObjs = (ServiceObjects<Object>) providerObj;
+					try {
+						serviceObjs.ungetService(v);
+					} catch(IllegalArgumentException e) {
+						log.log(Level.SEVERE, "Cannot unget service for resource " + provider.getName(), e);
+					}
+				}
+			});
+			singletons.clear();
 		} 
 	}
 	

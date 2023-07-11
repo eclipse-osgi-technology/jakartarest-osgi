@@ -41,6 +41,16 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  */
 public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider, JakartarsConstants {
 
+	private static final Filter IMPOSSIBLE_MATCH;
+	
+	static {
+		try {
+			IMPOSSIBLE_MATCH = FrameworkUtil.createFilter("(&(foo=bar)(!(foo=bar)))");
+		} catch (InvalidSyntaxException e) {
+			throw new IllegalArgumentException("The filter failed to be created", e);
+		}
+	}
+	
 	private static final Logger logger = Logger.getLogger("jersey.abstractProvider");
 	private final Map<String, Object> properties;
 	private String name;
@@ -127,10 +137,6 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 	 */
 	@Override
 	public boolean canHandleWhiteboard(Map<String, Object> runtimeProperties) {
-		// in case the application status is invalid, this application cannot be handled
-		if (getProviderStatus() != NO_FAILURE) {
-			return false;
-		}
 		/* 
 		 * Spec table 151.2: osgi.jakartars.whiteboard.target: ... If this property is not specified,
 		 * all Jakartars Whiteboards can handle this service
@@ -152,14 +158,6 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 	public List<Filter> getExtensionFilters() {
 		return extensionFilters;
 	}
-//
-//	/**
-//	 * Returns the {@link ServiceObjects} representing this resource
-//	 * @return the {@link ServiceObjects} representing this resource
-//	 */
-//	public ServiceObjects<T> getServiceObjects() {
-//		return serviceObjects;
-//	}
 	
 	/* 
 	 * (non-Javadoc)
@@ -246,6 +244,7 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 			} catch (InvalidSyntaxException e) {
 				logger.log(Level.SEVERE, "The given whiteboard target filter is invalid: " + filter);
 				updateStatus(DTOConstants.FAILURE_REASON_VALIDATION_FAILED);
+				whiteboardTargetFilter = IMPOSSIBLE_MATCH;
 			}
 		}
 		String[] filters = JerseyHelper.getStringPlusProperty(JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION_SELECT, properties);
@@ -275,7 +274,7 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 	 * Updates the status. This is an indicator for creating failed DTO's
 	 * @param newStatus the new status to update
 	 */
-	protected void updateStatus(int newStatus) {
+	public void updateStatus(int newStatus) {
 		if (newStatus == status) {
 			return;
 		}

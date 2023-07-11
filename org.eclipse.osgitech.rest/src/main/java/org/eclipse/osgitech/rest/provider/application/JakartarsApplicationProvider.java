@@ -14,24 +14,21 @@
 package org.eclipse.osgitech.rest.provider.application;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.core.Application;
-
-import org.eclipse.osgitech.rest.helper.DestroyListener;
 import org.eclipse.osgitech.rest.provider.JakartarsConstants;
-import org.glassfish.jersey.servlet.ServletContainer;
 import org.osgi.service.jakartars.runtime.dto.ApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.BaseApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.FailedApplicationDTO;
+
+import jakarta.ws.rs.core.Application;
 
 /**
  * Wrapper interface to provide an Jakartars application with all necessary properties
  * @author Mark Hoffmann
  * @since 30.07.2017
  */
-public interface JakartarsApplicationProvider extends JakartarsProvider, JakartarsConstants, DestroyListener {
+public interface JakartarsApplicationProvider extends JakartarsProvider, JakartarsConstants {
 	
 	/**
 	 * Return the context path for this application
@@ -69,19 +66,6 @@ public interface JakartarsApplicationProvider extends JakartarsProvider, Jakarta
 	public BaseApplicationDTO getApplicationDTO();
 	
 	/**
-	 * Sets the {@link ServletContainer} instance, that represents an application in Jersey
-	 * @param applicationContainer the application to set
-	 */
-	public void addServletContainer(ServletContainer applicationContainer);
-	
-	/**
-	 * Returns the {@link List} of {@link ServletContainer}s of the application
-	 * The List will never be null.
-	 * @return the {@link List} of {@link ServletContainer}s of the application
-	 */
-	public List<ServletContainer> getServletContainers();
-	
-	/**
 	 * Returns <code>true</code>, if the application provider is the default application.
 	 * @return <code>true</code>, if the application provider is the default application., otherwise <code>false</code>
 	 */
@@ -101,14 +85,11 @@ public interface JakartarsApplicationProvider extends JakartarsProvider, Jakarta
 	
 	/**
 	 * Returns <code>true</code>, if the provider has changed since the last change reset 
+	 * @param application 
 	 * @return <code>true</code>, if the provider has changed since the last change reset
 	 */
-	public boolean isChanged();
+	public boolean isChanged(Application application);
 	
-	/**
-	 * Marks the provider as unchanged
-	 */
-	public void markUnchanged();
 	
 	/**
 	 * Adds a new resource to the application provider. The call returns <code>true</code>,
@@ -142,18 +123,9 @@ public interface JakartarsApplicationProvider extends JakartarsProvider, Jakarta
 	 * All registered {@link JakartarsApplicationContentProvider}
 	 * @return a {@link Collection} of {@link JakartarsApplicationContentProvider}
 	 */
-	public Collection<JakartarsApplicationContentProvider> getContentProviers();
+	public Collection<JakartarsApplicationContentProvider> getContentProviders();
 
-	/**
-	 * Removes the given {@link ServletContainer}
-	 * @param applicationContainer the {@link ServletContainer} to remove
-	 */
-	public void removeServletContainer(ServletContainer applicationContainer);
-	
-	/**
-	 * Updates the application base property. section 151.6.1 Jakartars Whiteboard Specification
-	 * @param applicationBase the property to update
-	 */
-	public void updateApplicationBase(String applicationBase);
+	@Override
+	public JakartarsApplicationProvider cleanCopy();
 
 }

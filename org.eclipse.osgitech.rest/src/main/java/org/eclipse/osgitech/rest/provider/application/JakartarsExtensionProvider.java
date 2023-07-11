@@ -73,4 +73,7 @@ public interface JakartarsExtensionProvider extends JakartarsApplicationContentP
 		 */
 		public void dispose();
 	}
+	
+	@Override
+	public JakartarsExtensionProvider cleanCopy();
 }

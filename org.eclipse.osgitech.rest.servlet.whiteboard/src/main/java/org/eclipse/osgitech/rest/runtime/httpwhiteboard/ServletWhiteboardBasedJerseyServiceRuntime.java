@@ -13,40 +13,40 @@
  */
 package org.eclipse.osgitech.rest.runtime.httpwhiteboard;
 
-import java.util.Collection;
+import static org.osgi.framework.Constants.SERVICE_DESCRIPTION;
+import static org.osgi.framework.Constants.SERVICE_ID;
+import static org.osgi.framework.FrameworkUtil.asMap;
+import static org.osgi.service.jakartars.runtime.JakartarsServiceRuntimeConstants.JAKARTA_RS_SERVICE_ENDPOINT;
+import static org.osgi.service.servlet.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_FILTER_ASYNC_SUPPORTED;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
+
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.annotations.ProvideRuntimeAdapter;
 import org.eclipse.osgitech.rest.helper.JerseyHelper;
-import org.eclipse.osgitech.rest.provider.JerseyConstants;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.runtime.AbstractJerseyServiceRuntime;
-import org.eclipse.osgitech.rest.runtime.ResourceConfigWrapper;
+import org.eclipse.osgitech.rest.runtime.JerseyServiceRuntime;
 import org.eclipse.osgitech.rest.runtime.WhiteboardServletContainer;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.servlet.ServletContainer;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
-import org.osgi.framework.Filter;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.cm.ConfigurationException;
-import org.osgi.service.component.ComponentContext;
 import org.osgi.service.jakartars.runtime.JakartarsServiceRuntime;
 import org.osgi.service.servlet.context.ServletContextHelper;
 import org.osgi.service.servlet.runtime.HttpServiceRuntime;
-import org.osgi.service.servlet.runtime.HttpServiceRuntimeConstants;
 import org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants;
 import org.osgi.service.servlet.whiteboard.annotations.RequireHttpWhiteboard;
 
@@ -59,95 +59,81 @@ import jakarta.servlet.Servlet;
  */
 @ProvideRuntimeAdapter(HttpWhiteboardConstants.HTTP_WHITEBOARD_IMPLEMENTATION)
 @RequireHttpWhiteboard
-public class ServletWhiteboardBasedJerseyServiceRuntime extends AbstractJerseyServiceRuntime {
+public class ServletWhiteboardBasedJerseyServiceRuntime {
 
-	private final Map<String, ServiceRegistration<Servlet>> applicationServletRegistrationMap = new ConcurrentHashMap<>();
-	private Logger logger = Logger.getLogger(ServletWhiteboardBasedJerseyServiceRuntime.class.getName());
-	private Filter httpContextSelect;
-	private Filter httpWhiteboardTarget;
-	private String basePath;
+	private final Logger logger = Logger.getLogger(ServletWhiteboardBasedJerseyServiceRuntime.class.getName());
+	private final BundleContext context;
+	private final String basePath;
+	private final ServiceReference<HttpServiceRuntime> runtimeTarget;
+	private final Long httpId;
+	private final String httpWhiteboardTarget;
+	private final JerseyServiceRuntime<WhiteboardServletContainer> runtime;
+
+	private final Map<String, RestContext> pathsToServlets = new HashMap<>();
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doInitialize(org.osgi.service.component.ComponentContext)
-	 */
-	@Override
-	protected void doInitialize(ComponentContext context) {
+	private static class RestContext {
+		private final ServiceRegistration<ServletContextHelper> contextHelperReg;
+		private final ServiceRegistration<Servlet> servletReg;
+		private final WhiteboardServletContainer servlet;
+		
+		public RestContext(ServiceRegistration<ServletContextHelper> contextHelperReg,
+				ServiceRegistration<Servlet> servletReg, WhiteboardServletContainer servlet) {
+			this.contextHelperReg = contextHelperReg;
+			this.servletReg = servletReg;
+			this.servlet = servlet;
+		}
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doStartup()
-	 */
-	@Override
-	protected void doStartup() {
-		//Nothing todo here
+
+	public ServletWhiteboardBasedJerseyServiceRuntime(BundleContext context, String basePath,
+			ServiceReference<HttpServiceRuntime> runtimeTarget) {
+		this.context = context;
+		this.basePath = basePath;
+		this.runtimeTarget = runtimeTarget;
+		httpId = (Long) runtimeTarget.getProperty(SERVICE_ID);
+		this.httpWhiteboardTarget = String.format("(%s=%s)", SERVICE_ID, httpId);
+		this.runtime = new JerseyServiceRuntime<>(context, this::registerContainer, this::unregisterContainer);
+		
+		runtime.start(Map.of(JAKARTA_RS_SERVICE_ENDPOINT, getURLs(), 
+				SERVICE_DESCRIPTION, "REST whiteboard for HttpServiceRuntime " + httpId));
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doModified(org.osgi.service.component.ComponentContext)
-	 */
-	@Override
-	public void doModified(ComponentContext context) throws ConfigurationException {
-	}
+
 
 	/* 
 	 * (non-Javadoc)
 	 * @see org.eclipselabs.osgi.jersey.runtime.JakartarsJerseyHandler#getURLs(org.osgi.service.component.ComponentContext)
 	 */
-	public String[] getURLs(ComponentContext context) {
-		BundleContext bundleContext = context.getBundleContext();
-		
+	private String[] getURLs() {
 		//first look which http whiteboards would fit
+		String[] endpoints = JerseyHelper.getStringPlusProperty(HTTP_SERVICE_ENDPOINT, asMap(runtimeTarget.getProperties()));
 		
-		List<String> baseUris = new LinkedList<>();
-		
-		try {
-			final Collection<ServiceReference<ServletContextHelper>> contextReferences = bundleContext.getServiceReferences(ServletContextHelper.class, httpContextSelect != null ? httpContextSelect.toString() : null);
-			final Map<String, Filter> pathWithFilter = new HashMap<>();
-			contextReferences.forEach(sr -> {
-				String path = (String) sr.getProperty(HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH);
-				String whiteboardTarget = (String) sr.getProperty(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET);
-				if(whiteboardTarget == null) {
-					pathWithFilter.put(path, null);
-				} else {
-					try {
-						Filter targetFilter = bundleContext.createFilter(whiteboardTarget);
-						pathWithFilter.put(path, targetFilter);
-					} catch (InvalidSyntaxException e) {
-						logger.warning("There is a ServletContext with an invalid " + HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET + " out there with service ID "+ sr.getProperty(Constants.SERVICE_ID));
-					}
-				}
-			});
-			
-			Collection<ServiceReference<HttpServiceRuntime>> whiteboardReferences = bundleContext.getServiceReferences(HttpServiceRuntime.class, httpWhiteboardTarget != null ? httpWhiteboardTarget.toString() : null);
-			whiteboardReferences.forEach(ref -> {
-				Map<String,Object> properties = FrameworkUtil.asMap(ref.getProperties());
-				String[] endpoints = JerseyHelper.getStringPlusProperty(HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT, properties);
-				if (pathWithFilter.isEmpty()) {
-					if (endpoints != null) {
-						for (String e : endpoints) {
-							baseUris.add(buildEndPoint(e, null));
-						}
-					}
-				} else {
-					pathWithFilter.forEach((path, target) -> {
-						if(target == null || target.match(ref)) {
-							if (endpoints != null) {
-								for (String e : endpoints) {
-									baseUris.add(buildEndPoint(e, path));
-								}
-							}
-						}
-					});
-				}
-			});
-			
-		} catch (InvalidSyntaxException e1) {
-			// will not happen. We have already checked at this point
-		}
-		
-		return baseUris.toArray(new String[0]);
+		return Arrays.stream(endpoints)
+				.sorted(this::preferIPv4)
+				.map(s -> buildEndPoint(s, basePath))
+				.toArray(String[]::new);
 	}
 	
+
+	private int preferIPv4(String a, String b) {
+		if(a == null) {
+			return b == null ? 0 : 1;
+		} else if (b == null) {
+			return -1;
+		}
+		int aIdx = a.indexOf("://");
+		int bIdx = b.indexOf("://");
+		
+		boolean aIPv6 = a.charAt(aIdx < 0 ? 0 : aIdx + 3) == '[';
+		boolean bIPv6 = b.charAt(bIdx < 0 ? 0 : bIdx + 3) == '[';
+		
+		if(aIPv6 && !bIPv6) {
+			return 1;
+		} else if (!aIPv6 && bIPv6) {
+			return -1;
+		} else {
+			return a.compareTo(b);
+		}
+	}
+
 
 	private String buildEndPoint(String endpoint, String path) {
 		String rsEndpoint = endpoint;
@@ -156,6 +142,8 @@ public class ServletWhiteboardBasedJerseyServiceRuntime extends AbstractJerseySe
 		}
 		if (basePath.startsWith("/")) {
 			rsEndpoint += basePath.substring(1);
+		} else {
+			rsEndpoint += basePath;
 		}
 		if (!rsEndpoint.endsWith("/")) {
 			rsEndpoint += "/";
@@ -166,123 +154,65 @@ public class ServletWhiteboardBasedJerseyServiceRuntime extends AbstractJerseySe
 		return rsEndpoint;
 	}
 	
+	private final AtomicInteger counter = new AtomicInteger();
 	/* (non-Javadoc)
 	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doRegisterServletContainer(org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider, java.lang.String, org.glassfish.jersey.server.ResourceConfig)
 	 */
-	@Override
-	protected void doRegisterServletContext(JakartarsApplicationProvider provider, String path, ResourceConfig config) {
-		Dictionary<String, Object> props = new Hashtable<>();
-		props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, basePath + path);
-		props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, Boolean.TRUE);
-		props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_FILTER_ASYNC_SUPPORTED, Boolean.TRUE);
-		String target = (String) context.getProperties().get(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET);
-		if(target != null){
-			props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET, target);
-		}
-		String select = (String) context.getProperties().get(HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT);
-		if(select != null){
-			props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT, select);
-		}
-		
-		ServiceRegistration<Servlet> serviceRegistration = context.getBundleContext().registerService(Servlet.class, new PrototypeServiceFactory<Servlet>() {
+	private WhiteboardServletContainer registerContainer(String path, ResourceConfig config) {
+		String applicationPath = config.getApplicationPath() == null ? "" : config.getApplicationPath();
 
-			@Override
-			public Servlet getService(Bundle bundle, ServiceRegistration<Servlet> registration) {
-				ResourceConfig config = createResourceConfig(provider).config;
-				ServletContainer container = new WhiteboardServletContainer(config, provider);
-				provider.addServletContainer(container);
-				return container;
-			}
-
-			@Override
-			public void ungetService(Bundle bundle, ServiceRegistration<Servlet> registration, Servlet service) {
-				provider.removeServletContainer((ServletContainer) service);
-			}
-			
-		}, props);
+		String contextId = String.format("ContextForRestWhiteboard.%s.instance.%s", httpId, counter.incrementAndGet());
+		Dictionary<String, Object> contextHelperProps = new Hashtable<>();
+		contextHelperProps.put(HTTP_WHITEBOARD_TARGET, httpWhiteboardTarget);
+		contextHelperProps.put(HTTP_WHITEBOARD_CONTEXT_NAME, contextId);
+		String contextPath = basePath.endsWith("/") ? basePath.substring(0, basePath.length() -1) : basePath;
+		contextPath += path.substring(0, path.length() - applicationPath.length());
+		if(contextPath.endsWith("/")) {
+			contextPath = contextPath.substring(0, contextPath.length() - 1);
+		}
+		contextHelperProps.put(HTTP_WHITEBOARD_CONTEXT_PATH, contextPath.startsWith("/") ? contextPath : "/" + contextPath);
 		
-		applicationServletRegistrationMap.put(provider.getId(), serviceRegistration);
+		Dictionary<String, Object> servletProps = new Hashtable<>();
+		
+		String servletPath = applicationPath;
+		if(!servletPath.startsWith("/")) {
+			servletPath = "/" + servletPath;
+		}
+		if(servletPath.endsWith("/")) {
+			servletPath += "*";
+		} else {
+			servletPath += "/*";
+		}
+		servletProps.put(HTTP_WHITEBOARD_SERVLET_PATTERN, servletPath);
+		servletProps.put(HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, Boolean.TRUE);
+		servletProps.put(HTTP_WHITEBOARD_FILTER_ASYNC_SUPPORTED, Boolean.TRUE);
+		servletProps.put(HTTP_WHITEBOARD_TARGET, httpWhiteboardTarget);
+		servletProps.put(HTTP_WHITEBOARD_CONTEXT_SELECT, String.format("(osgi.http.whiteboard.context.name=%s)", contextId));
+		
+		WhiteboardServletContainer container = new WhiteboardServletContainer(config);
+		
+		RestContext rest = new RestContext(
+				context.registerService(ServletContextHelper.class, new ServletContextHelper() {}, contextHelperProps), 
+				context.registerService(Servlet.class, container, servletProps), container);
+		
+		pathsToServlets.put(path, rest);
+		
+		return container;
 	}
 
-	protected void doRegisterServletContext(JakartarsApplicationProvider provider, String path) {
-		Dictionary<String, Object> props = new Hashtable<>();
-		props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, basePath + path);
-		props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, Boolean.TRUE);
-		props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_FILTER_ASYNC_SUPPORTED, Boolean.TRUE);
-		String target = (String) context.getProperties().get(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET);
-		if(target != null){
-			props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET, target);
+	private void unregisterContainer(String path, WhiteboardServletContainer container) {
+		RestContext rest = pathsToServlets.remove(path);
+		if(rest != null) {
+			rest.servletReg.unregister();
+			if(rest.contextHelperReg != null)
+				rest.contextHelperReg.unregister();
+			rest.servlet.dispose();
 		}
-		String select = (String) context.getProperties().get(HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT);
-		if(select != null){
-			props.put(HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT, select);
-		}
-		
-		ServiceRegistration<Servlet> serviceRegistration = context.getBundleContext().registerService(Servlet.class, new PrototypeServiceFactory<Servlet>() {
-			
-			@Override
-			public Servlet getService(Bundle bundle, ServiceRegistration<Servlet> registration) {
-				ResourceConfigWrapper configWrapper = createResourceConfig(provider);
-				ServletContainer container = new WhiteboardServletContainer(configWrapper, provider);
-				provider.addServletContainer(container);
-				return container;
-			}
-			
-			@Override
-			public void ungetService(Bundle bundle, ServiceRegistration<Servlet> registration, Servlet service) {
-				provider.removeServletContainer((ServletContainer) service);
-			}
-			
-		}, props);
-		
-		applicationServletRegistrationMap.put(provider.getId(), serviceRegistration);
-	}
-	
-	@Override
-	protected void doUnregisterApplication(JakartarsApplicationProvider applicationProvider) {
-		ServiceRegistration<Servlet> serviceRegistration = applicationServletRegistrationMap.remove(applicationProvider.getId());
-		if(serviceRegistration != null) {
-			serviceRegistration.unregister();
-		}
-	}
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doUpdateProperties(org.osgi.service.component.ComponentContext)
-	 */
-	@Override
-	protected void doUpdateProperties(ComponentContext ctx) throws ConfigurationException {
-		String contextSelect = JerseyHelper.getPropertyWithDefault(ctx, HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT, null);
-		try {
-			httpContextSelect = contextSelect != null ? ctx.getBundleContext().createFilter(contextSelect) : null;
-		} catch (InvalidSyntaxException e) {
-			throw new ConfigurationException(HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT, "Invalid filter syntax: " + e.getMessage());
-		}
-		String whiteboardTarget = JerseyHelper.getPropertyWithDefault(ctx, HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET, null);
-		try {
-			httpWhiteboardTarget = whiteboardTarget != null ? ctx.getBundleContext().createFilter(whiteboardTarget) : null;
-		} catch (InvalidSyntaxException e) {
-			throw new ConfigurationException(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET, "Invalid filter syntax: " + e.getMessage());
-		}
-		
-		basePath = JerseyHelper.getPropertyWithDefault(ctx, JerseyConstants.JERSEY_CONTEXT_PATH, "");
-		if(basePath.length() > 0) {
-			if(!basePath.startsWith("/")) {
-				basePath = "/" + basePath;
-			}
-			if(basePath.endsWith("/")) {
-				basePath = basePath.substring(0, basePath.length() - 1);
-			} else if(basePath.endsWith("/*")) {
-				basePath = basePath.substring(0, basePath.length() - 2);
-			}
-		}
-		
+		container.dispose();
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doTeardown()
-	 */
-	@Override
-	protected void doTeardown() {
+	public void teardown(long i, TimeUnit seconds) {
+		runtime.teardown(i, seconds);
 	}
 
 }
