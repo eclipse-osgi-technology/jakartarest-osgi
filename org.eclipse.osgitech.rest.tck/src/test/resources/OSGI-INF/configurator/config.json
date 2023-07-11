@@ -7,5 +7,10 @@
 	"jersey.jakartars.whiteboard.name" : "test_wb",
 	"jersey.context.path" : "test",
 	"jersey.disable.sessions" : false
+   },
+  "JakartarsServletWhiteboardRuntimeComponent": 
+  {
+	"jersey.jakartars.whiteboard.name" : "test_wb",
+	"jersey.context.path" : "test"
    }
 }

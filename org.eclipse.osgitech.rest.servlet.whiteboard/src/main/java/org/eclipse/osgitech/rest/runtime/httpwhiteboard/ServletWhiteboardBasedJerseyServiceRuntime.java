@@ -27,6 +27,7 @@ import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_W
 import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -105,10 +106,34 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 		//first look which http whiteboards would fit
 		String[] endpoints = JerseyHelper.getStringPlusProperty(HTTP_SERVICE_ENDPOINT, asMap(runtimeTarget.getProperties()));
 		
-		return Arrays.stream(endpoints).map(s -> buildEndPoint(s, basePath))
+		return Arrays.stream(endpoints)
+				.sorted(this::preferIPv4)
+				.map(s -> buildEndPoint(s, basePath))
 				.toArray(String[]::new);
 	}
 	
+
+	private int preferIPv4(String a, String b) {
+		if(a == null) {
+			return b == null ? 0 : 1;
+		} else if (b == null) {
+			return -1;
+		}
+		int aIdx = a.indexOf("://");
+		int bIdx = b.indexOf("://");
+		
+		boolean aIPv6 = a.charAt(aIdx < 0 ? 0 : aIdx + 3) == '[';
+		boolean bIPv6 = b.charAt(bIdx < 0 ? 0 : bIdx + 3) == '[';
+		
+		if(aIPv6 && !bIPv6) {
+			return 1;
+		} else if (!aIPv6 && bIPv6) {
+			return -1;
+		} else {
+			return a.compareTo(b);
+		}
+	}
+
 
 	private String buildEndPoint(String endpoint, String path) {
 		String rsEndpoint = endpoint;
@@ -134,16 +159,31 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doRegisterServletContainer(org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider, java.lang.String, org.glassfish.jersey.server.ResourceConfig)
 	 */
 	private WhiteboardServletContainer registerContainer(String path, ResourceConfig config) {
+		String applicationPath = config.getApplicationPath() == null ? "" : config.getApplicationPath();
+
 		String contextId = String.format("ContextForRestWhiteboard.%s.instance.%s", httpId, counter.incrementAndGet());
 		Dictionary<String, Object> contextHelperProps = new Hashtable<>();
 		contextHelperProps.put(HTTP_WHITEBOARD_TARGET, httpWhiteboardTarget);
 		contextHelperProps.put(HTTP_WHITEBOARD_CONTEXT_NAME, contextId);
 		String contextPath = basePath.endsWith("/") ? basePath.substring(0, basePath.length() -1) : basePath;
+		contextPath += path.substring(0, path.length() - applicationPath.length());
+		if(contextPath.endsWith("/")) {
+			contextPath = contextPath.substring(0, contextPath.length() - 1);
+		}
 		contextHelperProps.put(HTTP_WHITEBOARD_CONTEXT_PATH, contextPath.startsWith("/") ? contextPath : "/" + contextPath);
 		
 		Dictionary<String, Object> servletProps = new Hashtable<>();
 		
-		servletProps.put(HTTP_WHITEBOARD_SERVLET_PATTERN, path + (path.endsWith("/") ? "*" : "/*"));
+		String servletPath = applicationPath;
+		if(!servletPath.startsWith("/")) {
+			servletPath = "/" + servletPath;
+		}
+		if(servletPath.endsWith("/")) {
+			servletPath += "*";
+		} else {
+			servletPath += "/*";
+		}
+		servletProps.put(HTTP_WHITEBOARD_SERVLET_PATTERN, servletPath);
 		servletProps.put(HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, Boolean.TRUE);
 		servletProps.put(HTTP_WHITEBOARD_FILTER_ASYNC_SUPPORTED, Boolean.TRUE);
 		servletProps.put(HTTP_WHITEBOARD_TARGET, httpWhiteboardTarget);
