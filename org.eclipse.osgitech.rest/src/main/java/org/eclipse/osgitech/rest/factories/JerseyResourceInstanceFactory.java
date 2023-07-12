@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.osgitech.rest.binder.PrototypeServiceBinder;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
+import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationContentProvider;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.osgi.framework.ServiceObjects;
 
@@ -30,18 +30,18 @@ import org.osgi.framework.ServiceObjects;
  */
 public class JerseyResourceInstanceFactory<T> implements InjectableFactory<T> {
 
-	private volatile Set<T> instanceCache = new HashSet<>();
-	private JakartarsApplicationContentProvider provider;
-	private ServiceObjects<T> serviceObjects;
+	private volatile Set<Object> instanceCache = new HashSet<>();
+	private JerseyApplicationContentProvider provider;
+	private ServiceObjects<Object> serviceObjects;
 	private InjectionManager injectionManager;
 	
 	/**
 	 * Creates a new instance. A service reference will be cached lazily, on the first request
 	 * @param clazz the resource class
 	 */
-	public JerseyResourceInstanceFactory(JakartarsApplicationContentProvider provider) {
+	public JerseyResourceInstanceFactory(JerseyApplicationContentProvider provider) {
 		this.provider = provider;
-		serviceObjects = provider.getProviderObject();;
+		serviceObjects = provider.getProviderObject();
 	}
 
 	/* (non-Javadoc)
@@ -55,6 +55,7 @@ public class JerseyResourceInstanceFactory<T> implements InjectableFactory<T> {
 	/* (non-Javadoc)
 	 * @see org.glassfish.hk2.api.Factory#provide()
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public T provide() {
 		try {
@@ -62,7 +63,7 @@ public class JerseyResourceInstanceFactory<T> implements InjectableFactory<T> {
 			if (serviceObjects == null) {
 				return null;
 			}
-			T instance = serviceObjects.getService();
+			Object instance = serviceObjects.getService();
 			if(instance == null) {
 				return null;
 			}

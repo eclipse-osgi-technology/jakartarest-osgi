@@ -14,7 +14,6 @@
 package org.eclipse.osgitech.rest.runtime.application;
 
 import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
-import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V11;
@@ -25,26 +24,19 @@ import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.dto.DTOConverter;
 import org.eclipse.osgitech.rest.helper.JakartarsHelper;
-import org.eclipse.osgitech.rest.helper.JerseyHelper;
-import org.eclipse.osgitech.rest.provider.application.AbstractJakartarsProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.osgi.service.jakartars.runtime.dto.BaseApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.DTOConstants;
-import org.osgi.service.jakartars.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
 
 import jakarta.ws.rs.ApplicationPath;
@@ -55,7 +47,7 @@ import jakarta.ws.rs.core.Application;
  * @author Mark Hoffmann
  * @since 30.07.2017
  */
-public class JerseyApplicationProvider extends AbstractJakartarsProvider<Application> implements JakartarsApplicationProvider {
+public class JerseyApplicationProvider extends AbstractJakartarsProvider<Application> {
 
 	private static final Logger logger = Logger.getLogger("jersey.applicationProvider");
 	private String applicationBase;
@@ -66,14 +58,16 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		// create name after validation, because some fields are needed eventually
 		if(application == null) {
 			wrappedApplication = null;
-		} else if (application.getClass().isAnnotationPresent(ApplicationPath.class)) {
-			// Dynamic subclass with the annotation value
-			wrappedApplication = createDynamicSubclass(applicationBase, application, properties);
 		} else {
-			wrappedApplication = new JerseyApplication(getProviderName(), application, properties);
-			
+			if (application.getClass().isAnnotationPresent(ApplicationPath.class)) {
+				// Dynamic subclass with the annotation value
+				wrappedApplication = createDynamicSubclass(applicationBase, application, properties);
+			} else {
+				wrappedApplication = new JerseyApplication(getProviderName(), application, properties);
+			}
+			// Re-create the name now that we have a wrapped application
+			setProviderName(getProviderName());
 		}
-		validateProperties();
 	}
 
 	private static class DynamicSubClassLoader extends ClassLoader {
@@ -82,6 +76,7 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 			super(JerseyApplication.class.getClassLoader());
 		}
 		
+		@SuppressWarnings("unchecked")
 		public Class<? extends JerseyApplication> getSubClass(byte[] bytes) {
 			return (Class<? extends JerseyApplication>) defineClass("org.eclipse.osgitech.rest.runtime.application.JerseyApplicationWithPath", bytes, 0, bytes.length);
 		}
@@ -127,11 +122,10 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		return null;
 	}
 	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#getPath()
+	/** 
+	 * Gets the full application path, including the osgi.jakartars.application.base and any
+	 * {@link ApplicationPath} that is applied to the application
 	 */
-	@Override
 	public String getPath() {
 		if (wrappedApplication == null) {
 			throw new IllegalStateException("This application provider does not contain an application, but should have one to create a context path");
@@ -139,11 +133,9 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		return JakartarsHelper.getFullApplicationPath(wrappedApplication.getSourceApplication(), applicationBase == null ? "" : applicationBase);
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#getJakartarsApplication()
+	/** 
+	 * Gets the wrapped whiteboard application suitable for deployment into Jersey
 	 */
-	@Override
 	public Application getJakartarsApplication() {
 		if (wrappedApplication == null) {
 			throw new IllegalStateException("This application provider does not contain an application, but should have one to return an application");
@@ -151,20 +143,9 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		return wrappedApplication;
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#getApplicationProperties()
+	/** 
+	 * Get the DTO representing this provider
 	 */
-	@Override
-	public Map<String, Object> getApplicationProperties() {
-		return getProviderProperties();
-	}
-
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#getApplicationDTO()
-	 */
-	@Override
 	public BaseApplicationDTO getApplicationDTO() {
 		int status = getProviderStatus();
 		if (wrappedApplication == null) {
@@ -177,99 +158,40 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		}
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#isDefault()
+	/**
+	 * Returns true if this is the default application
 	 */
 	public boolean isDefault() {
 		return JakartarsWhiteboardConstants.JAKARTA_RS_DEFAULT_APPLICATION.equals(getName());
 	}
 	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#isShadowDefault()
+	/** 
+	 * Returns true if this is shadowing the default application
 	 */
-	@Override
 	public boolean isShadowDefault() {
 		return "/".equals(applicationBase) && !isDefault();
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#isEmpty()
+	/** 
+	 * Add a resource provider to this application so that it can be used
 	 */
-	@Override
-	public boolean isEmpty() {
-		return JerseyHelper.isEmpty(wrappedApplication);
-	}
-
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#addResource(org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider)
-	 */
-	@Override
-	public boolean addResource(JakartarsResourceProvider provider) {
-		if (!provider.isResource()) {
-			logger.log(Level.WARNING, "The resource to add is not declared with the resource property: " + JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE);
+	public boolean addContent(JerseyApplicationContentProvider provider) {
+		if (provider.isFailed()) {
+			logger.log(Level.WARNING, "The resource to add is not valid: " + provider.getProviderStatus());
 			return false;
 		}
-		return doAddContent(provider);
+		return wrappedApplication.addContent(provider);
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#removeResource(org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider)
+	/** 
+	 * Remove a resource from this application, used as part of validating extension selection
 	 */
-	@Override
-	public boolean removeResource(JakartarsResourceProvider provider) {
+	public boolean removeContent(JerseyApplicationContentProvider provider) {
 		if (provider == null) {
 			logger.log(Level.WARNING, "The resource provider is null. There is nothing to remove.");
 			return false;
 		}
-		if (!provider.isResource()) {
-			logger.log(Level.WARNING, "The resource to be removed is not declared with the resource property: " + JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE);
-			return false;
-		}
-		return doRemoveContent(provider);
-	}
-
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#addExtension(org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider)
-	 */
-	@Override
-	public boolean addExtension(JakartarsExtensionProvider provider) {
-		if (!provider.isExtension()) {
-			logger.log(Level.WARNING, "The extension to add is not declared with the extension property: " + JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION);
-			return false;
-		}
-		return doAddContent(provider);
-	}
-	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#removeExtension(org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider)
-	 */
-	@Override
-	public boolean removeExtension(JakartarsExtensionProvider provider) {
-		if (provider == null) {
-			logger.log(Level.WARNING, "The extension provider is null. There is nothing to remove.");
-			return false;
-		}
-		if (!provider.isExtension()) {
-			logger.log(Level.WARNING, "The extension to be removed is not declared with the extension property: " + JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION);
-			return false;
-		}
-		return doRemoveContent(provider);
-	}
-	
-	/* 
-	 * (non-Javadoc)
-	 * @see java.lang.Object#clone()
-	 */
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		return new JerseyApplicationProvider(getProviderObject(), getProviderProperties());
+		return wrappedApplication.removeContent(provider);
 	}
 
 	/* 
@@ -292,7 +214,7 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 				updateStatus(DTOConstants.FAILURE_REASON_VALIDATION_FAILED);
 			}
 		}
-		return name == null ? getProviderId() : name;
+		return name == null ? calculateProviderId() : name;
 	}
 
 	/* 
@@ -310,52 +232,26 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 			applicationBase = baseProperty;
 		} 
 	}
-
-	/**
-	 * Adds content to the underlying {@link JerseyApplication}, if valid
-	 * @param provider the content provider to be added
-	 * @return <code>true</code>, if add was successful, otherwise <code>false</code>
-	 */
-	private boolean doAddContent(JakartarsApplicationContentProvider provider) {
-		if(getApplicationDTO() instanceof FailedApplicationDTO) {
-			return false;
-		}
-		return wrappedApplication.addContent(provider);
-	}
 	
 	/**
-	 * Removed content from the underlying {@link JerseyApplication}, if valid
-	 * @param provider the content provider to be removed
-	 * @return <code>true</code>, if removal was successful, otherwise <code>false</code>
+	 * Return the content providers known to this application
 	 */
-	private boolean doRemoveContent(JakartarsApplicationContentProvider provider) {
-		return wrappedApplication.removeContent(provider);
-	}
-	
-	/* (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#getContentProviers()
-	 */
-	@Override
-	public Collection<JakartarsApplicationContentProvider> getContentProviders() {
-		return wrappedApplication.getContentProviders();
-	}
-	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider#updateApplicationBase(java.lang.String)
-	 */
-	public void updateApplicationBase(String applicationBase) {
-		doValidateProperties(Collections.singletonMap(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, applicationBase));
+	public Collection<JerseyApplicationContentProvider> getContentProviders() {
+		return List.copyOf(wrappedApplication.getContentProviders());
 	}
 
-	@Override
+	/**
+	 * Return true if t
+	 * @param application
+	 * @return
+	 */
 	public boolean isChanged(Application application) {
 		// TODO optimise this by checking to see if the underlying application is the same
 		return true;
 	}
 
 	@Override
-	public JakartarsApplicationProvider cleanCopy() {
+	public JerseyApplicationProvider cleanCopy() {
 		return new JerseyApplicationProvider(getProviderObject(), getProviderProperties());
 	}
 

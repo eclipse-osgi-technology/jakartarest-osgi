@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider.JakartarsExtension;
+import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider;
+import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider.JerseyExtension;
 
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.core.Feature;
@@ -34,15 +34,15 @@ import jakarta.ws.rs.core.FeatureContext;
  */
 public class WhiteboardFeature implements Feature{
 
-	public static Comparator<Map.Entry<String, JakartarsExtensionProvider>> PROVIDER_COMPARATOR = (e1, e2) -> 
+	public static Comparator<Map.Entry<String, JerseyExtensionProvider>> PROVIDER_COMPARATOR = (e1, e2) -> 
 		e1.getValue().compareTo(e2.getValue());
 
-	Map<String, JakartarsExtensionProvider> extensions;
+	Map<String, JerseyExtensionProvider> extensions;
 
-	Map<JakartarsExtensionProvider, JakartarsExtension> extensionInstanceTrackingMap = new HashMap<>();
+	Map<JerseyExtensionProvider, JerseyExtension> extensionInstanceTrackingMap = new HashMap<>();
 
 
-	public WhiteboardFeature(Map<String, JakartarsExtensionProvider> extensions) {
+	public WhiteboardFeature(Map<String, JerseyExtensionProvider> extensions) {
 		this.extensions = extensions.entrySet().stream().sorted(PROVIDER_COMPARATOR).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue)->oldValue, LinkedHashMap::new));
 	}
 
@@ -54,7 +54,7 @@ public class WhiteboardFeature implements Feature{
 		AtomicInteger priority = new AtomicInteger(Priorities.USER + 1000);
 		extensions.forEach((k, extension) -> {
 
-			JakartarsExtension je = extension.getExtension(context);
+			JerseyExtension je = extension.getExtension(context);
 
 			extensionInstanceTrackingMap.put(extension, je);
 			Map<Class<?>,Integer> contractPriorities = je.getContractPriorities();
@@ -79,8 +79,8 @@ public class WhiteboardFeature implements Feature{
 		extensions.clear();
 	}
 
-	public void dispose(JakartarsExtensionProvider extProvider) {
-		JakartarsExtension je = extensionInstanceTrackingMap.remove(extProvider);
+	public void dispose(JerseyExtensionProvider extProvider) {
+		JerseyExtension je = extensionInstanceTrackingMap.remove(extProvider);
 
 		if(je != null) {
 			je.dispose();

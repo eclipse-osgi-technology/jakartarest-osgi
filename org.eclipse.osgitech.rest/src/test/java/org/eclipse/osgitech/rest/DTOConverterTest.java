@@ -27,9 +27,6 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import org.eclipse.osgitech.rest.dto.DTOConverter;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
 import org.eclipse.osgitech.rest.resources.TestApplPathApplication;
 import org.eclipse.osgitech.rest.resources.TestExtension;
 import org.eclipse.osgitech.rest.resources.TestPathApplication;
@@ -83,7 +80,7 @@ public class DTOConverterTest {
 	public void testToFailedApplicationDTO() {
 		Map<String, Object> properties = new Hashtable<>();
 		
-		JakartarsApplicationProvider resourceProvider = new JerseyApplicationProvider(new Application(), properties);
+		JerseyApplicationProvider resourceProvider = new JerseyApplicationProvider(new Application(), properties);
 		
 		FailedApplicationDTO dto = DTOConverter.toFailedApplicationDTO(resourceProvider, DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE);
 		assertNotNull(dto);
@@ -114,7 +111,7 @@ public class DTOConverterTest {
 	public void testToApplicationDTO() {
 		Map<String, Object> properties = new Hashtable<>();
 		
-		JakartarsApplicationProvider resourceProvider = new JerseyApplicationProvider(new Application(), properties);
+		JerseyApplicationProvider resourceProvider = new JerseyApplicationProvider(new Application(), properties);
 		
 		ApplicationDTO dto = DTOConverter.toApplicationDTO(resourceProvider);
 		assertNotNull(dto);
@@ -159,7 +156,7 @@ public class DTOConverterTest {
 		Map<String, Object> properties = new Hashtable<>();
 		
 		when(serviceObject.getService()).thenReturn(resource);
-		JakartarsResourceProvider resourceProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		JerseyResourceProvider resourceProvider = new JerseyResourceProvider(serviceObject, properties);
 		
 		FailedResourceDTO dto = DTOConverter.toFailedResourceDTO(resourceProvider, DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE);
 		assertNotNull(dto);
@@ -170,7 +167,7 @@ public class DTOConverterTest {
 		properties.put(Constants.SERVICE_ID, Long.valueOf(12));
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "Myresource");
 		
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, properties);
 		dto = DTOConverter.toFailedResourceDTO(resourceProvider, DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE);
 		
 		assertNotNull(dto);
@@ -188,7 +185,7 @@ public class DTOConverterTest {
 		TestResource resource = new TestResource();
 		Map<String, Object> properties = new Hashtable<>();
 		when(serviceObject.getService()).thenReturn(resource);
-		JakartarsResourceProvider resourceProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		JerseyResourceProvider resourceProvider = new JerseyResourceProvider(serviceObject, properties);
 		
 		ResourceDTO dto = DTOConverter.toResourceDTO(resourceProvider);
 		assertNotNull(dto);
@@ -201,7 +198,7 @@ public class DTOConverterTest {
 		properties.put(Constants.SERVICE_ID, Long.valueOf(12));
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "Myresource");
 		
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, properties);
 		dto = DTOConverter.toResourceDTO(resourceProvider);
 		
 		assertNotNull(dto);
@@ -215,7 +212,7 @@ public class DTOConverterTest {
 		properties.put(ComponentConstants.COMPONENT_ID, Long.valueOf(13));
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "Myresource2");
 
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, properties);
 		dto = DTOConverter.toResourceDTO(resourceProvider);
 		
 		assertNotNull(dto);
@@ -231,7 +228,7 @@ public class DTOConverterTest {
 		Object resource = new Object();
 		Map<String, Object> properties = new Hashtable<>();
 		when(serviceObject.getService()).thenReturn(resource);
-		JakartarsResourceProvider resourceProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		JerseyResourceProvider resourceProvider = new JerseyResourceProvider(serviceObject, properties);
 		
 		ResourceDTO dto = DTOConverter.toResourceDTO(resourceProvider);
 		assertNotNull(dto);
@@ -251,7 +248,7 @@ public class DTOConverterTest {
 		Map<String, Object> properties = new Hashtable<>();
 		properties.put(Constants.OBJECTCLASS, new String[] {TestExtension.class.getName()});
 		when(serviceObject.getService()).thenReturn(extension);
-		JakartarsExtensionProvider extensionProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		JerseyExtensionProvider extensionProvider = new JerseyExtensionProvider(serviceObject, properties);
 		
 		FailedExtensionDTO dto = DTOConverter.toFailedExtensionDTO(extensionProvider, DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE);
 		assertNotNull(dto);
@@ -262,7 +259,7 @@ public class DTOConverterTest {
 		properties.put(Constants.SERVICE_ID, Long.valueOf(12));
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "Myresource");
 		
-		extensionProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extensionProvider = new JerseyExtensionProvider(serviceObject, properties);
 		dto = DTOConverter.toFailedExtensionDTO(extensionProvider, DTOConstants.FAILURE_REASON_DUPLICATE_NAME);
 		
 		assertNotNull(dto);
@@ -281,7 +278,7 @@ public class DTOConverterTest {
 		Map<String, Object> properties = new Hashtable<>();
 		properties.put(Constants.OBJECTCLASS, new String[] {TestExtension.class.getName()});
 		when(serviceObject.getService()).thenReturn(extension);
-		JakartarsExtensionProvider extensionProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		JerseyExtensionProvider extensionProvider = new JerseyExtensionProvider(serviceObject, properties);
 		
 		ExtensionDTO dto = DTOConverter.toExtensionDTO(extensionProvider);
 		assertNotNull(dto);
@@ -291,7 +288,7 @@ public class DTOConverterTest {
 		properties.put(Constants.SERVICE_ID, Long.valueOf(12));
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "Myresource");
 		
-		extensionProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extensionProvider = new JerseyExtensionProvider(serviceObject, properties);
 		dto = DTOConverter.toExtensionDTO(extensionProvider);
 		
 		assertNotNull(dto);
@@ -304,7 +301,7 @@ public class DTOConverterTest {
 		properties.put(ComponentConstants.COMPONENT_ID, Long.valueOf(13));
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "Myresource2");
 		properties.put(Constants.OBJECTCLASS, new String[] {TestExtension.class.getName()});
-		extensionProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extensionProvider = new JerseyExtensionProvider(serviceObject, properties);
 		dto = DTOConverter.toExtensionDTO(extensionProvider);
 		
 		assertNotNull(dto);

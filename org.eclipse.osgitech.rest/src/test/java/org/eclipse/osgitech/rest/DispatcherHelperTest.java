@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.Application;
 
 import org.eclipse.osgitech.rest.helper.DispatcherHelper;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Constants;
@@ -66,7 +65,7 @@ public class DispatcherHelperTest {
 		assertNotNull(DispatcherHelper.getDefaultApplications(null));
 		assertEquals(0, DispatcherHelper.getDefaultApplications(null).size());
 		
-		List<JakartarsApplicationProvider> providers = new LinkedList<JakartarsApplicationProvider>();
+		List<JerseyApplicationProvider> providers = new LinkedList<JerseyApplicationProvider>();
 		providers.add(createApplicationProvider("test", Integer.valueOf(10), Long.valueOf(1)));
 		providers.add(createApplicationProvider("test3", Integer.valueOf(20), Long.valueOf(2)));
 		providers.add(createApplicationProvider("test54", Integer.valueOf(40), Long.valueOf(3)));
@@ -84,15 +83,15 @@ public class DispatcherHelperTest {
 		assertNotNull(DispatcherHelper.getDefaultApplications(null));
 		assertEquals(0, DispatcherHelper.getDefaultApplications(null).size());
 		
-		List<JakartarsApplicationProvider> providers = new LinkedList<JakartarsApplicationProvider>();
+		List<JerseyApplicationProvider> providers = new LinkedList<JerseyApplicationProvider>();
 		providers.add(createApplicationProvider("test", Integer.valueOf(10), Long.valueOf(1)));
-		JakartarsApplicationProvider defaultProvider = createApplicationProvider(".default", Integer.valueOf(20), Long.valueOf(2));
+		JerseyApplicationProvider defaultProvider = createApplicationProvider(".default", Integer.valueOf(20), Long.valueOf(2));
 		providers.add(defaultProvider);
 		providers.add(createApplicationProvider("test54", Integer.valueOf(40), Long.valueOf(3)));
 		
-		Set<JakartarsApplicationProvider> result = DispatcherHelper.getDefaultApplications(providers);
+		Set<JerseyApplicationProvider> result = DispatcherHelper.getDefaultApplications(providers);
 		assertEquals(1, result.size());
-		Optional<JakartarsApplicationProvider> first = result.stream().findFirst();
+		Optional<JerseyApplicationProvider> first = result.stream().findFirst();
 		assertTrue(first.isPresent());
 		assertEquals(defaultProvider, first.get());
 		
@@ -111,18 +110,18 @@ public class DispatcherHelperTest {
 		assertNotNull(DispatcherHelper.getDefaultApplications(null));
 		assertEquals(0, DispatcherHelper.getDefaultApplications(null).size());
 		
-		List<JakartarsApplicationProvider> providers = new LinkedList<JakartarsApplicationProvider>();
+		List<JerseyApplicationProvider> providers = new LinkedList<JerseyApplicationProvider>();
 		providers.add(createApplicationProvider("test", Integer.valueOf(10), Long.valueOf(1)));
-		JakartarsApplicationProvider defaultProvider01 = createApplicationProvider(".default", Integer.valueOf(20), Long.valueOf(2));
+		JerseyApplicationProvider defaultProvider01 = createApplicationProvider(".default", Integer.valueOf(20), Long.valueOf(2));
 		providers.add(defaultProvider01);
-		JakartarsApplicationProvider defaultProvider02 = createApplicationProvider(".default", Integer.valueOf(30), Long.valueOf(3));
+		JerseyApplicationProvider defaultProvider02 = createApplicationProvider(".default", Integer.valueOf(30), Long.valueOf(3));
 		providers.add(defaultProvider02);
 		providers.add(createApplicationProvider("test54", Integer.valueOf(40), Long.valueOf(4)));
 		
-		Set<JakartarsApplicationProvider> result = DispatcherHelper.getDefaultApplications(providers);
+		Set<JerseyApplicationProvider> result = DispatcherHelper.getDefaultApplications(providers);
 		assertEquals(2, result.size());
 		int cnt = 0;
-		for (JakartarsApplicationProvider p : result) {
+		for (JerseyApplicationProvider p : result) {
 			switch (cnt) {
 			case 0:
 				assertEquals(defaultProvider02, p);
@@ -134,7 +133,7 @@ public class DispatcherHelperTest {
 			cnt++;
 		}
 		
-		Optional<JakartarsApplicationProvider> first = DispatcherHelper.getDefaultApplication(providers);
+		Optional<JerseyApplicationProvider> first = DispatcherHelper.getDefaultApplication(providers);
 		assertNotNull(first);
 		assertTrue(first.isPresent());
 		assertEquals(defaultProvider02, first.get());
@@ -148,20 +147,20 @@ public class DispatcherHelperTest {
 		assertNotNull(DispatcherHelper.getDefaultApplications(null));
 		assertEquals(0, DispatcherHelper.getDefaultApplications(null).size());
 		
-		List<JakartarsApplicationProvider> providers = new LinkedList<JakartarsApplicationProvider>();
+		List<JerseyApplicationProvider> providers = new LinkedList<JerseyApplicationProvider>();
 		providers.add(createApplicationProvider("test", Integer.valueOf(10), Long.valueOf(1)));
-		JakartarsApplicationProvider defaultProvider01 = createApplicationProvider(".default", Integer.valueOf(20), Long.valueOf(2));
+		JerseyApplicationProvider defaultProvider01 = createApplicationProvider(".default", Integer.valueOf(20), Long.valueOf(2));
 		providers.add(defaultProvider01);
-		JakartarsApplicationProvider defaultProvider02 = createApplicationProvider(".default", Integer.valueOf(30), Long.valueOf(3));
+		JerseyApplicationProvider defaultProvider02 = createApplicationProvider(".default", Integer.valueOf(30), Long.valueOf(3));
 		providers.add(defaultProvider02);
 		providers.add(createApplicationProvider("test54", Integer.valueOf(40), Long.valueOf(4)));
-		JakartarsApplicationProvider defaultProvider03 = createApplicationProvider(".default", Integer.valueOf(30), Long.valueOf(5));
+		JerseyApplicationProvider defaultProvider03 = createApplicationProvider(".default", Integer.valueOf(30), Long.valueOf(5));
 		providers.add(defaultProvider03);
 		
-		Set<JakartarsApplicationProvider> result = DispatcherHelper.getDefaultApplications(providers);
+		Set<JerseyApplicationProvider> result = DispatcherHelper.getDefaultApplications(providers);
 		assertEquals(3, result.size());
 		int cnt = 0;
-		for (JakartarsApplicationProvider p : result) {
+		for (JerseyApplicationProvider p : result) {
 			switch (cnt) {
 			case 0:
 				assertEquals(defaultProvider02, p);
@@ -176,7 +175,7 @@ public class DispatcherHelperTest {
 			cnt++;
 		}
 		
-		Optional<JakartarsApplicationProvider> first = DispatcherHelper.getDefaultApplication(providers);
+		Optional<JerseyApplicationProvider> first = DispatcherHelper.getDefaultApplication(providers);
 		assertNotNull(first);
 		assertTrue(first.isPresent());
 		assertEquals(defaultProvider02, first.get());
@@ -203,9 +202,9 @@ public class DispatcherHelperTest {
 	 * @param name provider name
 	 * @param rank service rank
 	 * @param serviceId the service id
-	 * @return the JakartarsApplicationProvider instance 
+	 * @return the JerseyApplicationProvider instance 
 	 */
-	private JakartarsApplicationProvider createApplicationProvider(String name, Integer rank, Long serviceId) {
+	private JerseyApplicationProvider createApplicationProvider(String name, Integer rank, Long serviceId) {
 		Map<String, Object> properties = new HashMap<String, Object>();
 		if (name != null) {
 			properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, name);
@@ -216,7 +215,7 @@ public class DispatcherHelperTest {
 		if (serviceId != null) {
 			properties.put(Constants.SERVICE_ID, serviceId);
 		}
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), properties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), properties);
 		return provider;
 	}
 

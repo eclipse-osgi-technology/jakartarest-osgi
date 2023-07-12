@@ -28,11 +28,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplication;
+import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationContentProvider;
+import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyResourceProvider;
 import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
@@ -105,7 +103,7 @@ public class DTOConverter {
 	 * @param svc the service reference
 	 * @return the service reference dto
 	 */
-	public static ApplicationDTO toApplicationDTO(JakartarsApplicationProvider applicationProvider) {
+	public static ApplicationDTO toApplicationDTO(JerseyApplicationProvider applicationProvider) {
 		if (applicationProvider == null) {
 			throw new IllegalArgumentException("Expected an application provider to create an ApplicationDTO");
 		}
@@ -163,16 +161,16 @@ public class DTOConverter {
 		
 		if (applicationProvider.getContentProviders() != null) {
 
-			for (JakartarsApplicationContentProvider contentProvider : applicationProvider.getContentProviders()) {
+			for (JerseyApplicationContentProvider contentProvider : applicationProvider.getContentProviders()) {
 
 				if (contentProvider instanceof JerseyResourceProvider) {
-					ResourceDTO resDTO = toResourceDTO((JakartarsResourceProvider) contentProvider);
+					ResourceDTO resDTO = toResourceDTO((JerseyResourceProvider) contentProvider);
 					rdtos.add(resDTO);
 					if(resDTO.resourceMethods != null) {
 						rmidtos.addAll(Arrays.asList(resDTO.resourceMethods));
 					}					
 				} else if (contentProvider instanceof JerseyExtensionProvider) {
-					edtos.add(toExtensionDTO((JerseyExtensionProvider<?>) contentProvider));
+					edtos.add(toExtensionDTO((JerseyExtensionProvider) contentProvider));
 				}
 			}
 		}
@@ -189,7 +187,7 @@ public class DTOConverter {
 	 * @param svc the service reference
 	 * @return the service reference dto
 	 */
-	public static FailedApplicationDTO toFailedApplicationDTO(JakartarsApplicationProvider applicationProvider, int reason) {
+	public static FailedApplicationDTO toFailedApplicationDTO(JerseyApplicationProvider applicationProvider, int reason) {
 		if (applicationProvider == null) {
 			throw new IllegalArgumentException("Expected an application provider to create a FailedApplicationDTO");
 		}
@@ -207,7 +205,7 @@ public class DTOConverter {
 	 * @param resourceProvider the resource provider instance, needed to be inspect
 	 * @return a {@link ResourceDTO} or <code>null</code>, if the given object is no Jakartars resource
 	 */
-	public static <T> ResourceDTO toResourceDTO(JakartarsResourceProvider resourceProvider) {
+	public static <T> ResourceDTO toResourceDTO(JerseyResourceProvider resourceProvider) {
 		if (resourceProvider == null) {
 			throw new IllegalArgumentException("Expected an resource provider to create an ResourceDTO");
 		}
@@ -272,7 +270,7 @@ public class DTOConverter {
 	 * @param reason the error reason
 	 * @return a {@link FailedResourceDTO} or <code>null</code>, if the given object is no Jakartars resource
 	 */
-	public static FailedResourceDTO toFailedResourceDTO(JakartarsResourceProvider resourceProvider, int reason) {
+	public static FailedResourceDTO toFailedResourceDTO(JerseyResourceProvider resourceProvider, int reason) {
 		if (resourceProvider == null) {
 			throw new IllegalArgumentException("Expected an resource provider to create an FailedResourceDTO");
 		}
@@ -289,7 +287,7 @@ public class DTOConverter {
 	 * @param provider the extension provider instance, needed to be inspect
 	 * @return a {@link ExtensionDTO} or <code>null</code>, if the given object is no Jakartars extension
 	 */
-	public static <T> ExtensionDTO toExtensionDTO(JakartarsExtensionProvider provider) {
+	public static <T> ExtensionDTO toExtensionDTO(JerseyExtensionProvider provider) {
 		if (provider == null) {
 			throw new IllegalArgumentException("Expected an application content provider to create an ExtensionDTO");
 		}
@@ -343,7 +341,7 @@ public class DTOConverter {
 	 * @param reason the error reason
 	 * @return a {@link FailedExtensionDTO} or <code>null</code>, if the given object is no Jakartars extension
 	 */
-	public static FailedExtensionDTO toFailedExtensionDTO(JakartarsExtensionProvider provider, int reason) {
+	public static FailedExtensionDTO toFailedExtensionDTO(JerseyExtensionProvider provider, int reason) {
 		if (provider == null) {
 			throw new IllegalArgumentException("Expected an application content provider to create an FailedExtensionDTO");
 		}

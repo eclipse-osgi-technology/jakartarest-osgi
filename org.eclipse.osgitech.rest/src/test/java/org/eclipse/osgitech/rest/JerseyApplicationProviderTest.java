@@ -26,9 +26,6 @@ import java.util.Map;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.MessageBodyReader;
 
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
 import org.eclipse.osgitech.rest.resources.TestApplication;
 import org.eclipse.osgitech.rest.resources.TestExtension;
 import org.eclipse.osgitech.rest.resources.TestLegacyApplication;
@@ -53,7 +50,7 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  * @since 21.09.2017
  */
 @ExtendWith(MockitoExtension.class)
-public class JakartarsApplicationProviderTest {
+public class JerseyApplicationProviderTest {
 
 	@Mock
 	private ServiceObjects<Object> serviceObject;
@@ -65,7 +62,7 @@ public class JakartarsApplicationProviderTest {
 		// invalid filter schema
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(hallo=bla");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		BaseApplicationDTO dto = provider.getApplicationDTO();
 		assertTrue(dto instanceof FailedApplicationDTO);
@@ -84,7 +81,7 @@ public class JakartarsApplicationProviderTest {
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(hallo=bla");
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		BaseApplicationDTO  dto = provider.getApplicationDTO();
 		assertTrue(dto instanceof FailedApplicationDTO);
@@ -103,7 +100,7 @@ public class JakartarsApplicationProviderTest {
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "myTest");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		BaseApplicationDTO  dto = provider.getApplicationDTO();
 		assertTrue(dto instanceof FailedApplicationDTO);
@@ -121,7 +118,7 @@ public class JakartarsApplicationProviderTest {
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(hallo=bla)");
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		BaseApplicationDTO dto = provider.getApplicationDTO();
 		assertFalse(dto instanceof FailedApplicationDTO);
@@ -138,7 +135,7 @@ public class JakartarsApplicationProviderTest {
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "myTest");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		BaseApplicationDTO dto = provider.getApplicationDTO();
 		assertFalse(dto instanceof FailedApplicationDTO);
@@ -154,7 +151,7 @@ public class JakartarsApplicationProviderTest {
 		// invalid filter schema
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(hallo=bla");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		Map<String, Object> runtimeProperties = new HashMap<>();
 		assertFalse(provider.canHandleWhiteboard(runtimeProperties));
@@ -182,7 +179,7 @@ public class JakartarsApplicationProviderTest {
 		// invalid filter schema
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(hallo=bla)");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		Map<String, Object> runtimeProperties = new HashMap<>();
 		assertFalse(provider.canHandleWhiteboard(runtimeProperties));
@@ -209,7 +206,7 @@ public class JakartarsApplicationProviderTest {
 		// invalid filter schema
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(|(role=bla)(mandant=eTest))");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		Map<String, Object> runtimeProperties = new HashMap<>();
 		assertFalse(provider.canHandleWhiteboard(runtimeProperties));
@@ -247,7 +244,7 @@ public class JakartarsApplicationProviderTest {
 		// invalid filter schema
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(|(role=bla)(mandant=eTest))");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		Map<String, Object> runtimeProperties = new HashMap<>();
 		assertFalse(provider.canHandleWhiteboard(runtimeProperties));
@@ -284,7 +281,7 @@ public class JakartarsApplicationProviderTest {
 		// invalid filter schema
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(|(role=bla)(mandant=eTest))");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		assertFalse(provider.canHandleWhiteboard(null));
 		
@@ -308,7 +305,7 @@ public class JakartarsApplicationProviderTest {
 		// invalid filter schema
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(|(role=bla)(mandant=eTest))");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new TestLegacyApplication(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new TestLegacyApplication(), applicationProperties);
 		
 		assertFalse(provider.canHandleWhiteboard(null));
 		
@@ -334,7 +331,7 @@ public class JakartarsApplicationProviderTest {
 //		// invalid filter schema
 //		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(|(role=bla)(mandant=eTest))");
 //		
-//		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new TestLegacyApplication(), applicationProperties);
+//		JerseyApplicationProvider provider = new JerseyApplicationProvider(new TestLegacyApplication(), applicationProperties);
 //		
 //		assertTrue(provider.isChanged());
 //		
@@ -366,7 +363,7 @@ public class JakartarsApplicationProviderTest {
 //		// invalid filter schema
 //		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 //		
-//		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new TestApplication(), applicationProperties);
+//		JerseyApplicationProvider provider = new JerseyApplicationProvider(new TestApplication(), applicationProperties);
 //		
 //		assertTrue(provider.isEmpty());
 //		assertTrue(provider.isChanged());
@@ -408,7 +405,7 @@ public class JakartarsApplicationProviderTest {
 //		// invalid filter schema
 //		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET, "(|(role=bla)(mandant=eTest))");
 //		
-//		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+//		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 //		
 //		assertTrue(provider.isChanged());
 //		provider.markUnchanged();
@@ -441,7 +438,7 @@ public class JakartarsApplicationProviderTest {
 //		// invalid filter schema
 //		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 //		
-//		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+//		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 //		
 //		assertTrue(provider.isChanged());
 //		provider.markUnchanged();
@@ -476,7 +473,7 @@ public class JakartarsApplicationProviderTest {
 //		// invalid filter schema
 //		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 //		
-//		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+//		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 //		
 //		assertTrue(provider.isChanged());
 //		provider.markUnchanged();

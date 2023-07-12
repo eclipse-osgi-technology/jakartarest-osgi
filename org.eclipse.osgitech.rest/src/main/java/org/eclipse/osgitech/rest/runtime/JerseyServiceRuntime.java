@@ -62,12 +62,9 @@ import org.eclipse.osgitech.rest.dto.DTOConverter;
 import org.eclipse.osgitech.rest.factories.InjectableFactory;
 import org.eclipse.osgitech.rest.factories.JerseyResourceInstanceFactory;
 import org.eclipse.osgitech.rest.helper.DispatcherHelper;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
+import org.eclipse.osgitech.rest.runtime.application.AbstractJakartarsProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplication;
+import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationContentProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyResourceProvider;
@@ -162,20 +159,20 @@ public class JerseyServiceRuntime<C extends Container> {
 	/**
 	 * Empty Whiteboard Application services. Protected by {@link #lock}
 	 */
-	private final Map<String, JakartarsApplicationProvider> applicationContainerMap = new HashMap<>();
+	private final Map<String, JerseyApplicationProvider> applicationContainerMap = new HashMap<>();
 	
 	/**
 	 * Empty Whiteboard Extension services. Protected by {@link #lock}
 	 */
-	private final Map<String, JakartarsExtensionProvider> extensionMap = new HashMap<>();
+	private final Map<String, JerseyExtensionProvider> extensionMap = new HashMap<>();
 	
 	/**
 	 * Empty Whiteboard Resource services. Protected by {@link #lock}
 	 */
-	private final Map<String, JakartarsResourceProvider> resourceMap = new HashMap<>();
+	private final Map<String, JerseyResourceProvider> resourceMap = new HashMap<>();
 	
 	// The implicit default application, may be shadowed by a registered service
-	private final JakartarsApplicationProvider defaultProvider = new JerseyApplicationProvider(new Application(), 
+	private final JerseyApplicationProvider defaultProvider = new JerseyApplicationProvider(new Application(), 
 			Map.of(JAKARTA_RS_NAME, JAKARTA_RS_DEFAULT_APPLICATION,
 					JAKARTA_RS_APPLICATION_BASE, "/",
 					SERVICE_RANKING, MIN_VALUE));;
@@ -204,7 +201,7 @@ public class JerseyServiceRuntime<C extends Container> {
 	
 				@Override
 				public ServiceReference<?> addingService(ServiceReference<Object> reference) {
-					JakartarsResourceProvider provider = new JerseyResourceProvider<>(
+					JerseyResourceProvider provider = new JerseyResourceProvider(
 							context.getServiceObjects(reference), getServiceProps(reference));
 					updateMap(resourceMap, provider);
 					return reference;
@@ -212,14 +209,14 @@ public class JerseyServiceRuntime<C extends Container> {
 	
 				@Override
 				public void modifiedService(ServiceReference<Object> reference, ServiceReference<?> service) {
-					JakartarsResourceProvider provider = new JerseyResourceProvider<>(
+					JerseyResourceProvider provider = new JerseyResourceProvider(
 							context.getServiceObjects(reference), getServiceProps(reference));
 					updateMap(resourceMap, provider);
 				}
 	
 				@Override
 				public void removedService(ServiceReference<Object> reference, ServiceReference<?> service) {
-					JakartarsResourceProvider provider = new JerseyResourceProvider<>(
+					JerseyResourceProvider provider = new JerseyResourceProvider(
 							null, getServiceProps(reference));
 					clearMap(resourceMap, provider);
 				}
@@ -230,7 +227,7 @@ public class JerseyServiceRuntime<C extends Container> {
 				
 				@Override
 				public ServiceReference<?> addingService(ServiceReference<Object> reference) {
-					JakartarsExtensionProvider provider = new JerseyExtensionProvider<>(
+					JerseyExtensionProvider provider = new JerseyExtensionProvider(
 							context.getServiceObjects(reference), getServiceProps(reference));
 					updateMap(extensionMap, provider);
 					return reference;
@@ -238,14 +235,14 @@ public class JerseyServiceRuntime<C extends Container> {
 				
 				@Override
 				public void modifiedService(ServiceReference<Object> reference, ServiceReference<?> service) {
-					JakartarsExtensionProvider provider = new JerseyExtensionProvider<>(
+					JerseyExtensionProvider provider = new JerseyExtensionProvider(
 							context.getServiceObjects(reference), getServiceProps(reference));
 					updateMap(extensionMap, provider);
 				}
 				
 				@Override
 				public void removedService(ServiceReference<Object> reference, ServiceReference<?> service) {
-					JakartarsExtensionProvider provider = new JerseyExtensionProvider<>(
+					JerseyExtensionProvider provider = new JerseyExtensionProvider(
 							context.getServiceObjects(reference), getServiceProps(reference));
 					clearMap(extensionMap, provider);
 				}
@@ -257,7 +254,7 @@ public class JerseyServiceRuntime<C extends Container> {
 				@Override
 				public Application addingService(ServiceReference<Application> reference) {
 					Application app = super.addingService(reference);
-					JakartarsApplicationProvider provider = new JerseyApplicationProvider(
+					JerseyApplicationProvider provider = new JerseyApplicationProvider(
 							app, getServiceProps(reference));
 					updateMap(applicationContainerMap, provider);
 					return app;
@@ -266,14 +263,14 @@ public class JerseyServiceRuntime<C extends Container> {
 				@Override
 				public void modifiedService(ServiceReference<Application> reference,
 						Application service) {
-					JakartarsApplicationProvider provider = new JerseyApplicationProvider(
+					JerseyApplicationProvider provider = new JerseyApplicationProvider(
 							service, getServiceProps(reference));
 					updateMap(applicationContainerMap, provider);
 				}
 	
 				@Override
 				public void removedService(ServiceReference<Application> reference, Application service) {
-					JakartarsApplicationProvider provider = new JerseyApplicationProvider(
+					JerseyApplicationProvider provider = new JerseyApplicationProvider(
 							null, getServiceProps(reference));
 					clearMap(applicationContainerMap, provider);
 					super.removedService(reference, service);
@@ -290,7 +287,7 @@ public class JerseyServiceRuntime<C extends Container> {
 			.collect(toMap(identity(), ref::getProperty));
 	}
 	
-	private <T extends JakartarsProvider> void updateMap(Map<String, T> map, T provider) {
+	private <R, T extends AbstractJakartarsProvider<R>> void updateMap(Map<String, T> map, T provider) {
 		synchronized (lock) {
 			scheduleUpdate();
 			map.put(provider.getId(), provider);
@@ -298,7 +295,7 @@ public class JerseyServiceRuntime<C extends Container> {
 		}
 	}
 
-	private <T extends JakartarsProvider> void clearMap(Map<String, T> map, T provider) {
+	private <R, T extends AbstractJakartarsProvider<R>> void clearMap(Map<String, T> map, T provider) {
 		synchronized (lock) {
 			scheduleUpdate();
 			map.remove(provider.getId());
@@ -365,9 +362,9 @@ public class JerseyServiceRuntime<C extends Container> {
 		
 		long changeCount;
 		Map<String, Object> runtimeProperties;
-		List<JakartarsApplicationProvider> applications;
-		List<JakartarsExtensionProvider> extensions;
-		List<JakartarsResourceProvider> resources;
+		List<JerseyApplicationProvider> applications;
+		List<JerseyExtensionProvider> extensions;
+		List<JerseyResourceProvider> resources;
 		
 		Instant update = Instant.now();
 		synchronized (lock) {
@@ -433,8 +430,8 @@ public class JerseyServiceRuntime<C extends Container> {
 	}
 
 	private void doDispatch(Map<String, Object> properties, 
-			List<JakartarsApplicationProvider> applications, List<JakartarsExtensionProvider> extensions, 
-			List<JakartarsResourceProvider> resources) {
+			List<JerseyApplicationProvider> applications, List<JerseyExtensionProvider> extensions, 
+			List<JerseyResourceProvider> resources) {
 		try {
 		
 			/*
@@ -455,24 +452,24 @@ public class JerseyServiceRuntime<C extends Container> {
 			 * Non matching applications will be filtered out and marked as failing.
 			 * #19 151.6.1
 			 */
-			List<JakartarsApplicationProvider> applicationCandidates = checkPathProperty(applications);		
+			List<JerseyApplicationProvider> applicationCandidates = checkPathProperty(applications);		
 					
 //				Check the osgi.jakartars.name property and filter out services with same name and lower rank
-			List<JakartarsProvider> candidates = checkNameProperty(applicationCandidates, extensions, resources);
+			List<AbstractJakartarsProvider<?>> candidates = checkNameProperty(applicationCandidates, extensions, resources);
 			
 			applicationCandidates = candidates.stream()
-					.filter(JakartarsApplicationProvider.class::isInstance)
-					.map(JakartarsApplicationProvider.class::cast)
+					.filter(JerseyApplicationProvider.class::isInstance)
+					.map(JerseyApplicationProvider.class::cast)
 					.collect(Collectors.toUnmodifiableList());
 			
-			List<JakartarsResourceProvider> resourceCandidates = candidates.stream()
-					.filter(JakartarsResourceProvider.class::isInstance)
-					.map(JakartarsResourceProvider.class::cast)
+			List<JerseyResourceProvider> resourceCandidates = candidates.stream()
+					.filter(JerseyResourceProvider.class::isInstance)
+					.map(JerseyResourceProvider.class::cast)
 					.collect(Collectors.toUnmodifiableList());
 			
-			List<JakartarsExtensionProvider> extensionCandidates = candidates.stream()
-					.filter(JakartarsExtensionProvider.class::isInstance)
-					.map(JakartarsExtensionProvider.class::cast)
+			List<JerseyExtensionProvider> extensionCandidates = candidates.stream()
+					.filter(JerseyExtensionProvider.class::isInstance)
+					.map(JerseyExtensionProvider.class::cast)
 					.collect(Collectors.toUnmodifiableList());			
 			
 			
@@ -497,7 +494,7 @@ public class JerseyServiceRuntime<C extends Container> {
 			 * this step should be filtered out of the application list
 			 * #18 151.6.1
 			 */
-			Set<JakartarsApplicationProvider> defaultApplications = DispatcherHelper.getDefaultApplications(applicationCandidates);
+			Set<JerseyApplicationProvider> defaultApplications = DispatcherHelper.getDefaultApplications(applicationCandidates);
 			
 			defaultApplications
 				.stream()
@@ -507,7 +504,7 @@ public class JerseyServiceRuntime<C extends Container> {
 				});
 			
 //				Filter out from the application list the default ones which have been added to the failed list
-			applicationCandidates = applicationCandidates.stream().filter(not(JakartarsProvider::isFailed))
+			applicationCandidates = applicationCandidates.stream().filter(not(AbstractJakartarsProvider::isFailed))
 					.collect(Collectors.toUnmodifiableList());	
 			
 //				Assign resources to apps and report a failure DTO for those resources which have not been added to any app
@@ -520,7 +517,7 @@ public class JerseyServiceRuntime<C extends Container> {
 			
 			// We now have our full set of applications
 			
-			for(JakartarsApplicationProvider jap : applicationCandidates) {
+			for(JerseyApplicationProvider jap : applicationCandidates) {
 				C c = containersByPath.get(jap.getPath());
 				if(c == null) {
 					c = containerFactory.apply(jap.getPath(), createResourceConfig(jap));
@@ -534,7 +531,7 @@ public class JerseyServiceRuntime<C extends Container> {
 				}
 			}
 			Set<String> paths = applicationCandidates.stream()
-					.map(JakartarsApplicationProvider::getPath)
+					.map(JerseyApplicationProvider::getPath)
 					.collect(toSet());
 			
 			Iterator<Entry<String, C>> it = containersByPath.entrySet().iterator();
@@ -564,12 +561,12 @@ public class JerseyServiceRuntime<C extends Container> {
 	 * 
 	 * @return the surviving apps after this check
 	 */
-	private List<JakartarsApplicationProvider> checkPathProperty(List<JakartarsApplicationProvider> applicationCandidates) {
+	private List<JerseyApplicationProvider> checkPathProperty(List<JerseyApplicationProvider> applicationCandidates) {
 		
 		logger.fine("App Candidates size BEFORE ordering " + applicationCandidates.size());
 		
 		applicationCandidates = applicationCandidates.stream()
-				.filter(not(JakartarsProvider::isFailed))
+				.filter(not(AbstractJakartarsProvider::isFailed))
 				.sorted()
 				.collect(Collectors.toUnmodifiableList());
 		
@@ -577,17 +574,17 @@ public class JerseyServiceRuntime<C extends Container> {
 
 		
 		for(int i = 0; i < applicationCandidates.size(); i++) {
-			JakartarsApplicationProvider a1 = applicationCandidates.get(i);
+			JerseyApplicationProvider a1 = applicationCandidates.get(i);
 			String path = a1.getPath();
 			for(int j = i+1; j < applicationCandidates.size(); j++) {
-				JakartarsApplicationProvider a2 = applicationCandidates.get(j);
+				JerseyApplicationProvider a2 = applicationCandidates.get(j);
 				if(path.equals(a2.getPath())) {
 					logger.fine("Failing DTO status for App " + a2.getId());						
 					a2.updateStatus(DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE);
 				}
 			}
 		}
-		return applicationCandidates.stream().filter(not(JakartarsProvider::isFailed)).collect(toList());
+		return applicationCandidates.stream().filter(not(AbstractJakartarsProvider::isFailed)).collect(toList());
 	}
 	
 	/**
@@ -598,24 +595,24 @@ public class JerseyServiceRuntime<C extends Container> {
 	 * @param applicationCandidates
 	 * @param resourceCandidates
 	 * @param extensionCandidates
-	 * @return a set of JakartarsProvider containing the surviving services
+	 * @return a set of AbstractJakartarsProvider containing the surviving services
 	 */
-	private List<JakartarsProvider> checkNameProperty(List<JakartarsApplicationProvider> applicationCandidates,
-			List<JakartarsExtensionProvider> extensionCandidates, List<JakartarsResourceProvider> resourceCandidates) {			
+	private List<AbstractJakartarsProvider<?>> checkNameProperty(List<JerseyApplicationProvider> applicationCandidates,
+			List<JerseyExtensionProvider> extensionCandidates, List<JerseyResourceProvider> resourceCandidates) {			
 		
-		List<JakartarsProvider> allCandidates = Stream.of(applicationCandidates.stream(), extensionCandidates.stream(), resourceCandidates.stream())
-				.flatMap(identity())
-				.map(JakartarsProvider.class::cast)
-				.filter(not(JakartarsProvider::isFailed))
+		@SuppressWarnings("unchecked")
+		List<AbstractJakartarsProvider<?>> allCandidates = Stream.of(applicationCandidates.stream(), extensionCandidates.stream(), resourceCandidates.stream())
+				.flatMap(s -> (Stream<AbstractJakartarsProvider<?>>)s)
+				.filter(not(AbstractJakartarsProvider::isFailed))
 				.sorted()
 				.collect(toUnmodifiableList());
 			
 		for(int i = 0; i < allCandidates.size(); i++) {
-			JakartarsProvider p = allCandidates.get(i);
+			AbstractJakartarsProvider<?> p = allCandidates.get(i);
 			String name = p.getName();
 			String id = p.getId();
 			for(int j = i+1; j < allCandidates.size(); j++) {
-				JakartarsProvider p2 = allCandidates.get(j);	
+				AbstractJakartarsProvider<?> p2 = allCandidates.get(j);	
 				// If they have the same name and different services the latter fails
 				// This can happen if the same service is a resource and an extension
 				if(name.equals(p2.getName()) && !id.equals(p2.getId())) {
@@ -625,25 +622,21 @@ public class JerseyServiceRuntime<C extends Container> {
 			}
 		}
 		
-		return allCandidates.stream().filter(not(JakartarsProvider::isFailed)).collect(Collectors.toList());	
+		return allCandidates.stream().filter(not(AbstractJakartarsProvider::isFailed)).collect(Collectors.toList());	
 	}
 	
-	private void assignContent(Collection<JakartarsApplicationProvider> candidates,
-			Collection<? extends JakartarsApplicationContentProvider> content) {
+	private void assignContent(Collection<JerseyApplicationProvider> candidates,
+			Collection<? extends JerseyApplicationContentProvider> content) {
 		
 		// determine all content that match an application and returns the ones that found a match
-		for(JakartarsApplicationContentProvider jacp : content) {
+		for(JerseyApplicationContentProvider jacp : content) {
 			boolean matched = false;
-			for(JakartarsApplicationProvider jap : candidates) {
+			for(JerseyApplicationProvider jap : candidates) {
 				if(jacp.canHandleApplication(jap)) {
 					logger.info("Added content " + jacp.getName() + " to application " + jap.getName() + " " + jacp.getObjectClass());
 					matched = true;
-					if (jacp instanceof JakartarsResourceProvider) {
-						jap.addResource((JakartarsResourceProvider) jacp.cleanCopy());
-					} else if (jacp instanceof JakartarsExtensionProvider) {
-						jap.addExtension((JakartarsExtensionProvider) jacp.cleanCopy());
-					} else {
-						logger.warning("Unhandled JakartarsApplicationContentProvider. Could not add content " + jacp + " to application " + jap.getName());
+					if(!jap.addContent(jacp.cleanCopy())) {
+						logger.warning("Unhandled JerseyApplicationContentProvider. Could not add content " + jacp + " to application " + jap.getName());
 					}
 				}
 			}
@@ -664,19 +657,19 @@ public class JerseyServiceRuntime<C extends Container> {
 	 * @param applicationCandidates the app candidates
 	 * @return the set of surviving apps after this check
 	 */
-	private List<JakartarsApplicationProvider> checkExtensionSelect(List<JakartarsApplicationProvider> applicationCandidates,
-			List<JakartarsExtensionProvider> extensionsForDTO, Map<String, Object> runtimeProperties) {
+	private List<JerseyApplicationProvider> checkExtensionSelect(List<JerseyApplicationProvider> applicationCandidates,
+			List<JerseyExtensionProvider> extensionsForDTO, Map<String, Object> runtimeProperties) {
 		
 		
-		for(JakartarsApplicationProvider app : applicationCandidates) {
+		for(JerseyApplicationProvider app : applicationCandidates) {
 		
-			Map<JakartarsProvider, Set<String>> dependencyMap = new HashMap<JakartarsProvider, Set<String>>();
+			Map<AbstractJakartarsProvider<?>, Set<String>> dependencyMap = new HashMap<AbstractJakartarsProvider<?>, Set<String>>();
 
 			// get the extensions which have been added to this app
-			Collection<JakartarsApplicationContentProvider> contents = app.getContentProviders();
-			List<JakartarsExtensionProvider> extensions = contents.stream()
-					.filter(JakartarsExtensionProvider.class::isInstance)
-					.map(JakartarsExtensionProvider.class::cast)
+			Collection<JerseyApplicationContentProvider> contents = app.getContentProviders();
+			List<JerseyExtensionProvider> extensions = contents.stream()
+					.filter(JerseyExtensionProvider.class::isInstance)
+					.map(JerseyExtensionProvider.class::cast)
 					.collect(Collectors.toList());
 
 			// check if the app itself requires some ext. If so, check if they are among the contents.
@@ -686,8 +679,8 @@ public class JerseyServiceRuntime<C extends Container> {
 				List<Filter> extFilters = app.getExtensionFilters();			
 				
 				filters: for(Filter filter : extFilters) {					
-					for(JakartarsExtensionProvider ext : extensions) {
-						if(filter.matches(ext.getProperties())) {
+					for(JerseyExtensionProvider ext : extensions) {
+						if(filter.matches(ext.getProviderProperties())) {
 							dependencyMap.get(app).add(ext.getId());
 							continue filters;
 						}
@@ -703,13 +696,13 @@ public class JerseyServiceRuntime<C extends Container> {
 //			We also check if previous passing extension needed that ext. In that case we unregistered also
 //			those ones recursively. If the app needed one of the removed extension we remove the app
 			
-			for(JakartarsExtensionProvider ext : extensions) {
+			for(JerseyExtensionProvider ext : extensions) {
 				if(ext.requiresExtensions()) {
 					dependencyMap.put(ext, new HashSet<String>());
 					List<Filter> extFilters = ext.getExtensionFilters();	
 					filters: for(Filter filter : extFilters) {					
-						for(JakartarsExtensionProvider ext2 : extensions) {
-							if(filter.matches(ext2.getProperties())) {
+						for(JerseyExtensionProvider ext2 : extensions) {
+							if(filter.matches(ext2.getProviderProperties())) {
 								dependencyMap.get(ext).add(ext2.getId());
 								continue filters;
 							}
@@ -723,12 +716,12 @@ public class JerseyServiceRuntime<C extends Container> {
 				}
 			}			
 		}	
-		return applicationCandidates.stream().filter(not(JakartarsProvider::isFailed)).collect(toList());
+		return applicationCandidates.stream().filter(not(AbstractJakartarsProvider::isFailed)).collect(toList());
 	}
 	
-	private void handleExtensionRemoval(JakartarsApplicationProvider app, JakartarsExtensionProvider ext,
-			List<JakartarsExtensionProvider> extensionsForDTO, Map<JakartarsProvider, Set<String>> dependencies) {
-		app.removeExtension(ext);
+	private void handleExtensionRemoval(JerseyApplicationProvider app, JerseyExtensionProvider ext,
+			List<JerseyExtensionProvider> extensionsForDTO, Map<AbstractJakartarsProvider<?>, Set<String>> dependencies) {
+		app.removeContent(ext);
 		ext.updateStatus(DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE);
 		extensionsForDTO.add(ext);
 		// Check the dependencies to remove any other extensions that now need removing
@@ -737,8 +730,8 @@ public class JerseyServiceRuntime<C extends Container> {
 			.filter(e -> e.getValue().contains(id))
 			.map(Entry::getKey)
 			.forEach(e -> {
-				if (e instanceof JakartarsExtensionProvider){
-					handleExtensionRemoval(app, (JakartarsExtensionProvider) e, extensionsForDTO, dependencies);
+				if (e instanceof JerseyExtensionProvider){
+					handleExtensionRemoval(app, (JerseyExtensionProvider) e, extensionsForDTO, dependencies);
 				} else {
 					e.updateStatus(DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE);	
 				}
@@ -751,37 +744,37 @@ public class JerseyServiceRuntime<C extends Container> {
 	 * 
 	 * @param applicationCandidates
 	 */
-	private void checkExtensionSelectForResources(List<JakartarsApplicationProvider> applicationCandidates,
-			List<JakartarsResourceProvider> resourcesForDTO, Map<String, Object> runtimeProperties) {
+	private void checkExtensionSelectForResources(List<JerseyApplicationProvider> applicationCandidates,
+			List<JerseyResourceProvider> resourcesForDTO, Map<String, Object> runtimeProperties) {
 		
-		for(JakartarsApplicationProvider app : applicationCandidates) {
+		for(JerseyApplicationProvider app : applicationCandidates) {
 
-			Collection<JakartarsApplicationContentProvider> contents = app.getContentProviders();
+			Collection<JerseyApplicationContentProvider> contents = app.getContentProviders();
 			
 //			get the extensions which have been added to this app
-			List<JakartarsExtensionProvider> extensions = contents.stream()
-					.filter(JakartarsExtensionProvider.class::isInstance)
-					.map(JakartarsExtensionProvider.class::cast)
+			List<JerseyExtensionProvider> extensions = contents.stream()
+					.filter(JerseyExtensionProvider.class::isInstance)
+					.map(JerseyExtensionProvider.class::cast)
 					.collect(Collectors.toList());
 			
 //			get the resources which have been added to this app
-			List<JakartarsResourceProvider> resources = contents.stream()
-					.filter(JakartarsResourceProvider.class::isInstance)
-					.map(JakartarsResourceProvider.class::cast)
+			List<JerseyResourceProvider> resources = contents.stream()
+					.filter(JerseyResourceProvider.class::isInstance)
+					.map(JerseyResourceProvider.class::cast)
 					.collect(Collectors.toList());
 			
-			for(JakartarsResourceProvider res : resources) {
+			for(JerseyResourceProvider res : resources) {
 				if(res.requiresExtensions()) {
 					List<Filter> extFilters = res.getExtensionFilters();	
 					filters: for(Filter filter : extFilters) {					
-						for(JakartarsExtensionProvider ext : extensions) {
-							if(filter.matches(ext.getProperties())) {
+						for(JerseyExtensionProvider ext : extensions) {
+							if(filter.matches(ext.getProviderProperties())) {
 								continue filters;
 							}
 						}
 						if(!filter.matches(app.getProviderProperties())
 								&& !filter.matches(runtimeProperties)) {
-							app.removeResource(res);
+							app.removeContent(res);
 							res.updateStatus(DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE);
 							resourcesForDTO.add(res);
 						}
@@ -816,8 +809,8 @@ public class JerseyServiceRuntime<C extends Container> {
 
 
 	private RuntimeDTO getUpdatedRuntimeDTO(Map<String, Object> properties, 
-			List<JakartarsApplicationProvider> applications, List<JakartarsExtensionProvider> extensions, 
-			List<JakartarsResourceProvider> resources) {
+			List<JerseyApplicationProvider> applications, List<JerseyExtensionProvider> extensions, 
+			List<JerseyResourceProvider> resources) {
 		
 		RuntimeDTO newDto = new RuntimeDTO();
 		
@@ -834,7 +827,7 @@ public class JerseyServiceRuntime<C extends Container> {
 		
 		List<ApplicationDTO> appDTOList = new ArrayList<>();
 		List<FailedApplicationDTO> failedAppDTOList = new ArrayList<>();
-		for(JakartarsApplicationProvider jap : applications) {
+		for(JerseyApplicationProvider jap : applications) {
 			BaseApplicationDTO appDTO = jap.getApplicationDTO();
 			if (appDTO instanceof ApplicationDTO) {
 				ApplicationDTO curDTO = (ApplicationDTO) appDTO;
@@ -854,7 +847,7 @@ public class JerseyServiceRuntime<C extends Container> {
 		newDto.failedApplicationDTOs = failedAppDTOList.toArray(FailedApplicationDTO[]::new);
 		
 		List<FailedExtensionDTO> failedExtensions = new ArrayList<>();
-		for(JakartarsExtensionProvider jep : extensions) {
+		for(JerseyExtensionProvider jep : extensions) {
 			BaseExtensionDTO dto = jep.getExtensionDTO();
 			if(dto instanceof FailedExtensionDTO) {
 				failedExtensions.add((FailedExtensionDTO) dto);
@@ -863,7 +856,7 @@ public class JerseyServiceRuntime<C extends Container> {
 		newDto.failedExtensionDTOs = failedExtensions.toArray(FailedExtensionDTO[]::new);
 
 		List<FailedResourceDTO> failedResources = new ArrayList<>();
-		for(JakartarsResourceProvider jrp : resources) {
+		for(JerseyResourceProvider jrp : resources) {
 			BaseDTO dto = jrp.getResourceDTO();
 			if(dto instanceof FailedResourceDTO) {
 				failedResources.add((FailedResourceDTO) dto);
@@ -917,7 +910,7 @@ public class JerseyServiceRuntime<C extends Container> {
 	 * Jersey factories for prototype scoped resource services and singletons separately
 	 * @param applicationProvider the Jakartars application application provider
 	 */
-	private ResourceConfig createResourceConfig(JakartarsApplicationProvider applicationProvider) {
+	private ResourceConfig createResourceConfig(JerseyApplicationProvider applicationProvider) {
 		if (applicationProvider == null) {
 			logger.log(Level.WARNING, "Cannot create a resource configuration for null application provider");
 			return null;
@@ -931,8 +924,8 @@ public class JerseyServiceRuntime<C extends Container> {
 		PrototypeServiceBinder resBinder = new PrototypeServiceBinder();
 		
 		List<InjectableFactory<?>> factories = applicationProvider.getContentProviders().stream()
-			.filter(JakartarsResourceProvider.class::isInstance)
-			.map(JakartarsResourceProvider.class::cast)
+			.filter(JerseyResourceProvider.class::isInstance)
+			.map(JerseyResourceProvider.class::cast)
 			.map(provider -> {					
 				logger.info("Register prototype provider for classes " + provider.getObjectClass() + " in the application " + applicationProvider.getId());
 				logger.info("Register prototype provider for name " + provider.getName() + " id " + provider.getId() + " rank " + provider.getServiceRank());

@@ -14,7 +14,6 @@
 package org.eclipse.osgitech.rest.runtime.application;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +21,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.helper.JerseyHelper;
-import org.eclipse.osgitech.rest.provider.application.AbstractJakartarsProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
@@ -40,17 +36,17 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  * @param <T>
  * @since 09.10.2017
  */
-public abstract class JerseyApplicationContentProvider<T> extends AbstractJakartarsProvider<ServiceObjects<T>> implements JakartarsApplicationContentProvider {
+public abstract class JerseyApplicationContentProvider extends AbstractJakartarsProvider<ServiceObjects<Object>> {
 
 	private static final Logger logger = Logger.getLogger("jersey.contentProvider");
 	private List<Filter> applicationFilter;
 	private Class<? extends Object> clazz;
 
-	public JerseyApplicationContentProvider(ServiceObjects<T> serviceObjects, Map<String, Object> properties) {
+	public JerseyApplicationContentProvider(ServiceObjects<Object> serviceObjects, Map<String, Object> properties) {
 		super(serviceObjects, properties);
 		serviceObjects = getProviderObject();
 		if(serviceObjects != null) {
-			T service = null;
+			Object service = null;
 			try {
 				service = serviceObjects.getService();
 			} catch(Exception e) {
@@ -90,26 +86,20 @@ public abstract class JerseyApplicationContentProvider<T> extends AbstractJakart
 		return false;
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.JakartarsRandEProvider#getObjectClass()
+	/** 
+	 * Get the actual instance class type for this service
 	 */
-	@Override
 	public Class<?> getObjectClass() {
 		return clazz;
 	}
-	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.JakartarsRandEProvider#getProperties()
-	 */
-	@Override
-	public Map<String, Object> getProperties() {
-		return getProviderProperties();
-	}
 
-	@Override
-	public boolean canHandleApplication(JakartarsApplicationProvider application) {
+	/**
+	 * Returns true if the supplied application matches any defined
+	 * <code>osgi.jakartars.application.select</code> filter
+	 * @param application
+	 * @return
+	 */
+	public boolean canHandleApplication(JerseyApplicationProvider application) {
 		if (applicationFilter != null && !applicationFilter.isEmpty()) {
 			try {
 				boolean applicationMatch = applicationFilter.stream()
@@ -141,12 +131,7 @@ public abstract class JerseyApplicationContentProvider<T> extends AbstractJakart
 		return true;
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider#canHandleDefaultApplication()
-	 */
-	@Override
-	public boolean canHandleDefaultApplication() {
+	private boolean canHandleDefaultApplication() {
 		if (applicationFilter == null || applicationFilter.isEmpty()) {
 			return true;
 		} else {
@@ -156,48 +141,14 @@ public abstract class JerseyApplicationContentProvider<T> extends AbstractJakart
 		}
 	}
 	
-	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider#canHandleDefaultApplication(org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider)
-	 */
 	@Override
-	public boolean canHandleDefaultApplication(JakartarsApplicationProvider application) {
-		if(application.isDefault()) {
-			return canHandleDefaultApplication();
-		}
-		if (application.isShadowDefault()) {
-			return false;
-		}
-		if (applicationFilter == null || applicationFilter.isEmpty()) {
-			return true;
-		} else {
-			return applicationFilter.stream()
-					.anyMatch(f -> f.matches(application.getProviderProperties()));
-		}
-	}
-
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider#canHandleApplications(java.util.Collection)
-	 */
-	@Override
-	public boolean validateApplications(Collection<JakartarsApplicationProvider> applications) {
-		if (applications == null) {
-			return false;
-		}
-		long matched = applications.stream().filter((app)->canHandleApplication(app)).count();
-		boolean canHandle = canHandleDefaultApplication() || matched > 0;
-		if (!canHandle) {
-			updateStatus(DTOConstants.FAILURE_REASON_VALIDATION_FAILED);
-		}
-		return canHandle;
-	}
+	public abstract JerseyApplicationContentProvider cleanCopy();
 
 	/* 
 	 * (non-Javadoc)
 	 * @see org.eclipse.osgitech.rest.provider.AbstractJakartarsProvider#doValidateProperties(java.util.Map)
 	 */
+	@Override
 	protected void doValidateProperties(Map<String, Object> properties) {
 		Object resourceProp = properties.get(getJakartarsResourceConstant());
 		if (resourceProp == null || (resourceProp instanceof Boolean && !((Boolean) resourceProp)) || !Boolean.parseBoolean(resourceProp.toString())) {
@@ -225,8 +176,5 @@ public abstract class JerseyApplicationContentProvider<T> extends AbstractJakart
 	 * Returns the {@link JakartarsWhiteboardConstants} for this resource type 
 	 * @return the {@link JakartarsWhiteboardConstants} for this resource type
 	 */
-	protected String getJakartarsResourceConstant() {
-		return new String();
-	}
-
+	protected abstract String getJakartarsResourceConstant();
 }
