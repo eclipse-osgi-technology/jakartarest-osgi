@@ -24,7 +24,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.eclipse.osgitech.rest.dto.DTOConverter;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
 import org.eclipse.osgitech.rest.proxy.ExtensionProxyFactory;
 import org.glassfish.jersey.InjectionManagerProvider;
 import org.osgi.framework.Constants;
@@ -53,7 +52,7 @@ import jakarta.ws.rs.ext.WriterInterceptor;
  * @param <T>
  * @since 09.10.2017
  */
-public class JerseyExtensionProvider<T> extends JerseyApplicationContentProvider<T> implements JakartarsExtensionProvider {
+public class JerseyExtensionProvider extends JerseyApplicationContentProvider {
 
 	private static final List<String> POSSIBLE_INTERFACES = Arrays.asList(new String[] {
 		ContainerRequestFilter.class.getName(),
@@ -73,7 +72,7 @@ public class JerseyExtensionProvider<T> extends JerseyApplicationContentProvider
 	
 	private ClassLoader proxyClassLoader = null;
 	
-	public JerseyExtensionProvider(ServiceObjects<T> serviceObjects, Map<String, Object> properties) {
+	public JerseyExtensionProvider(ServiceObjects<Object> serviceObjects, Map<String, Object> properties) {
 		super(serviceObjects, properties);
 		checkExtensionProperty(properties);
 		extractContracts(properties);
@@ -115,20 +114,9 @@ public class JerseyExtensionProvider<T> extends JerseyApplicationContentProvider
 		}
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.JakartarsExtensionProvider#isExtension()
+	/** 
+	 * Get the DTO representing this extension
 	 */
-	@Override
-	public boolean isExtension() {
-		return (getProviderStatus() != INVALID) && (getProviderStatus() != DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE) ;
-	}
-
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.JakartarsExtensionProvider#getExtensionDTO()
-	 */
-	@Override
 	public BaseExtensionDTO getExtensionDTO() {
 		int status = getProviderStatus();
 		if (status == NO_FAILURE) {
@@ -140,17 +128,16 @@ public class JerseyExtensionProvider<T> extends JerseyApplicationContentProvider
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider#getContracts()
+	/** 
+	 * Get the extension contracts advertised by this provider
 	 */
-	@Override
 	public Class<?>[] getContracts() {
 		return contracts;
 	}
 	
 	@Override
-	public JakartarsExtensionProvider cleanCopy() {
-		return new JerseyExtensionProvider<T>(getProviderObject(), getProviderProperties());
+	public JerseyExtensionProvider cleanCopy() {
+		return new JerseyExtensionProvider(getProviderObject(), getProviderProperties());
 	}
 
 	/**
@@ -160,32 +147,33 @@ public class JerseyExtensionProvider<T> extends JerseyApplicationContentProvider
 	protected String getJakartarsResourceConstant() {
 		return JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION;
 	}
-	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.AbstractJakartarsProvider#updateStatus(int)
-	 */
-	@Override
-	public void updateStatus(int newStatus) {
-		super.updateStatus(newStatus);
-	}
 
-	@Override
-	public JakartarsExtension getExtension(FeatureContext context) {
-		T service = getProviderObject().getService();
+	/**
+	 * Get an extension lifecycle manager suitable for use in the {@link JerseyApplication}
+	 * @param context
+	 * @return
+	 */
+	public JerseyExtension getExtension(FeatureContext context) {
+		Object service = getProviderObject().getService();
 		InjectionManagerProvider.getInjectionManager(context).inject(service);
 		return new JerseyExtension(service);
 	}
 	
-	public class JerseyExtension implements JakartarsExtension {
+	/**
+	 * The JerseyExtension encapsulates an instance of the extension and
+	 * wraps it in a generated class for use in a running application.
+	 * 
+	 * This instance can be released by calling {@link #dispose()}
+	 */
+	public class JerseyExtension {
 		
-		private T delegate;
+		private Object delegate;
 		
 		/**
 		 * Creates a new instance.
 		 * @param delegate
 		 */
-		public JerseyExtension(T delegate) {
+		public JerseyExtension(Object delegate) {
 			this.delegate = delegate;
 		}
 
@@ -258,7 +246,7 @@ public class JerseyExtensionProvider<T> extends JerseyApplicationContentProvider
 		 * Release the provider object
 		 */
 		public void dispose() {
-			T toRelease;
+			Object toRelease;
 			synchronized (this) {
 				toRelease = delegate;
 				delegate = null;

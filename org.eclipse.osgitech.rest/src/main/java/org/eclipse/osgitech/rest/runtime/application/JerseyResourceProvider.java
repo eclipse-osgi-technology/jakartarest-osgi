@@ -16,7 +16,6 @@ package org.eclipse.osgitech.rest.runtime.application;
 import java.util.Map;
 
 import org.eclipse.osgitech.rest.dto.DTOConverter;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.service.jakartars.runtime.dto.BaseDTO;
 import org.osgi.service.jakartars.runtime.dto.DTOConstants;
@@ -28,26 +27,15 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  * @param <T>
  * @since 09.10.2017
  */
-public class JerseyResourceProvider<T extends Object> extends JerseyApplicationContentProvider<T> implements JakartarsResourceProvider {
+public class JerseyResourceProvider extends JerseyApplicationContentProvider {
 
-	public JerseyResourceProvider(ServiceObjects<T> serviceObjects, Map<String, Object> properties) {
+	public JerseyResourceProvider(ServiceObjects<Object> serviceObjects, Map<String, Object> properties) {
 		super(serviceObjects, properties);
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.JakartarsResourceProvider#isResource()
+	/** 
+	 * Get the DTO representing this provider
 	 */
-	@Override
-	public boolean isResource() {
-		return getProviderStatus() != INVALID;
-	}
-
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.JakartarsResourceProvider#getResourceDTO()
-	 */
-	@Override
 	public BaseDTO getResourceDTO() {
 		int status = getProviderStatus();
 		if (status == NO_FAILURE) {
@@ -61,9 +49,8 @@ public class JerseyResourceProvider<T extends Object> extends JerseyApplicationC
 	/* (non-Javadoc)
 	 * @see java.lang.Object#clone()
 	 */
-	@Override
-	public JakartarsResourceProvider cleanCopy() {
-		return new JerseyResourceProvider<T>(getProviderObject(), getProviderProperties());
+	public JerseyResourceProvider cleanCopy() {
+		return new JerseyResourceProvider(getProviderObject(), getProviderProperties());
 	}
 	
 	/**

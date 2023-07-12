@@ -24,10 +24,6 @@ import java.util.Map;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.MessageBodyReader;
 
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
 import org.eclipse.osgitech.rest.resources.TestExtension;
 import org.eclipse.osgitech.rest.resources.TestResource;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
@@ -57,7 +53,7 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  * @since 13.10.2017
  */
 @ExtendWith(MockitoExtension.class)
-public class JakartarsProviderTest {
+public class JerseyProviderTest {
 
 	@Mock
 	private ServiceObjects<Object> serviceObject;
@@ -68,7 +64,7 @@ public class JakartarsProviderTest {
 	@Test
 	public void testNameApplication() {
 		Map<String, Object> properties = new HashMap<>();
-		JakartarsApplicationProvider appProvider = new JerseyApplicationProvider(new Application(), properties);
+		JerseyApplicationProvider appProvider = new JerseyApplicationProvider(new Application(), properties);
 		// generated name
 		assertTrue(appProvider.getName().startsWith("."));
 		BaseApplicationDTO appDTO = appProvider.getApplicationDTO();
@@ -126,7 +122,7 @@ public class JakartarsProviderTest {
 		properties.put(Constants.OBJECTCLASS, new String[] {MessageBodyReader.class.getName()});		
 		
 		when(serviceObject.getService()).thenReturn(new TestExtension());
-		JakartarsExtensionProvider extProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		JerseyExtensionProvider extProvider = new JerseyExtensionProvider(serviceObject, properties);
 		// generated name
 		assertTrue(extProvider.getName().startsWith("."));
 		BaseExtensionDTO extDTO = extProvider.getExtensionDTO();
@@ -135,7 +131,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE, ((FailedExtensionDTO)extDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION, "false");
-		extProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extProvider = new JerseyExtensionProvider(serviceObject, properties);
 		// generated name
 		assertNotNull(extProvider.getName());
 		extDTO = extProvider.getExtensionDTO();
@@ -144,7 +140,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE, ((FailedExtensionDTO)extDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, ".test");
-		extProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extProvider = new JerseyExtensionProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals(".test", extProvider.getName());
@@ -154,7 +150,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE, ((FailedExtensionDTO)extDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "test");
-		extProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extProvider = new JerseyExtensionProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals("test", extProvider.getName());
@@ -165,7 +161,7 @@ public class JakartarsProviderTest {
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION, "true");
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, ".test");
-		extProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extProvider = new JerseyExtensionProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals(".test", extProvider.getName());
@@ -175,7 +171,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_VALIDATION_FAILED, ((FailedExtensionDTO)extDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "osgitest");
-		extProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extProvider = new JerseyExtensionProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals("osgitest", extProvider.getName());
@@ -185,7 +181,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_VALIDATION_FAILED, ((FailedExtensionDTO)extDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "mytest");
-		extProvider = new JerseyExtensionProvider<Object>(serviceObject, properties);
+		extProvider = new JerseyExtensionProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals("mytest", extProvider.getName());
@@ -201,7 +197,7 @@ public class JakartarsProviderTest {
 	public void testNameResource() {
 		Map<String, Object> properties = new HashMap<>();
 		when(serviceObject.getService()).thenReturn(new TestResource());
-		JakartarsResourceProvider resProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		JerseyResourceProvider resProvider = new JerseyResourceProvider(serviceObject, properties);
 		// generated name
 		assertTrue(resProvider.getName().startsWith("."));
 		BaseDTO resDTO = resProvider.getResourceDTO();
@@ -210,7 +206,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, ((FailedResourceDTO)resDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, "false");
-		resProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resProvider = new JerseyResourceProvider(serviceObject, properties);
 		// generated name
 		assertNotNull(resProvider.getName());
 		resDTO = resProvider.getResourceDTO();
@@ -219,7 +215,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, ((FailedResourceDTO)resDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, ".test");
-		resProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resProvider = new JerseyResourceProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals(".test", resProvider.getName());
@@ -229,7 +225,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, ((FailedResourceDTO)resDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "test");
-		resProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resProvider = new JerseyResourceProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals("test", resProvider.getName());
@@ -240,7 +236,7 @@ public class JakartarsProviderTest {
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, "true");
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, ".test");
-		resProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resProvider = new JerseyResourceProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals(".test", resProvider.getName());
@@ -250,7 +246,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_VALIDATION_FAILED, ((FailedResourceDTO)resDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "osgitest");
-		resProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resProvider = new JerseyResourceProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals("osgitest", resProvider.getName());
@@ -260,7 +256,7 @@ public class JakartarsProviderTest {
 		assertEquals(DTOConstants.FAILURE_REASON_VALIDATION_FAILED, ((FailedResourceDTO)resDTO).failureReason);
 		
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "mytest");
-		resProvider = new JerseyResourceProvider<Object>(serviceObject, properties);
+		resProvider = new JerseyResourceProvider(serviceObject, properties);
 		
 		// generated name
 		assertEquals("mytest", resProvider.getName());

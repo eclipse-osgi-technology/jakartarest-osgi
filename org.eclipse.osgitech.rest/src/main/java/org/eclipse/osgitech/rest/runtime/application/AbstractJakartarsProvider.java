@@ -11,7 +11,7 @@
  *     Stefan Bishof - API and implementation
  *     Tim Ward - implementation
  */
-package org.eclipse.osgitech.rest.provider.application;
+package org.eclipse.osgitech.rest.runtime.application;
 
 import static java.util.Objects.isNull;
 
@@ -39,7 +39,7 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  * @author Mark Hoffmann
  * @since 11.10.2017
  */
-public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider, JakartarsConstants {
+public abstract class AbstractJakartarsProvider<T> implements JakartarsConstants, Comparable<AbstractJakartarsProvider<?>> {
 
 	private static final Filter IMPOSSIBLE_MATCH;
 	
@@ -68,74 +68,66 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 		validateProperties();
 	}
 	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsProvider#getId()
+	/** 
+	 * The unique identifier for this provider. Should be stable, i.e. if two instances
+	 * are created for the same provider they should have the same id.
 	 */
-	@Override
 	public String getId() {
 		return id;
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.DTOProvider#getName()
+	/** 
+	 * A human readable name for the provider
 	 */
-	@Override
 	public String getName() {
 		return name;
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.DTOProvider#getServiceId()
+	/** 
+	 * The service id for the provider. Will be -1 if this instance is not backed
+	 * by a service
 	 */
-	@Override
 	public Long getServiceId() {
 		return serviceId;
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsProvider#getServiceRank()
+	/** 
+	 * The service ranking for this provider. Will be 0 if this instance has no
+	 * service ranking
 	 */
-	@Override
 	public Integer getServiceRank() {
 		return serviceRank;
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsProvider#isFailed()
+	/** 
+	 * Returns true if this provider has failed validation, or been set with a
+	 * failure status
 	 */
-	@Override
 	public boolean isFailed() {
 		return getProviderStatus() != NO_FAILURE;
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.JakartarsProvider#getProviderProperties()
+	/**
+	 * Get the properties (usually service properties) associated with this
+	 * provider
 	 */
-	@Override
 	public Map<String, Object> getProviderProperties() {
 		return Collections.unmodifiableMap(properties);
 	}
 	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsProvider#requiresExtensions()
+	/** 
+	 * Returns true if this provider requires any extensions using the
+	 * <code>osgi.jakartars.extension.select</code> filter
 	 */
-	@Override
 	public boolean requiresExtensions() {
 		return !extensionFilters.isEmpty();
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsProvider#canHandleWhiteboard(java.util.Map)
+	/** 
+	 * Returns true if this provider can be applied to the supplied rest
+	 * whiteboard. If a <code>osgi.jakartars.whiteboard.select</code> filter
+	 * is present then it will be checked
 	 */
-	@Override
 	public boolean canHandleWhiteboard(Map<String, Object> runtimeProperties) {
 		/* 
 		 * Spec table 151.2: osgi.jakartars.whiteboard.target: ... If this property is not specified,
@@ -150,20 +142,16 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 		return match;
 	}
 	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsProvider#getExtensionFilters()
+	/** 
+	 * Get the list of extension selection filters for this provider
 	 */
-	@Override
 	public List<Filter> getExtensionFilters() {
 		return extensionFilters;
 	}
 	
-	/* 
-	 * (non-Javadoc)
-	 * @see org.eclipse.osgitech.rest.provider.application.JakartarsProvider#getProviderObject()
+	/** 
+	 * Get the provider object that this provider represents
 	 */
-	@SuppressWarnings("unchecked")
 	public T getProviderObject() {
 		return providerObject;
 	}
@@ -185,11 +173,9 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 	}
 	
 	/**
-	 * Returns the provider name. This method should always return a unique name for the content, so that there can many provider instance can exist.
-	 * with same content, that can be identified by the name.
-	 * @return the provider name
+	 * Calculates an id for the provider.
 	 */
-	protected String getProviderId() {
+	protected String calculateProviderId() {
 		Long serviceId = getServiceId();
 		if (isNull(serviceId)) {
 			return "." + UUID.randomUUID().toString();
@@ -198,12 +184,10 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 	}
 
 	/**
-	 * Returns the provider name. This method should always return a unique name for the content, so that there can many provider instance can exist.
-	 * with same content, that can be identified by the name.
-	 * @return the provider name
+	 * Determine the name for the provider based on the <code>osgi.jakartars.name</code>
 	 */
 	protected String getProviderName() {
-		String providerName = getProviderId();
+		String providerName = calculateProviderId();
 		if (properties != null) {
 			String jakartarsName = (String) properties.get(JakartarsWhiteboardConstants.JAKARTA_RS_NAME);
 			if (jakartarsName != null) {
@@ -226,7 +210,7 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 		if (serviceId == null) {
 			serviceId = (Long) properties.get(ComponentConstants.COMPONENT_ID);
 		}
-		id = getProviderId();
+		id = calculateProviderId();
 		name = getProviderName();
 		Object sr = properties.get(Constants.SERVICE_RANKING);
 		if (sr != null && sr instanceof Integer) {
@@ -261,6 +245,7 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 				}
 			}
 		}
+		extensionFilters = List.copyOf(extensionFilters);
 		doValidateProperties(properties);
 	}
 
@@ -287,12 +272,20 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsProvider,
 		}
 	}
 	
+	/**
+	 * Returns a clean copy of this object as if it had been freshly
+	 * constructed. This will clear any error status, but validation
+	 * errors will be regenerated.
+	 * @return
+	 */
+	public abstract AbstractJakartarsProvider<T> cleanCopy();
+	
 	/* 
 	 * (non-Javadoc)
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
 	@Override
-	public final int compareTo(JakartarsProvider o) {
+	public final int compareTo(AbstractJakartarsProvider<?> o) {
 		if (o == null) {
 			throw new NullPointerException();
 		}

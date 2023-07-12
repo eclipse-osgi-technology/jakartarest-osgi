@@ -23,8 +23,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.ext.MessageBodyReader;
 
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
 import org.eclipse.osgitech.rest.resources.TestApplication;
 import org.eclipse.osgitech.rest.resources.TestExtension;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
@@ -48,7 +46,7 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  * @since 21.09.2017
  */
 @ExtendWith(MockitoExtension.class)
-public class JakartarsExtensionProviderTest {
+public class JerseyExtensionProviderTest {
 
 	@Mock
 	private ServiceObjects<Object> serviceObject;
@@ -64,7 +62,7 @@ public class JakartarsExtensionProviderTest {
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "test");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new TestApplication(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new TestApplication(), applicationProperties);
 		
 		BaseApplicationDTO dto = provider.getApplicationDTO();
 		assertFalse(dto instanceof FailedApplicationDTO);
@@ -76,11 +74,10 @@ public class JakartarsExtensionProviderTest {
 		resourceProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, "true");
 		resourceProperties.put(Constants.OBJECTCLASS, new String[] {TestExtension.class.getName()});
 		when(serviceObject.getService()).thenReturn(new TestExtension());
-		JakartarsExtensionProvider resourceProvider = new JerseyExtensionProvider<Object>(serviceObject, resourceProperties);
+		JerseyExtensionProvider resourceProvider = new JerseyExtensionProvider(serviceObject, resourceProperties);
 		
 		BaseExtensionDTO resourceDto = resourceProvider.getExtensionDTO();
 		assertTrue(resourceDto instanceof FailedExtensionDTO);
-		assertFalse(resourceProvider.isExtension());
 		assertTrue(resourceProvider.isSingleton());
 		
 		resourceProperties.clear();
@@ -89,11 +86,10 @@ public class JakartarsExtensionProviderTest {
 //		This should advertise one of the valid extension types to be considered an extension
 //		resourceProperties.put(Constants.OBJECTCLASS, new String[] {TestExtension.class.getName()});
 		resourceProperties.put(Constants.OBJECTCLASS, new String[] {MessageBodyReader.class.getName()});
-		resourceProvider = new JerseyExtensionProvider<Object>(serviceObject, resourceProperties);
+		resourceProvider = new JerseyExtensionProvider(serviceObject, resourceProperties);
 		
 		resourceDto = resourceProvider.getExtensionDTO();
 		assertFalse(resourceDto instanceof FailedExtensionDTO);
-		assertTrue(resourceProvider.isExtension());
 		assertTrue(resourceProvider.isSingleton());
 		
 	}

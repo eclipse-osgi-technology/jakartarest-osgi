@@ -26,8 +26,6 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Application;
 
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsResourceProvider;
 import org.eclipse.osgitech.rest.resources.TestResource;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyResourceProvider;
@@ -49,7 +47,7 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  * @since 21.09.2017
  */
 @ExtendWith(MockitoExtension.class)
-public class JakartarsResourceProviderTest {
+public class JerseyResourceProviderTest {
 
 	@Mock
 	private ServiceObjects<Object> serviceObject;
@@ -62,7 +60,7 @@ public class JakartarsResourceProviderTest {
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE, "test");
 		applicationProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "test");
 		
-		JakartarsApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
+		JerseyApplicationProvider provider = new JerseyApplicationProvider(new Application(), applicationProperties);
 		
 		BaseApplicationDTO dto = provider.getApplicationDTO();
 		assertFalse(dto instanceof FailedApplicationDTO);
@@ -73,11 +71,10 @@ public class JakartarsResourceProviderTest {
 		Map<String, Object> resourceProperties = new HashMap<>();
 		resourceProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, "true");
 		when(serviceObject.getService()).thenReturn(new TestResource());
-		JakartarsResourceProvider resourceProvider = new JerseyResourceProvider<Object>(serviceObject, resourceProperties);
+		JerseyResourceProvider resourceProvider = new JerseyResourceProvider(serviceObject, resourceProperties);
 		
 		BaseDTO resourceDto = resourceProvider.getResourceDTO();
 		assertFalse(resourceDto instanceof FailedResourceDTO);
-		assertTrue(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 		
 		assertNotNull(resourceProvider.getName());
@@ -91,7 +88,7 @@ public class JakartarsResourceProviderTest {
 		
 		// invalid application filter
 		resourceProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_SELECT, "test");
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, resourceProperties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, resourceProperties);
 		
 		assertFalse(resourceProvider.canHandleApplication(provider));
 //		assertFalse(provider.addResource(resourceProvider));
@@ -100,30 +97,27 @@ public class JakartarsResourceProviderTest {
 		assertTrue(resourceDto instanceof FailedResourceDTO);
 		FailedResourceDTO failedDto = (FailedResourceDTO) resourceDto;
 		assertEquals(DTOConstants.FAILURE_REASON_VALIDATION_FAILED, failedDto.failureReason);
-		assertTrue(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 		
 		// application filter does not match
 		resourceProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_SELECT, "(name=xy)");
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, resourceProperties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, resourceProperties);
 		
 		assertFalse(resourceProvider.canHandleApplication(provider));
 //		assertFalse(provider.addResource(resourceProvider));
 		
 		resourceDto = resourceProvider.getResourceDTO();
 		assertFalse(resourceDto instanceof FailedResourceDTO);
-		assertTrue(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 		
 		// application filter matches
 		resourceProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_SELECT, "(" + JakartarsWhiteboardConstants.JAKARTA_RS_NAME + "=test)");
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, resourceProperties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, resourceProperties);
 		
 		assertTrue(resourceProvider.canHandleApplication(provider));
 //		assertTrue(provider.addResource(resourceProvider));
 		resourceDto = resourceProvider.getResourceDTO();
 		assertFalse(resourceDto instanceof FailedResourceDTO);
-		assertTrue(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 	}
 	
@@ -131,22 +125,20 @@ public class JakartarsResourceProviderTest {
 	public void testResourceProviderPrototype() {
 		
 		when(serviceObject.getService()).thenReturn(new TestResource());
-		JakartarsResourceProvider resourceProvider = new JerseyResourceProvider<Object>(serviceObject, Collections.emptyMap());
+		JerseyResourceProvider resourceProvider = new JerseyResourceProvider(serviceObject, Collections.emptyMap());
 		BaseDTO resourceDto = resourceProvider.getResourceDTO();
 		assertTrue(resourceDto instanceof FailedResourceDTO);
 		FailedResourceDTO failedDto = (FailedResourceDTO) resourceDto;
 		assertEquals(DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, failedDto.failureReason);
-		assertFalse(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 		
 		Map<String, Object> resourceProperties = new HashMap<>();
 		resourceProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, "true");
 		
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, resourceProperties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, resourceProperties);
 		
 		resourceDto = resourceProvider.getResourceDTO();
 		assertFalse(resourceDto instanceof FailedResourceDTO);
-		assertTrue(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 		
 		assertNotNull(resourceProvider.getName());
@@ -154,11 +146,10 @@ public class JakartarsResourceProviderTest {
 		
 		resourceProperties.put("service.scope", "prototype");
 		
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, resourceProperties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, resourceProperties);
 		
 		resourceDto = resourceProvider.getResourceDTO();
 		assertFalse(resourceDto instanceof FailedResourceDTO);
-		assertTrue(resourceProvider.isResource());
 		assertFalse(resourceProvider.isSingleton());
 		
 		assertNotNull(resourceProvider.getName());
@@ -170,22 +161,20 @@ public class JakartarsResourceProviderTest {
 	public void testResourceProviderName() {
 
 		when(serviceObject.getService()).thenReturn(new TestResource());
-		JakartarsResourceProvider resourceProvider = new JerseyResourceProvider<Object>(serviceObject, Collections.emptyMap());
+		JerseyResourceProvider resourceProvider = new JerseyResourceProvider(serviceObject, Collections.emptyMap());
 		BaseDTO resourceDto = resourceProvider.getResourceDTO();
 		assertTrue(resourceDto instanceof FailedResourceDTO);
 		FailedResourceDTO failedDto = (FailedResourceDTO) resourceDto;
 		assertEquals(DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, failedDto.failureReason);
-		assertFalse(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 		
 		Map<String, Object> resourceProperties = new HashMap<>();
 		resourceProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, "true");
 		
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, resourceProperties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, resourceProperties);
 		
 		resourceDto = resourceProvider.getResourceDTO();
 		assertFalse(resourceDto instanceof FailedResourceDTO);
-		assertTrue(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 		
 		assertNotNull(resourceProvider.getName());
@@ -194,11 +183,10 @@ public class JakartarsResourceProviderTest {
 		
 		resourceProperties.put(JakartarsWhiteboardConstants.JAKARTA_RS_NAME, "test");
 		
-		resourceProvider = new JerseyResourceProvider<Object>(serviceObject, resourceProperties);
+		resourceProvider = new JerseyResourceProvider(serviceObject, resourceProperties);
 		
 		resourceDto = resourceProvider.getResourceDTO();
 		assertFalse(resourceDto instanceof FailedResourceDTO);
-		assertTrue(resourceProvider.isResource());
 		assertTrue(resourceProvider.isSingleton());
 		assertEquals("test", resourceProvider.getName());
 		

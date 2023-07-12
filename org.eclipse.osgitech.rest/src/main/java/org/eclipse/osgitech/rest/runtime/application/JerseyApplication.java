@@ -25,8 +25,6 @@ import java.util.logging.Logger;
 
 import jakarta.ws.rs.core.Application;
 
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationContentProvider;
-import org.eclipse.osgitech.rest.provider.application.JakartarsExtensionProvider;
 import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
@@ -40,8 +38,8 @@ public class JerseyApplication extends Application {
 
 	private volatile Map<String, Class<?>> classes = new ConcurrentHashMap<>();
 	private volatile Map<String, Object> singletons = new ConcurrentHashMap<>();
-	private volatile Map<String, JakartarsExtensionProvider> extensions = new ConcurrentHashMap<>();
-	private volatile Map<String, JakartarsApplicationContentProvider> contentProviders = new ConcurrentHashMap<>();
+	private volatile Map<String, JerseyExtensionProvider> extensions = new ConcurrentHashMap<>();
+	private volatile Map<String, JerseyApplicationContentProvider> contentProviders = new ConcurrentHashMap<>();
 	private final String applicationName;
 	private final Logger log = Logger.getLogger("jersey.application");
 	private Map<String, Object> properties;
@@ -107,7 +105,7 @@ public class JerseyApplication extends Application {
 			whiteboardFeature.dispose();
 			whiteboardFeature = null;
 			singletons.forEach((k,v) -> {
-				JakartarsApplicationContentProvider provider = contentProviders.get(k);
+				JerseyApplicationContentProvider provider = contentProviders.get(k);
 				Object providerObj = provider.getProviderObject();
 				if(providerObj instanceof ServiceObjects) {
 					@SuppressWarnings("unchecked")
@@ -132,7 +130,7 @@ public class JerseyApplication extends Application {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public boolean addContent(JakartarsApplicationContentProvider contentProvider) {
+	public boolean addContent(JerseyApplicationContentProvider contentProvider) {
 		
 		if (contentProvider == null) {
 			if (log != null) {
@@ -142,14 +140,14 @@ public class JerseyApplication extends Application {
 		}
 		String key = contentProvider.getId();
 		contentProviders.put(key, contentProvider);
-		if(contentProvider instanceof JakartarsExtensionProvider) {
+		if(contentProvider instanceof JerseyExtensionProvider) {
 			Class<?> extensionClass = contentProvider.getObjectClass();
 			if (extensionClass == null) {
 				contentProviders.remove(key);
 				Object removed = extensions.remove(key);
 				return removed != null;
 			}
-			JakartarsExtensionProvider result = extensions.put(key, (JakartarsExtensionProvider) contentProvider);
+			JerseyExtensionProvider result = extensions.put(key, (JerseyExtensionProvider) contentProvider);
 			return  result == null || !extensionClass.equals(result.getObjectClass());
 		} else if (contentProvider.isSingleton()) {
 			Class<?> resourceClass = contentProvider.getObjectClass();
@@ -196,7 +194,7 @@ public class JerseyApplication extends Application {
 	 * @return Return <code>true</code>, if the content was removed
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public boolean removeContent(JakartarsApplicationContentProvider contentProvider) {
+	public boolean removeContent(JerseyApplicationContentProvider contentProvider) {
 		if (contentProvider == null) {
 			if (log != null) {
 				log.log(Level.WARNING, "A null resource provider was given to unregister as a Jakartars resource");
@@ -204,9 +202,9 @@ public class JerseyApplication extends Application {
 			return false;
 		}
 		String key = contentProvider.getId();
-		if(contentProvider instanceof JakartarsExtensionProvider) {
+		if(contentProvider instanceof JerseyExtensionProvider) {
 			synchronized (extensions) {
-				JakartarsExtensionProvider ext = extensions.remove(key);
+				JerseyExtensionProvider ext = extensions.remove(key);
 				if(ext != null) {
 					if(whiteboardFeature != null) {
 						whiteboardFeature.dispose(ext);
@@ -244,7 +242,7 @@ public class JerseyApplication extends Application {
 	 * Returns all content providers
 	 * @return a Collection of contentProviders
 	 */
-	public Collection<JakartarsApplicationContentProvider> getContentProviders(){
+	public Collection<JerseyApplicationContentProvider> getContentProviders(){
 		return contentProviders.values();
 	}
 

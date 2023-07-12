@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider;
+import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
 
 /**
  * Helper class for the dispatcher
@@ -34,13 +34,13 @@ public class DispatcherHelper {
 	 * @param applications the {@link Collection} of applications
 	 * @return a {@link Set} of application or an empty {@link Set}
 	 */
-	public static Set<JakartarsApplicationProvider> getDefaultApplications(Collection<JakartarsApplicationProvider> applications) {
+	public static Set<JerseyApplicationProvider> getDefaultApplications(Collection<JerseyApplicationProvider> applications) {
 		if (applications == null) {
 			return Collections.emptySet();
 		}
 		
-		Set<JakartarsApplicationProvider> resultSet = applications.stream()
-				.filter(JakartarsApplicationProvider::isDefault)
+		Set<JerseyApplicationProvider> resultSet = applications.stream()
+				.filter(JerseyApplicationProvider::isDefault)
 				.sorted()
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 		return resultSet;
@@ -51,7 +51,7 @@ public class DispatcherHelper {
 	 * @param applications the {@link Collection} of applications
 	 * @return a {@link Optional} of application 
 	 */
-	public static Optional<JakartarsApplicationProvider> getDefaultApplication(Collection<JakartarsApplicationProvider> applications) {
+	public static Optional<JerseyApplicationProvider> getDefaultApplication(Collection<JerseyApplicationProvider> applications) {
 		if (applications == null) {
 			return Optional.empty();
 		}
