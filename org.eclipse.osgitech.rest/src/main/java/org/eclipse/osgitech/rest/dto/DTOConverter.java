@@ -109,7 +109,7 @@ public class DTOConverter {
 		if (applicationProvider == null) {
 			throw new IllegalArgumentException("Expected an application provider to create an ApplicationDTO");
 		}
-		ApplicationDTO dto = new JerseyApplicationDTO();
+		ApplicationDTO dto = new ApplicationDTO();
 		dto.name = applicationProvider.getName();
 		String basePath = applicationProvider.getPath();
 		if(basePath!=null) {
@@ -127,6 +127,7 @@ public class DTOConverter {
 //		Create the DTO for the static resources and extensions 
 		if(applicationProvider.getJakartarsApplication() instanceof JerseyApplication) {
 			Application sourceApp = ((JerseyApplication) applicationProvider.getJakartarsApplication()).getSourceApplication();
+			@SuppressWarnings("deprecation")
 			Set<Object> singletons = sourceApp.getSingletons();
 			Set<Class<?>> classes = sourceApp.getClasses();
 			for(Object obj : singletons) {
@@ -210,7 +211,7 @@ public class DTOConverter {
 		if (resourceProvider == null) {
 			throw new IllegalArgumentException("Expected an resource provider to create an ResourceDTO");
 		}
-		ResourceDTO dto = new JerseyResourceDTO();
+		ResourceDTO dto = new ResourceDTO();
 		dto.name = resourceProvider.getName();
 		Long serviceId = resourceProvider.getServiceId();
 		dto.serviceId = -1;
@@ -292,7 +293,7 @@ public class DTOConverter {
 		if (provider == null) {
 			throw new IllegalArgumentException("Expected an application content provider to create an ExtensionDTO");
 		}
-		ExtensionDTO dto = new JerseyExtensionDTO();
+		ExtensionDTO dto = new ExtensionDTO();
 		Class<?> clazz = provider.getObjectClass();
 		dto = toExtensionDTO(clazz, dto);
 		Class<?>[] contracts = provider.getContracts() == null ? new Class<?>[0] : provider.getContracts();
