@@ -17,17 +17,17 @@ import static org.osgi.framework.Constants.SERVICE_DESCRIPTION;
 import static org.osgi.framework.Constants.SERVICE_ID;
 import static org.osgi.framework.FrameworkUtil.asMap;
 import static org.osgi.service.jakartars.runtime.JakartarsServiceRuntimeConstants.JAKARTA_RS_SERVICE_ENDPOINT;
+import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_DEFAULT_APPLICATION;
 import static org.osgi.service.servlet.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
 import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
 import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
-import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_FILTER_ASYNC_SUPPORTED;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
 import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED;
 import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN;
 import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -159,18 +159,35 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doRegisterServletContainer(org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider, java.lang.String, org.glassfish.jersey.server.ResourceConfig)
 	 */
 	private WhiteboardServletContainer registerContainer(String path, ResourceConfig config) {
+		
 		String applicationPath = config.getApplicationPath() == null ? "" : config.getApplicationPath();
 
-		String contextId = String.format("ContextForRestWhiteboard.%s.instance.%s", httpId, counter.incrementAndGet());
-		Dictionary<String, Object> contextHelperProps = new Hashtable<>();
-		contextHelperProps.put(HTTP_WHITEBOARD_TARGET, httpWhiteboardTarget);
-		contextHelperProps.put(HTTP_WHITEBOARD_CONTEXT_NAME, contextId);
 		String contextPath = basePath.endsWith("/") ? basePath.substring(0, basePath.length() -1) : basePath;
 		contextPath += path.substring(0, path.length() - applicationPath.length());
 		if(contextPath.endsWith("/")) {
 			contextPath = contextPath.substring(0, contextPath.length() - 1);
 		}
-		contextHelperProps.put(HTTP_WHITEBOARD_CONTEXT_PATH, contextPath.startsWith("/") ? contextPath : "/" + contextPath);
+		if(!contextPath.startsWith("/")) {
+			contextPath = "/" + contextPath;
+		}
+
+		String contextId;
+		ServiceRegistration<ServletContextHelper> helper;
+		if("/".equals(contextPath) && JAKARTA_RS_DEFAULT_APPLICATION.equals(config.getApplicationName())) {
+			// The default application on the default path, just use the default context
+			contextId = HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
+			helper = null;
+		} else {
+			// This is a custom application so it gets a custom context
+			contextId = String.format("ContextForRestWhiteboard.%s.instance.%s", httpId, counter.incrementAndGet());
+			
+			Dictionary<String, Object> contextHelperProps = new Hashtable<>();
+			contextHelperProps.put(HTTP_WHITEBOARD_TARGET, httpWhiteboardTarget);
+			contextHelperProps.put(HTTP_WHITEBOARD_CONTEXT_NAME, contextId);
+			contextHelperProps.put(HTTP_WHITEBOARD_CONTEXT_PATH, contextPath);
+			helper = context.registerService(ServletContextHelper.class, new ServletContextHelper() {}, contextHelperProps);
+		}
+		
 		
 		Dictionary<String, Object> servletProps = new Hashtable<>();
 		
@@ -185,15 +202,12 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 		}
 		servletProps.put(HTTP_WHITEBOARD_SERVLET_PATTERN, servletPath);
 		servletProps.put(HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, Boolean.TRUE);
-		servletProps.put(HTTP_WHITEBOARD_FILTER_ASYNC_SUPPORTED, Boolean.TRUE);
 		servletProps.put(HTTP_WHITEBOARD_TARGET, httpWhiteboardTarget);
 		servletProps.put(HTTP_WHITEBOARD_CONTEXT_SELECT, String.format("(osgi.http.whiteboard.context.name=%s)", contextId));
 		
 		WhiteboardServletContainer container = new WhiteboardServletContainer(config);
 		
-		RestContext rest = new RestContext(
-				context.registerService(ServletContextHelper.class, new ServletContextHelper() {}, contextHelperProps), 
-				context.registerService(Servlet.class, container, servletProps), container);
+		RestContext rest = new RestContext(helper, context.registerService(Servlet.class, container, servletProps), container);
 		
 		pathsToServlets.put(path, rest);
 		
