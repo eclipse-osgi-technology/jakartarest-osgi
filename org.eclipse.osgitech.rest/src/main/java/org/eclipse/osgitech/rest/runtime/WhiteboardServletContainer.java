@@ -20,17 +20,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.eclipse.osgitech.rest.annotations.RequireJerseyServlet;
-import org.eclipse.osgitech.rest.binder.PromiseResponseHandlerBinder;
 import org.eclipse.osgitech.rest.provider.jakartars.RuntimeDelegateService;
-import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.hk2.api.ServiceLocatorFactory;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
-import org.glassfish.jersey.servlet.ServletProperties;
-import org.glassfish.jersey.servlet.async.AsyncContextDelegateProviderImpl;
-import org.glassfish.jersey.servlet.init.FilterUrlMappingsProviderImpl;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,9 +38,6 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequireJerseyServlet
 public class WhiteboardServletContainer extends ServletContainer {
 
-	/** SERVICE_LOCATOR_PREFIX */
-	private static final String SERVICE_LOCATOR_PREFIX = "JakartaRESTJerseyWhiteboard-";
-
 	/**
 	 * 
 	 */
@@ -58,16 +48,8 @@ public class WhiteboardServletContainer extends ServletContainer {
 	private final AtomicBoolean initialized = new AtomicBoolean();
 	private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-	private final ServiceLocator locator;
-
 	public WhiteboardServletContainer(ResourceConfig config) {
 		initialConfig = config;
-		
-		// Ensure that promise types can be returned by resource methods
-		locator = ServiceLocatorFactory.getInstance()
-			.create(SERVICE_LOCATOR_PREFIX + System.identityHashCode(this));
-		ServiceLocatorUtilities.bind(locator, new PromiseResponseHandlerBinder());
-		ServiceLocatorUtilities.addClasses(locator, AsyncContextDelegateProviderImpl.class, FilterUrlMappingsProviderImpl.class);
 	}
 
 	/* (non-Javadoc)
@@ -83,7 +65,6 @@ public class WhiteboardServletContainer extends ServletContainer {
 			try {
 				Thread.currentThread().setContextClassLoader(RuntimeDelegateService.class.getClassLoader());
 				
-				getServletContext().setAttribute(ServletProperties.SERVICE_LOCATOR, locator);
 				super.init();
 				// we have to wait until the injection manager is available on first start
 				Future<?> future = Executors.newSingleThreadExecutor().submit(()->{
@@ -189,6 +170,5 @@ public class WhiteboardServletContainer extends ServletContainer {
 	}
 
 	public void dispose() {
-		locator.shutdown();
 	}
 }
