@@ -13,15 +13,21 @@
  */
 package org.eclipse.osgitech.rest.runtime.application;
 
+import static java.util.stream.Collectors.toUnmodifiableSet;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.eclipse.osgitech.rest.binder.PromiseResponseHandlerBinder;
 import org.eclipse.osgitech.rest.binder.PrototypeServiceBinder;
 import org.eclipse.osgitech.rest.factories.InjectableFactory;
 import org.eclipse.osgitech.rest.factories.JerseyResourceInstanceFactory;
@@ -29,6 +35,8 @@ import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
 import org.glassfish.jersey.server.spi.Container;
+import org.glassfish.jersey.servlet.async.AsyncContextDelegateProviderImpl;
+import org.glassfish.jersey.servlet.init.FilterUrlMappingsProviderImpl;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
 
@@ -94,10 +102,10 @@ public class JerseyApplication extends Application {
 	 */
 	@Override
 	public Set<Class<?>> getClasses() {
-		Set<Class<?>> resutlClasses = new HashSet<>();
-		resutlClasses.addAll(classes.values());
-		resutlClasses.addAll(sourceApplication.getClasses());
-		return Collections.unmodifiableSet(resutlClasses);
+		return Stream.of(classes.values().stream(), sourceApplication.getClasses().stream(),
+				Stream.of(PromiseResponseHandlerBinder.class, AsyncContextDelegateProviderImpl.class, FilterUrlMappingsProviderImpl.class))
+				.flatMap(Function.identity())
+				.collect(toUnmodifiableSet());
 	}
 
 	/* 
