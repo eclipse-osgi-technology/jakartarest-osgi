@@ -22,7 +22,11 @@ import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
+import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE;
+import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_DEFAULT_APPLICATION;
+import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_NAME;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +41,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.osgi.service.jakartars.runtime.dto.BaseApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.DTOConstants;
-import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
 
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
@@ -50,24 +53,13 @@ import jakarta.ws.rs.core.Application;
 public class JerseyApplicationProvider extends AbstractJakartarsProvider<Application> {
 
 	private static final Logger logger = Logger.getLogger("jersey.applicationProvider");
-	private String applicationBase;
-	private final JerseyApplication wrappedApplication;
+	
+	private JerseyApplication wrappedApplication;
+	private boolean locked;
+	private List<JerseyApplicationContentProvider> providers = new ArrayList<>();
 
 	public JerseyApplicationProvider(Application application, Map<String, Object> properties) {
 		super(application, properties);
-		// create name after validation, because some fields are needed eventually
-		if(application == null) {
-			wrappedApplication = null;
-		} else {
-			if (application.getClass().isAnnotationPresent(ApplicationPath.class)) {
-				// Dynamic subclass with the annotation value
-				wrappedApplication = createDynamicSubclass(applicationBase, application, properties);
-			} else {
-				wrappedApplication = new JerseyApplication(getProviderName(), application, properties);
-			}
-			// Re-create the name now that we have a wrapped application
-			setProviderName(getProviderName());
-		}
 	}
 
 	private static class DynamicSubClassLoader extends ClassLoader {
@@ -98,7 +90,7 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		
 		// Write a constructor which directly calls super and nothing else
 		String constructorDescriptor = getMethodDescriptor(VOID_TYPE, getType(String.class), 
-				getType(Application.class), getType(Map.class));
+				getType(Application.class), getType(Map.class), getType(List.class));
 		
 		MethodVisitor mv = writer.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null);
 		mv.visitCode();
@@ -106,6 +98,7 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		mv.visitVarInsn(Opcodes.ALOAD, 1);
 		mv.visitVarInsn(Opcodes.ALOAD, 2);
 		mv.visitVarInsn(Opcodes.ALOAD, 3);
+		mv.visitVarInsn(Opcodes.ALOAD, 4);
 		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "<init>", constructorDescriptor, false);
 		mv.visitInsn(RETURN);
 		mv.visitMaxs(4, 4);
@@ -115,7 +108,7 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		DynamicSubClassLoader loader = new DynamicSubClassLoader();
 		Class<? extends JerseyApplication> clazz = loader.getSubClass(writer.toByteArray());
 		try {
-			return clazz.getConstructor(String.class, Application.class, Map.class).newInstance(name, application, properties);
+			return clazz.getConstructor(String.class, Application.class, Map.class, List.class).newInstance(name, application, properties, providers);
 		} catch (Exception e) {
 			logger.severe("Unable to create a subclass of the JerseyApplication " + e.getMessage());
 		}
@@ -127,18 +120,23 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	 * {@link ApplicationPath} that is applied to the application
 	 */
 	public String getPath() {
-		if (wrappedApplication == null) {
-			throw new IllegalStateException("This application provider does not contain an application, but should have one to create a context path");
-		}
-		return JakartarsHelper.getFullApplicationPath(wrappedApplication.getSourceApplication(), applicationBase == null ? "" : applicationBase);
+		String base = getApplicationBase();
+		return JakartarsHelper.getFullApplicationPath(getProviderObject(), base == null ? "" : base);
 	}
-
+	
 	/** 
 	 * Gets the wrapped whiteboard application suitable for deployment into Jersey
 	 */
 	public Application getJakartarsApplication() {
+		locked = true;
 		if (wrappedApplication == null) {
-			throw new IllegalStateException("This application provider does not contain an application, but should have one to return an application");
+			Application application = getProviderObject();
+			if (application.getClass().isAnnotationPresent(ApplicationPath.class)) {
+				// Dynamic subclass with the annotation value
+				wrappedApplication = createDynamicSubclass(getApplicationBase(), application, getProviderProperties());
+			} else {
+				wrappedApplication = new JerseyApplication(getProviderName(), application, getProviderProperties(), providers);
+			}
 		}
 		return wrappedApplication;
 	}
@@ -148,9 +146,6 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	 */
 	public BaseApplicationDTO getApplicationDTO() {
 		int status = getProviderStatus();
-		if (wrappedApplication == null) {
-			throw new IllegalStateException("This application provider does not contain an application, but should have one to get a DTO");
-		}
 		if (status == NO_FAILURE) {
 			return DTOConverter.toApplicationDTO(this);
 		} else {
@@ -162,36 +157,42 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	 * Returns true if this is the default application
 	 */
 	public boolean isDefault() {
-		return JakartarsWhiteboardConstants.JAKARTA_RS_DEFAULT_APPLICATION.equals(getName());
+		return JAKARTA_RS_DEFAULT_APPLICATION.equals(getName());
 	}
 	
 	/** 
 	 * Returns true if this is shadowing the default application
 	 */
 	public boolean isShadowDefault() {
-		return "/".equals(applicationBase) && !isDefault();
+		return "/".equals(getApplicationBase()) && !isDefault();
 	}
 
 	/** 
 	 * Add a resource provider to this application so that it can be used
 	 */
 	public boolean addContent(JerseyApplicationContentProvider provider) {
+		if (locked) {
+			throw new IllegalStateException("The application " + getId() + " (" + getName() + ") is locked");
+		}
 		if (provider.isFailed()) {
 			logger.log(Level.WARNING, "The resource to add is not valid: " + provider.getProviderStatus());
 			return false;
 		}
-		return wrappedApplication.addContent(provider);
+		return providers.add(provider);
 	}
 
 	/** 
 	 * Remove a resource from this application, used as part of validating extension selection
 	 */
 	public boolean removeContent(JerseyApplicationContentProvider provider) {
+		if (locked) {
+			throw new IllegalStateException("The application " + getId() + " (" + getName() + ") is locked");
+		}
 		if (provider == null) {
 			logger.log(Level.WARNING, "The resource provider is null. There is nothing to remove.");
 			return false;
 		}
-		return wrappedApplication.removeContent(provider);
+		return providers.remove(provider);
 	}
 
 	/* 
@@ -203,11 +204,8 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 		String name = null;
 		Map<String, Object> providerProperties = getProviderProperties();
 		if (providerProperties != null) {
-			String baseProperty = (String) providerProperties.get(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE);
-			if (wrappedApplication != null) {
-				baseProperty = getPath();
-			}
-			name = (String) providerProperties.get(JakartarsWhiteboardConstants.JAKARTA_RS_NAME);
+			String baseProperty = getPath();
+			name = (String) providerProperties.get(JAKARTA_RS_NAME);
 			if (name == null && baseProperty != null) {
 				name = "." + baseProperty;
 			} else if (name != null && !name.equals(".default") && (name.startsWith(".") || name.startsWith("osgi"))) {
@@ -223,21 +221,22 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	 */
 	@Override
 	protected void doValidateProperties(Map<String, Object> properties) {
-		String baseProperty = (String) properties.get(JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE);
-		if (applicationBase == null && (baseProperty == null || baseProperty.isEmpty())) {
+		String applicationBase = getApplicationBase();
+		if (applicationBase == null || applicationBase.isEmpty()) {
 			updateStatus(DTOConstants.FAILURE_REASON_VALIDATION_FAILED);
 			return;
 		}
-		if (baseProperty != null && !baseProperty.isEmpty()) {
-			applicationBase = baseProperty;
-		} 
+	}
+
+	private String getApplicationBase() {
+		return (String) getProviderProperties().get(JAKARTA_RS_APPLICATION_BASE);
 	}
 	
 	/**
 	 * Return the content providers known to this application
 	 */
 	public Collection<JerseyApplicationContentProvider> getContentProviders() {
-		return List.copyOf(wrappedApplication.getContentProviders());
+		return List.copyOf(providers);
 	}
 
 	/**
@@ -246,7 +245,6 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	 * @return
 	 */
 	public boolean isChanged(Application application) {
-		// TODO optimise this by checking to see if the underlying application is the same
 		return true;
 	}
 
