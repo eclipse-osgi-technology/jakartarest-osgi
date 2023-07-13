@@ -34,6 +34,7 @@ import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyResourceProvider;
 import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -123,8 +124,13 @@ public class DTOConverter {
 		List<ExtensionDTO> edtos = new ArrayList<>();
 		
 //		Create the DTO for the static resources and extensions 
-		if(applicationProvider.getJakartarsApplication() instanceof JerseyApplication) {
-			Application sourceApp = ((JerseyApplication) applicationProvider.getJakartarsApplication()).getSourceApplication();
+		ResourceConfig resourceConfig = applicationProvider.getJakartarsApplication();
+		Application app = resourceConfig.getApplication();
+		if(app instanceof ResourceConfig) {
+			app = ((ResourceConfig) app).getApplication();
+		}
+		if(app instanceof JerseyApplication) {
+			Application sourceApp = ((JerseyApplication) app).getSourceApplication();
 			@SuppressWarnings("deprecation")
 			Set<Object> singletons = sourceApp.getSingletons();
 			Set<Class<?>> classes = sourceApp.getClasses();
