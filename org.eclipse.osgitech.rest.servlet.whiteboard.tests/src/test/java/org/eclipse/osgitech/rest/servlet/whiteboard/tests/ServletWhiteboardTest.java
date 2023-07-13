@@ -17,6 +17,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.osgi.service.jakartars.runtime.JakartarsServiceRuntimeConstants.JAKARTA_RS_SERVICE_ENDPOINT;
 import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_EXTENSION;
 import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
+import static org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN;
 
 import java.io.IOException;
 import java.net.URI;
@@ -37,13 +41,22 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.osgi.service.cm.Configuration;
 import org.osgi.service.jakartars.runtime.JakartarsServiceRuntime;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
+import org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants;
 import org.osgi.test.common.annotation.InjectBundleContext;
+import org.osgi.test.common.annotation.config.InjectConfiguration;
+import org.osgi.test.common.annotation.config.WithFactoryConfiguration;
+import org.osgi.test.junit5.cm.ConfigurationExtension;
 import org.osgi.test.junit5.context.BundleContextExtension;
 import org.osgi.test.junit5.service.ServiceExtension;
 import org.osgi.util.tracker.ServiceTracker;
 
+import jakarta.servlet.Servlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
@@ -55,6 +68,7 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
  */
 @ExtendWith(BundleContextExtension.class)
 @ExtendWith(ServiceExtension.class)
+@ExtendWith(ConfigurationExtension.class)
 public class ServletWhiteboardTest {
 	
 	private ServiceTracker<JakartarsServiceRuntime, Semaphore> tracker;
@@ -168,6 +182,64 @@ public class ServletWhiteboardTest {
 		HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 		assertEquals(200, response.statusCode());
 		assertEquals("Hello Universe", response.body());
+	}
+	
+	@Test
+	public void testServletWhiteboardDefaultContext(@InjectBundleContext BundleContext ctx,
+			@InjectConfiguration(withFactoryConfig = 
+				@WithFactoryConfiguration(
+						factoryPid = "JakartarsServletWhiteboardRuntimeComponent",
+						name = "JRSWB")) Configuration config) throws Exception {
+		
+		Dictionary<String,Object> cfg = config.getProperties();
+		Object oldContext = cfg.remove("jersey.context.path");
+		config.update(cfg);
+		Thread.sleep(500);
+		try {
+			Semaphore semaphore = tracker.waitForService(5000);
+			assertNotNull(semaphore);
+			semaphore.drainPermits();
+			
+			Dictionary<String,Object> properties = new Hashtable<>();
+			properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, Boolean.TRUE);
+	
+			ctx.registerService(WhiteboardResource.class, new WhiteboardResource(), properties);
+	
+			assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
+	
+			String baseURI = getBaseURI(tracker.getServiceReference());
+			
+			HttpRequest request = HttpRequest.newBuilder()
+					.GET()
+					.uri(URI.create(baseURI + "whiteboard/resource"))
+					.build();
+	
+			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+			assertEquals(200, response.statusCode());
+			assertEquals("Hello World", response.body());
+			
+			properties = new Hashtable<>();
+			properties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/servlet");
+			properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT, "(" + HTTP_WHITEBOARD_CONTEXT_NAME + "=" + HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
+			ctx.registerService(Servlet.class, new HttpServlet() {
+				@Override
+				protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+					resp.getWriter().print("Hello Servlet");
+				}
+			}, properties);
+			
+			request = HttpRequest.newBuilder()
+					.GET()
+					.uri(URI.create(baseURI + "servlet"))
+					.build();
+	
+			response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+			assertEquals(200, response.statusCode());
+			assertEquals("Hello Servlet", response.body());
+		} finally {
+			cfg.put("jersey.context.path", oldContext);
+			config.update(cfg);
+		}
 	}
 	
 	protected String getBaseURI(ServiceReference<JakartarsServiceRuntime> runtime) {

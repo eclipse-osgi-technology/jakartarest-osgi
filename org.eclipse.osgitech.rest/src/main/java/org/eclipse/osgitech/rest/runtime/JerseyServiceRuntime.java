@@ -917,6 +917,7 @@ public class JerseyServiceRuntime<C extends Container> {
 		}
 		Application application = applicationProvider.getJakartarsApplication();
 		ResourceConfig config = ResourceConfig.forApplication(application);
+		config.setApplicationName(applicationProvider.getName());
 		final Map<String, Object> properties = new HashMap<String, Object>(config.getProperties());
 		properties.put(ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS, Boolean.TRUE);
 		config.setProperties(properties);
