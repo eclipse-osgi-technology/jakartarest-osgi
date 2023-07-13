@@ -19,6 +19,7 @@ import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -27,6 +28,8 @@ import java.util.logging.Logger;
 import org.eclipse.osgitech.rest.dto.DTOConverter;
 import org.eclipse.osgitech.rest.helper.JakartarsHelper;
 import org.eclipse.osgitech.rest.proxy.ApplicationProxyFactory;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.osgi.service.jakartars.runtime.dto.BaseApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.DTOConstants;
 
@@ -42,9 +45,10 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 
 	private static final Logger logger = Logger.getLogger("jersey.applicationProvider");
 	
-	private JerseyApplication wrappedApplication;
 	private boolean locked;
 	private List<JerseyApplicationContentProvider> providers = new ArrayList<>();
+
+	private ResourceConfig config;
 
 	public JerseyApplicationProvider(Application application, Map<String, Object> properties) {
 		super(application, properties);
@@ -62,19 +66,25 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	/** 
 	 * Gets the wrapped whiteboard application suitable for deployment into Jersey
 	 */
-	public Application getJakartarsApplication() {
+	public ResourceConfig getJakartarsApplication() {
 		locked = true;
-		if (wrappedApplication == null) {
+		if (config == null) {
+			JerseyApplication jerseyApp;
 			Application application = getProviderObject();
 			if (application.getClass().isAnnotationPresent(ApplicationPath.class)) {
 				// Dynamic subclass with the annotation value
-				wrappedApplication = ApplicationProxyFactory.createDynamicSubclass(getApplicationBase(), application, 
+				jerseyApp = ApplicationProxyFactory.createDynamicSubclass(getApplicationBase(), application, 
 						getProviderProperties(), providers);
 			} else {
-				wrappedApplication = new JerseyApplication(getProviderName(), application, getProviderProperties(), providers);
+				jerseyApp = new JerseyApplication(getProviderName(), application, getProviderProperties(), providers);
 			}
+			config = ResourceConfig.forApplication(jerseyApp);
+			config.setApplicationName(getName());
+			final Map<String, Object> properties = new HashMap<String, Object>(config.getProperties());
+			properties.put(ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS, Boolean.TRUE);
+			config.setProperties(properties);
 		}
-		return wrappedApplication;
+		return config;
 	}
 
 	/** 

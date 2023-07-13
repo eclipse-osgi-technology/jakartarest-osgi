@@ -57,22 +57,14 @@ import java.util.stream.Stream;
 
 import org.eclipse.osgitech.rest.annotations.RequireJerseyExtras;
 import org.eclipse.osgitech.rest.annotations.RequireRuntimeAdapter;
-import org.eclipse.osgitech.rest.binder.PrototypeServiceBinder;
 import org.eclipse.osgitech.rest.dto.DTOConverter;
-import org.eclipse.osgitech.rest.factories.InjectableFactory;
-import org.eclipse.osgitech.rest.factories.JerseyResourceInstanceFactory;
 import org.eclipse.osgitech.rest.helper.DispatcherHelper;
 import org.eclipse.osgitech.rest.runtime.application.AbstractJakartarsProvider;
-import org.eclipse.osgitech.rest.runtime.application.JerseyApplication;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationContentProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyResourceProvider;
-import org.glassfish.jersey.InjectionManagerProvider;
-import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.ServerProperties;
-import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
 import org.glassfish.jersey.server.spi.Container;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Filter;
@@ -97,8 +89,6 @@ import org.osgi.service.jakartars.runtime.dto.RuntimeDTO;
 import org.osgi.util.tracker.ServiceTracker;
 
 import jakarta.ws.rs.core.Application;
-import jakarta.ws.rs.core.Feature;
-import jakarta.ws.rs.core.FeatureContext;
 
 /**
  * Implementation of the {@link JakartarsServiceRuntime} for a Jersey implementation
@@ -520,14 +510,14 @@ public class JerseyServiceRuntime<C extends Container> {
 			for(JerseyApplicationProvider jap : applicationCandidates) {
 				C c = containersByPath.get(jap.getPath());
 				if(c == null) {
-					c = containerFactory.apply(jap.getPath(), createResourceConfig(jap));
+					c = containerFactory.apply(jap.getPath(), jap.getJakartarsApplication());
 					containersByPath.put(jap.getPath(), c);
 					continue;
 				}
 				
 				Application application = c.getConfiguration().getApplication();
 				if(jap.isChanged(application)) {
-					c.reload(createResourceConfig(jap));
+					c.reload(jap.getJakartarsApplication());
 				}
 			}
 			Set<String> paths = applicationCandidates.stream()
@@ -902,71 +892,6 @@ public class JerseyServiceRuntime<C extends Container> {
 					extDTO.filteredByName = extResNameBind.get(extDTO.name).toArray(new ResourceDTO[0]);
 				}
 			}
-		}
-	}
-
-	/**
-	 * Creates a new {@link ResourceConfig} for a given application. this method takes care of registering
-	 * Jersey factories for prototype scoped resource services and singletons separately
-	 * @param applicationProvider the Jakartars application application provider
-	 */
-	private ResourceConfig createResourceConfig(JerseyApplicationProvider applicationProvider) {
-		if (applicationProvider == null) {
-			logger.log(Level.WARNING, "Cannot create a resource configuration for null application provider");
-			return null;
-		}
-		Application application = applicationProvider.getJakartarsApplication();
-		ResourceConfig config = ResourceConfig.forApplication(application);
-		config.setApplicationName(applicationProvider.getName());
-		final Map<String, Object> properties = new HashMap<String, Object>(config.getProperties());
-		properties.put(ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS, Boolean.TRUE);
-		config.setProperties(properties);
-		
-		PrototypeServiceBinder resBinder = new PrototypeServiceBinder();
-		
-		List<InjectableFactory<?>> factories = applicationProvider.getContentProviders().stream()
-			.filter(JerseyResourceProvider.class::isInstance)
-			.map(JerseyResourceProvider.class::cast)
-			.map(provider -> {					
-				logger.info("Register prototype provider for classes " + provider.getObjectClass() + " in the application " + applicationProvider.getId());
-				logger.info("Register prototype provider for name " + provider.getName() + " id " + provider.getId() + " rank " + provider.getServiceRank());
-				InjectableFactory<?> factory = new JerseyResourceInstanceFactory<>(provider);
-				resBinder.register(provider.getObjectClass(), factory);
-				return factory;
-			})
-			.collect(toList());
-		config.register(resBinder);
-		config.register(new ContainerLifecycleFeature(factories));
-				
-		return config;
-	}
-	
-	private static class ContainerLifecycleFeature implements Feature {
-		
-		private final List<InjectableFactory<?>> factories;
-
-		public ContainerLifecycleFeature(List<InjectableFactory<?>> factories) {
-			this.factories = factories;
-		}
-
-		@Override
-		public boolean configure(FeatureContext context) {
-			InjectionManager im = InjectionManagerProvider.getInjectionManager(context);
-			factories.forEach(factory -> factory.setInjectionManager(im));
-			context.register(new AbstractContainerLifecycleListener() {
-				@Override
-				public void onShutdown(Container container) {
-					Application application = container.getConfiguration().getApplication();
-					// Try this one time in case we have a WrappingResourceConfig
-					if(application instanceof ResourceConfig) {
-						application = ((ResourceConfig)application).getApplication();
-					}
-					if(application instanceof JerseyApplication) {
-						((JerseyApplication)application).dispose();
-					}
-				}
-			});
-			return true;
 		}
 	}
 }

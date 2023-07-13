@@ -19,11 +19,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.osgitech.rest.binder.PrototypeServiceBinder;
+import org.eclipse.osgitech.rest.factories.InjectableFactory;
+import org.eclipse.osgitech.rest.factories.JerseyResourceInstanceFactory;
 import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
+import org.glassfish.jersey.internal.inject.InjectionManager;
+import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
+import org.glassfish.jersey.server.spi.Container;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
 
@@ -39,13 +44,16 @@ public class JerseyApplication extends Application {
 	private final Map<String, Class<?>> classes = new HashMap<>();
 	private final Map<String, Object> singletons = new HashMap<>();
 	private final Map<String, JerseyExtensionProvider> extensions = new HashMap<>();
-	private final Map<String, JerseyApplicationContentProvider> contentProviders = new ConcurrentHashMap<>();
+	private final Map<String, JerseyApplicationContentProvider> contentProviders = new HashMap<>();
 	private final String applicationName;
 	private final Logger log = Logger.getLogger("jersey.application");
 	private final Map<String, Object> properties;
 	private final Application sourceApplication;
+	private final Map<Class<?>, InjectableFactory<?>> factories = new HashMap<>();
 	private final WhiteboardFeature whiteboardFeature;
+	private final Set<Object> appSingletons;
 
+	@SuppressWarnings("deprecation")
 	public JerseyApplication(String applicationName, Application sourceApplication, Map<String, Object> additionalProperites,
 			List<JerseyApplicationContentProvider> providers) {
 		this.applicationName = applicationName;
@@ -62,6 +70,17 @@ public class JerseyApplication extends Application {
 		providers.forEach(this::addContent);
 		
 		whiteboardFeature = new WhiteboardFeature(extensions);
+
+		PrototypeServiceBinder resourceFactory  = new PrototypeServiceBinder();
+		factories.forEach(resourceFactory::register);
+		
+		appSingletons = new HashSet<>();
+		appSingletons.addAll(this.singletons.values());
+		appSingletons.addAll(sourceApplication.getSingletons());
+		appSingletons.add(whiteboardFeature);
+		appSingletons.add(resourceFactory);
+		appSingletons.add(new ContainerLifecycleTracker());
+		
 	}
 
 	@Override
@@ -85,14 +104,9 @@ public class JerseyApplication extends Application {
 	 * (non-Javadoc)
 	 * @see jakarta.ws.rs.core.Application#getSingletons()
 	 */
-	@SuppressWarnings("deprecation")
 	@Override
 	public Set<Object> getSingletons() {
-		Set<Object> resutlSingletons = new HashSet<>();
-		resutlSingletons.addAll(singletons.values());
-		resutlSingletons.addAll(sourceApplication.getSingletons());
-		resutlSingletons.add(whiteboardFeature);
-		return Collections.unmodifiableSet(resutlSingletons);
+		return Collections.unmodifiableSet(appSingletons);
 	}
 
 	
@@ -142,41 +156,43 @@ public class JerseyApplication extends Application {
 			}
 			JerseyExtensionProvider result = extensions.put(key, (JerseyExtensionProvider) contentProvider);
 			return  result == null || !extensionClass.equals(result.getObjectClass());
-		} else if (contentProvider.isSingleton()) {
+		} else { 
 			Class<?> resourceClass = contentProvider.getObjectClass();
-			Object result = singletons.get(key);
-			if(result == null || !result.getClass().equals(resourceClass)){
-				Object providerObject = contentProvider.getProviderObject();
-				/*
-				 * Maybe we are in shutdown mode
-				 */
-				if (providerObject == null) {
+			factories.put(resourceClass, new JerseyResourceInstanceFactory<>(contentProvider));
+			if (contentProvider.isSingleton()) {
+				Object result = singletons.get(key);
+				if(result == null || !result.getClass().equals(resourceClass)){
+					Object providerObject = contentProvider.getProviderObject();
+					/*
+					 * Maybe we are in shutdown mode
+					 */
+					if (providerObject == null) {
+						contentProviders.remove(key);
+						Object removed = singletons.remove(key);
+						return removed != null;
+					}
+					Object service = ((ServiceObjects<?>) providerObject).getService();
+					if (service == null) {
+						contentProviders.remove(key);
+						Object removed = singletons.remove(key);
+						return removed != null;
+					}
+					result = singletons.put(key, service);
+					if(result != null) {
+						((ServiceObjects) contentProvider.getProviderObject()).ungetService(result);
+					}
+					return true;
+				}
+				return false;
+			} else {
+				if (resourceClass == null) {
 					contentProviders.remove(key);
-					Object removed = singletons.remove(key);
+					Object removed = classes.remove(key);
 					return removed != null;
 				}
-				Object service = ((ServiceObjects<?>) providerObject).getService();
-				if (service == null) {
-					contentProviders.remove(key);
-					Object removed = singletons.remove(key);
-					return removed != null;
-				}
-				result = singletons.put(key, service);
-				if(result != null) {
-					((ServiceObjects) contentProvider.getProviderObject()).ungetService(result);
-				}
-				return true;
+				Object result = classes.put(key, resourceClass);
+				return !resourceClass.equals(result) || result == null;
 			}
-			return false;
-		} else {
-			Class<?> resourceClass = contentProvider.getObjectClass();
-			if (resourceClass == null) {
-				contentProviders.remove(key);
-				Object removed = classes.remove(key);
-				return removed != null;
-			}
-			Object result = classes.put(key, resourceClass);
-			return !resourceClass.equals(result) || result == null;
 		}
 		
 	}
@@ -188,4 +204,21 @@ public class JerseyApplication extends Application {
 		return sourceApplication;
 	}
 	
+	/**
+	 * Used to set the injection manager in the factories, and to teardown the instances
+	 * afterwards
+	 */
+	private class ContainerLifecycleTracker extends AbstractContainerLifecycleListener {
+
+		@Override
+		public void onStartup(Container container) {
+			InjectionManager im = container.getApplicationHandler().getInjectionManager();
+			factories.values().forEach(f -> f.setInjectionManager(im));
+		}
+
+		@Override
+		public void onShutdown(Container container) {
+			dispose();
+		}
+	}
 }
