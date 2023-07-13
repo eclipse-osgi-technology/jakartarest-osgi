@@ -78,12 +78,4 @@ public class WhiteboardFeature implements Feature{
 		extensionInstanceTrackingMap.clear();
 		extensions.clear();
 	}
-
-	public void dispose(JerseyExtensionProvider extProvider) {
-		JerseyExtension je = extensionInstanceTrackingMap.remove(extProvider);
-
-		if(je != null) {
-			je.dispose();
-		}
-	}
 }

@@ -13,21 +13,21 @@
  */
 package org.eclipse.osgitech.rest.runtime.application;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import jakarta.ws.rs.core.Application;
-
 import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
+
+import jakarta.ws.rs.core.Application;
 
 /**
  * Special Jakartars application implementation that holds and updates all resource and extension given by the application provider
@@ -36,21 +36,18 @@ import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
  */
 public class JerseyApplication extends Application {
 
-	private volatile Map<String, Class<?>> classes = new ConcurrentHashMap<>();
-	private volatile Map<String, Object> singletons = new ConcurrentHashMap<>();
-	private volatile Map<String, JerseyExtensionProvider> extensions = new ConcurrentHashMap<>();
-	private volatile Map<String, JerseyApplicationContentProvider> contentProviders = new ConcurrentHashMap<>();
+	private final Map<String, Class<?>> classes = new HashMap<>();
+	private final Map<String, Object> singletons = new HashMap<>();
+	private final Map<String, JerseyExtensionProvider> extensions = new HashMap<>();
+	private final Map<String, JerseyApplicationContentProvider> contentProviders = new ConcurrentHashMap<>();
 	private final String applicationName;
 	private final Logger log = Logger.getLogger("jersey.application");
-	private Map<String, Object> properties;
-	private Application sourceApplication;
-	private WhiteboardFeature whiteboardFeature;
+	private final Map<String, Object> properties;
+	private final Application sourceApplication;
+	private final WhiteboardFeature whiteboardFeature;
 
-	public JerseyApplication(String applicationName) {
-		this.applicationName = applicationName;
-	}
-
-	public JerseyApplication(String applicationName, Application sourceApplication, Map<String, Object> additionalProperites) {
+	public JerseyApplication(String applicationName, Application sourceApplication, Map<String, Object> additionalProperites,
+			List<JerseyApplicationContentProvider> providers) {
 		this.applicationName = applicationName;
 		this.sourceApplication = sourceApplication;
 		Map<String, Object> props = new HashMap<String, Object>();
@@ -61,6 +58,10 @@ public class JerseyApplication extends Application {
 			props.putAll(sourceApplication.getProperties());
 		}
 		properties = Collections.unmodifiableMap(props);
+		
+		providers.forEach(this::addContent);
+		
+		whiteboardFeature = new WhiteboardFeature(extensions);
 	}
 
 	@Override
@@ -90,35 +91,27 @@ public class JerseyApplication extends Application {
 		Set<Object> resutlSingletons = new HashSet<>();
 		resutlSingletons.addAll(singletons.values());
 		resutlSingletons.addAll(sourceApplication.getSingletons());
-		if(!extensions.isEmpty()) {
-			if(whiteboardFeature == null) {
-				whiteboardFeature = new WhiteboardFeature(extensions);
-			}
-			resutlSingletons.add(whiteboardFeature);
-		}
+		resutlSingletons.add(whiteboardFeature);
 		return Collections.unmodifiableSet(resutlSingletons);
 	}
 
 	
 	public void dispose() {
-		if(whiteboardFeature != null) {
-			whiteboardFeature.dispose();
-			whiteboardFeature = null;
-			singletons.forEach((k,v) -> {
-				JerseyApplicationContentProvider provider = contentProviders.get(k);
-				Object providerObj = provider.getProviderObject();
-				if(providerObj instanceof ServiceObjects) {
-					@SuppressWarnings("unchecked")
-					ServiceObjects<Object> serviceObjs = (ServiceObjects<Object>) providerObj;
-					try {
-						serviceObjs.ungetService(v);
-					} catch(IllegalArgumentException e) {
-						log.log(Level.SEVERE, "Cannot unget service for resource " + provider.getName(), e);
-					}
+		whiteboardFeature.dispose();
+		singletons.forEach((k,v) -> {
+			JerseyApplicationContentProvider provider = contentProviders.get(k);
+			Object providerObj = provider.getProviderObject();
+			if(providerObj instanceof ServiceObjects) {
+				@SuppressWarnings("unchecked")
+				ServiceObjects<Object> serviceObjs = (ServiceObjects<Object>) providerObj;
+				try {
+					serviceObjs.ungetService(v);
+				} catch(IllegalArgumentException e) {
+					log.log(Level.SEVERE, "Cannot unget service for resource " + provider.getName(), e);
 				}
-			});
-			singletons.clear();
-		} 
+			}
+		});
+		singletons.clear();
 	}
 	
 	/**
@@ -130,7 +123,7 @@ public class JerseyApplication extends Application {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public boolean addContent(JerseyApplicationContentProvider contentProvider) {
+	private boolean addContent(JerseyApplicationContentProvider contentProvider) {
 		
 		if (contentProvider == null) {
 			if (log != null) {
@@ -186,64 +179,6 @@ public class JerseyApplication extends Application {
 			return !resourceClass.equals(result) || result == null;
 		}
 		
-	}
-
-	/**
-	 * Removes a content from the application
-	 * @param contentProvider the provider of the contents to be removed
-	 * @return Return <code>true</code>, if the content was removed
-	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public boolean removeContent(JerseyApplicationContentProvider contentProvider) {
-		if (contentProvider == null) {
-			if (log != null) {
-				log.log(Level.WARNING, "A null resource provider was given to unregister as a Jakartars resource");
-			}
-			return false;
-		}
-		String key = contentProvider.getId();
-		if(contentProvider instanceof JerseyExtensionProvider) {
-			synchronized (extensions) {
-				JerseyExtensionProvider ext = extensions.remove(key);
-				if(ext != null) {
-					if(whiteboardFeature != null) {
-						whiteboardFeature.dispose(ext);
-					}
-				}
-				// We can ignore singletons here, because we don't consider them here. 
-			}
-		} else if (contentProvider.isSingleton()) {
-			synchronized (singletons) {
-				Object obj = singletons.remove(key);
-				if(obj != null) {
-					log.fine("Unregistering service for resource " + contentProvider.getName() + " service " + obj);
-					Object providerObj = contentProvider.getProviderObject();
-					if(providerObj instanceof ServiceObjects) {
-						ServiceObjects serviceObjs = (ServiceObjects) providerObj;
-						try {
-							serviceObjs.ungetService(obj);
-						} catch(IllegalArgumentException e) {
-							log.log(Level.SEVERE, "Cannot unget service for resource " + contentProvider.getName(), e);
-						}
-					}
-				}				
-			}
-		} else {
-			synchronized (classes) {
-				classes.remove(key);
-			}
-		}
-		synchronized (contentProviders) {
-			return contentProviders.remove(key) != null;
-		}
-	}
-
-	/**
-	 * Returns all content providers
-	 * @return a Collection of contentProviders
-	 */
-	public Collection<JerseyApplicationContentProvider> getContentProviders(){
-		return contentProviders.values();
 	}
 
 	/**
