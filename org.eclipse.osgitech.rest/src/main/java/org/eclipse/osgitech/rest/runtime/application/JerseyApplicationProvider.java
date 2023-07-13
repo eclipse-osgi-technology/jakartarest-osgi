@@ -13,15 +13,6 @@
  */
 package org.eclipse.osgitech.rest.runtime.application;
 
-import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.V11;
-import static org.objectweb.asm.Type.VOID_TYPE;
-import static org.objectweb.asm.Type.getDescriptor;
-import static org.objectweb.asm.Type.getInternalName;
-import static org.objectweb.asm.Type.getMethodDescriptor;
-import static org.objectweb.asm.Type.getType;
 import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_APPLICATION_BASE;
 import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_DEFAULT_APPLICATION;
 import static org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants.JAKARTA_RS_NAME;
@@ -35,10 +26,7 @@ import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.dto.DTOConverter;
 import org.eclipse.osgitech.rest.helper.JakartarsHelper;
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+import org.eclipse.osgitech.rest.proxy.ApplicationProxyFactory;
 import org.osgi.service.jakartars.runtime.dto.BaseApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.DTOConstants;
 
@@ -61,59 +49,6 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 	public JerseyApplicationProvider(Application application, Map<String, Object> properties) {
 		super(application, properties);
 	}
-
-	private static class DynamicSubClassLoader extends ClassLoader {
-
-		public DynamicSubClassLoader() {
-			super(JerseyApplication.class.getClassLoader());
-		}
-		
-		@SuppressWarnings("unchecked")
-		public Class<? extends JerseyApplication> getSubClass(byte[] bytes) {
-			return (Class<? extends JerseyApplication>) defineClass("org.eclipse.osgitech.rest.runtime.application.JerseyApplicationWithPath", bytes, 0, bytes.length);
-		}
-	}
-	
-	private JerseyApplication createDynamicSubclass(String name, Application application, Map<String, Object> properties) {
-
-		ApplicationPath pathInfo = application.getClass().getAnnotation(ApplicationPath.class);
-		String superName = getInternalName(JerseyApplication.class);
-
-		// Write the class header, with JerseyApplication as the superclass
-		ClassWriter writer = new ClassWriter(COMPUTE_FRAMES);
-		writer.visit(V11, ACC_PUBLIC, "org/eclipse/osgitech/rest/runtime/application/JerseyApplicationWithPath", null, 
-				superName, null);
-		// Write the application path annotation
-		AnnotationVisitor av = writer.visitAnnotation(getDescriptor(ApplicationPath.class), true);
-		av.visit("value", pathInfo.value());
-		av.visitEnd();
-		
-		// Write a constructor which directly calls super and nothing else
-		String constructorDescriptor = getMethodDescriptor(VOID_TYPE, getType(String.class), 
-				getType(Application.class), getType(Map.class), getType(List.class));
-		
-		MethodVisitor mv = writer.visitMethod(ACC_PUBLIC, "<init>", constructorDescriptor, null, null);
-		mv.visitCode();
-		mv.visitVarInsn(Opcodes.ALOAD, 0);
-		mv.visitVarInsn(Opcodes.ALOAD, 1);
-		mv.visitVarInsn(Opcodes.ALOAD, 2);
-		mv.visitVarInsn(Opcodes.ALOAD, 3);
-		mv.visitVarInsn(Opcodes.ALOAD, 4);
-		mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "<init>", constructorDescriptor, false);
-		mv.visitInsn(RETURN);
-		mv.visitMaxs(4, 4);
-		mv.visitEnd();
-		writer.visitEnd();
-		
-		DynamicSubClassLoader loader = new DynamicSubClassLoader();
-		Class<? extends JerseyApplication> clazz = loader.getSubClass(writer.toByteArray());
-		try {
-			return clazz.getConstructor(String.class, Application.class, Map.class, List.class).newInstance(name, application, properties, providers);
-		} catch (Exception e) {
-			logger.severe("Unable to create a subclass of the JerseyApplication " + e.getMessage());
-		}
-		return null;
-	}
 	
 	/** 
 	 * Gets the full application path, including the osgi.jakartars.application.base and any
@@ -133,7 +68,8 @@ public class JerseyApplicationProvider extends AbstractJakartarsProvider<Applica
 			Application application = getProviderObject();
 			if (application.getClass().isAnnotationPresent(ApplicationPath.class)) {
 				// Dynamic subclass with the annotation value
-				wrappedApplication = createDynamicSubclass(getApplicationBase(), application, getProviderProperties());
+				wrappedApplication = ApplicationProxyFactory.createDynamicSubclass(getApplicationBase(), application, 
+						getProviderProperties(), providers);
 			} else {
 				wrappedApplication = new JerseyApplication(getProviderName(), application, getProviderProperties(), providers);
 			}
