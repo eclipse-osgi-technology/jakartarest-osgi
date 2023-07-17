@@ -233,7 +233,7 @@ public class JerseyServiceRuntime<C extends Container> {
 				@Override
 				public void removedService(ServiceReference<Object> reference, ServiceReference<?> service) {
 					JerseyExtensionProvider provider = new JerseyExtensionProvider(
-							context.getServiceObjects(reference), getServiceProps(reference));
+							null, getServiceProps(reference));
 					clearMap(extensionMap, provider);
 				}
 				

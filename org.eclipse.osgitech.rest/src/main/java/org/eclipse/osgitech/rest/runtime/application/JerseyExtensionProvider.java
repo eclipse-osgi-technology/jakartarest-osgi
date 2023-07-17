@@ -20,8 +20,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.eclipse.osgitech.rest.dto.DTOConverter;
 import org.eclipse.osgitech.rest.proxy.ExtensionProxyFactory;
@@ -54,6 +57,8 @@ import jakarta.ws.rs.ext.WriterInterceptor;
  */
 public class JerseyExtensionProvider extends JerseyApplicationContentProvider {
 
+	private static final Logger logger = Logger.getLogger("jersey.extensionProvider");
+	
 	private static final List<String> POSSIBLE_INTERFACES = Arrays.asList(new String[] {
 		ContainerRequestFilter.class.getName(),
 		ContainerResponseFilter.class.getName(),
@@ -154,7 +159,14 @@ public class JerseyExtensionProvider extends JerseyApplicationContentProvider {
 	 * @return
 	 */
 	public JerseyExtension getExtension(FeatureContext context) {
-		Object service = getProviderObject().getService();
+		Object service = Optional.ofNullable(getProviderObject())
+				.map(ServiceObjects::getService)
+				.orElse(null);
+		if(service == null) {
+			logger.severe("Unable to get the service object for service " + getId() + " with name " + getName() + 
+					" and contracts" + Arrays.stream(contracts).map(Class::getName).collect(Collectors.joining(", ")));
+			return null;
+		}
 		InjectionManagerProvider.getInjectionManager(context).inject(service);
 		return new JerseyExtension(service);
 	}
