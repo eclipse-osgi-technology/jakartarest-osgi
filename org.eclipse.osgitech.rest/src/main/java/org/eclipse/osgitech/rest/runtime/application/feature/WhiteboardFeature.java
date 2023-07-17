@@ -56,12 +56,14 @@ public class WhiteboardFeature implements Feature{
 
 			JerseyExtension je = extension.getExtension(context);
 
-			extensionInstanceTrackingMap.put(extension, je);
-			Map<Class<?>,Integer> contractPriorities = je.getContractPriorities();
-			if (contractPriorities.isEmpty()) {
-				context.register(je.getExtensionObject(), priority.getAndIncrement());
-			} else {
-				context.register(je.getExtensionObject(), je.getContractPriorities());
+			if(je != null) {
+				extensionInstanceTrackingMap.put(extension, je);
+				Map<Class<?>,Integer> contractPriorities = je.getContractPriorities();
+				if (contractPriorities.isEmpty()) {
+					context.register(je.getExtensionObject(), priority.getAndIncrement());
+				} else {
+					context.register(je.getExtensionObject(), je.getContractPriorities());
+				}
 			}
 		});
 		return true;
