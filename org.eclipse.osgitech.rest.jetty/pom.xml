@@ -3,7 +3,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-	        <groupId>org.eclipse.osgitech.rest</groupId>
+	        <groupId>org.eclipse.osgi-technology.rest</groupId>
 	        <artifactId>parent</artifactId>
 	        <version>1.0.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
@@ -15,10 +15,10 @@
     
 	<dependencies>
 		<dependency>
-	    		<groupId>org.eclipse.osgitech.rest</groupId>
-	    		<artifactId>org.eclipse.osgitech.rest</artifactId>
-	    		<version>1.0.0-SNAPSHOT</version>
-	    	</dependency>
+	        <groupId>org.eclipse.osgi-technology.rest</groupId>
+	    	<artifactId>org.eclipse.osgitech.rest</artifactId>
+	    	<version>1.0.0-SNAPSHOT</version>
+	    </dependency>
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-client</artifactId>
