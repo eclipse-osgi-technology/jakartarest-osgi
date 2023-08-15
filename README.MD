@@ -29,27 +29,27 @@ You will find the Release and Snapshot artifacts at Maven Central, respectively 
 
 ```
 <dependency>
-  <groupId>org.eclipse.osgitech.rest</groupId>
+  <groupId>org.eclipse.osgi-technology.rest</groupId>
   <artifactId>org.eclipse.osgitech.rest</artifactId>
   <version>${version}</version>
 </dependency>
 <dependency>
-  <groupId>org.eclipse.osgitech.rest</groupId>
+  <groupId>org.eclipse.osgi-technology.rest</groupId>
   <artifactId>org.eclipse.osgitech.rest.config</artifactId>
   <version>${version}</version>
 </dependency>
 <dependency>
-  <groupId>org.eclipse.osgitech.rest</groupId>
+  <groupId>org.eclipse.osgi-technology.rest</groupId>
   <artifactId>org.eclipse.osgitech.rest.sse</artifactId>
   <version>${version}</version>
 </dependency>
 <dependency>
-  <groupId>org.eclipse.osgitech.rest</groupId>
+  <groupId>org.eclipse.osgi-technology.rest</groupId>
   <artifactId>org.eclipse.osgitech.rest.jetty</artifactId>
   <version>${version}</version>
 </dependency>
 <dependency>
-  <groupId>org.eclipse.osgitech.rest</groupId>
+  <groupId>org.eclipse.osgi-technology.rest</groupId>
   <artifactId>org.eclipse.osgitech.rest.servlet.whiteboard</artifactId>
   <version>${version}</version>
 </dependency>
@@ -58,9 +58,9 @@ You will find the Release and Snapshot artifacts at Maven Central, respectively 
 For those, who use Gradle:
 
 ```
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest:${version}
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.config:${version}
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.sse:${version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest:${version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.config:${version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.sse:${version}
 ```
 
 ## Jetty Setup
@@ -139,6 +139,7 @@ Therefore you may set the system property `org.osgi.service.http.port=-1` to dea
 ## Example Resource
 
 When using the Jakarta REST Whiteboard, you just have to register your REST resources and extensions as a service. There are some useful Meta-Annotations, that create component properties for you.
+
 ```java
 @RequireJakartarsWhiteboard
 @JakartarsResource
@@ -168,7 +169,7 @@ To create a sample project call:
 
 ```bash
 mvn archetype:generate 
--DarchetypeGroupId=org.eclipse.osgitech.rest 
+-DarchetypeGroupId=org.eclipse.osgi-technology.rest 
 -DarchetypeArtifactId=org.eclipse.osgitech.rest.archetype 
 -DarchetypeVersion=1.0.0-SNAPSHOT 
 -DgroupId=<your-group-id> 
@@ -182,20 +183,25 @@ The generated project contains a ready to run [example](org.eclipse.osgitech.res
 ## Gradle Bnd Library Support
 
 When adding the Jakarta REST Library to you dependencies:
+
 ```
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.bnd.library:${version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.bnd.library:${version}
 ```
+
 you can simply but the instruction `-library: jakartaREST` and you will find a repository in you bnd workspace after reloading the workspace.
 
 It brings you all dependencies, you need to run Jersey. In addition to that it also brings a dependency to:
+
 ```
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.bnd.project.library:${version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.bnd.project.library:${version}
 ```
+
 This library adds support for *bndrun* files. Calling the instruction `-library: enableJakartaREST` within a *bndrun* adds automatically all Jersey and Jakarta REST Whiteboard dependencies to the *runbundles* section.
 
 If you use the library instruction within a *bnd.bnd* file, it adds the JakartaRs API to the buildpath.
 
 Furthermore this dependency brings three bndtools project templates:
+
 1. Jakarta REST Resource with a default configuration
 2. Jakarta REST Resource with Jetty Runtime and a corresponding configuration file
 3. Jakarta REST Resource with a configuration for the use with the OSGI Servlet Whiteboard
