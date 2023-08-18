@@ -15,7 +15,7 @@
 		<url>https://github.com/osgi/jakartarest-osgi</url>
 		<connection>scm:git:https://github.com/osgi/jakartarest-osgi</connection>
 		<developerConnection>scm:git:https://github.com/osgi/jakartarest-osgi</developerConnection>
-		<tag>release</tag>		
+		<tag>main</tag>		
 	</scm>
 	
 	<issueManagement>
