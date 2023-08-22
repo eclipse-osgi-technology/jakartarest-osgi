@@ -21,6 +21,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
+import org.eclipse.osgitech.rest.sse.SseEventSourceFactoryImpl;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;

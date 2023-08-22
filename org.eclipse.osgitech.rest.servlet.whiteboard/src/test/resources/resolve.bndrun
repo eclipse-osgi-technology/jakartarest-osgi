@@ -1,0 +1,5 @@
+-runrequires: \
+	bnd.identity;id='org.eclipse.osgitech.rest.servlet.whiteboard'
+	
+-runfw: org.apache.felix.framework
+-runee: JavaSE-11
