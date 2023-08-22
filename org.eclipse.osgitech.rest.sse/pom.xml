@@ -15,6 +15,10 @@
     
 	<dependencies>
 		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.service.jakartars</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-client</artifactId>
 		</dependency>
@@ -42,6 +46,10 @@
 			<groupId>jakarta.inject</groupId>
 			<artifactId>jakarta.inject-api</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>biz.aQute.bnd</groupId>
+			<artifactId>biz.aQute.bnd.annotation</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -57,10 +65,7 @@
 						</goals>
 						<configuration>
 							<bnd><![CDATA[
-							Fragment-Host: org.glassfish.jersey.media.jersey-media-sse
-							Export-Package: \
-								org.glassfish.jersey.media.sse.internal,\
-								org.glassfish.jersey.media.sse
+							Fragment-Host: org.glassfish.jersey.media.jersey-media-sse;bundle-version="${range;[==,+);${jersey.version}}"
 							]]></bnd>
 						</configuration>
 					</execution>
