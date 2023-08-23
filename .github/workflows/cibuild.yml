@@ -64,7 +64,6 @@ jobs:
         cache: maven
     - name: Build Maven
       id: build
-      continue-on-error: ${{ matrix.experimental }}
       run: |
         ./.github/scripts/build.sh ${{ matrix.mavenopts }}
 
