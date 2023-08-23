@@ -15,6 +15,10 @@
     <name>JakartaREST / Jersey Whitebboard Application Tests</name>
     <description>Application tests for using the Jakarta RESTful Web Services Whiteboard implementation</description>
 
+	<properties>
+		<maven.deploy.skip>true</maven.deploy.skip>
+	</properties>
+	
 	<dependencies>
 		<dependency>
 		    	<groupId>org.eclipse.osgi-technology.rest</groupId>
