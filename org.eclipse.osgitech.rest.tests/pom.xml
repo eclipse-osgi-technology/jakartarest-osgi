@@ -221,11 +221,12 @@
 				<artifactId>bnd-testing-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
-            	<groupId>org.apache.maven.plugins</groupId>
-            	<artifactId>maven-deploy-plugin</artifactId>
-            	<configuration>
-            		<skip>true</skip>
-            	</configuration>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
+                </configuration>
             </plugin>
 		</plugins>
 	</build>
