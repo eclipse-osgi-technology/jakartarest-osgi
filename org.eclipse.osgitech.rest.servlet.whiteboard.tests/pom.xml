@@ -15,6 +15,10 @@
 	<name>JakartaREST / Jersey with Servlet Whiteboard Application Tests</name>
 	<description>Application tests for use of the Servlet Whiteboard implementation together with the JakartaREST Whiteboard</description>
 
+	<properties>
+		<maven.deploy.skip>true</maven.deploy.skip>
+	</properties>
+	
 	<dependencies>
 		<dependency>
 	    		<groupId>org.eclipse.osgi-technology.rest</groupId>
