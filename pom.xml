@@ -672,7 +672,6 @@
       					<autoVersionSubmodules>true</autoVersionSubmodules>
       					<autoResolveSnapshots>1</autoResolveSnapshots>
       					<releaseProfiles>release</releaseProfiles>
-      					<allowTimestampedSnapshots>true</allowTimestampedSnapshots>
    					</configuration>
 				</plugin>
 			</plugins>
