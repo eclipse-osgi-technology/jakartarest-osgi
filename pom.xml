@@ -72,8 +72,9 @@
 	</properties>
 
 	<modules>
-		<module>org.eclipse.osgitech.rest.bnd.library</module>
+		<!--<module>org.eclipse.osgitech.rest.bnd.library</module>
 		<module>org.eclipse.osgitech.rest.bnd.project.library</module>
+		<module>org.eclipse.osgitech.rest.archetype</module>-->
 		<module>org.eclipse.osgitech.rest</module>
 		<module>org.eclipse.osgitech.rest.config</module>
 		<module>org.eclipse.osgitech.rest.jetty</module>
@@ -83,7 +84,6 @@
 		<module>org.eclipse.osgitech.rest.sse</module>
 		<module>org.eclipse.osgitech.rest.tck</module>
 		<module>org.eclipse.osgitech.rest.tests</module>
-		<module>org.eclipse.osgitech.rest.archetype</module>
 	</modules>
 	
 	<repositories>
