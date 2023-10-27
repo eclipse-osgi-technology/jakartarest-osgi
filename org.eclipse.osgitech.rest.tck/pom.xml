@@ -5,7 +5,7 @@
 	<parent>
         <groupId>org.eclipse.osgi-technology.rest</groupId>
         <artifactId>parent</artifactId>
-        <version>1.1.0-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
     
@@ -20,24 +20,24 @@
 	
 	<dependencies>
 		<dependency>
-		   	<groupId>org.eclipse.osgi-technology.rest</groupId>
+		   	<groupId>${project.groupId}</groupId>
 	    	<artifactId>org.eclipse.osgitech.rest</artifactId>
-	    	<version>1.1.0-SNAPSHOT</version>
+	    	<version>${project.version}</version>
     	</dependency>
 		<dependency>
-		   	<groupId>org.eclipse.osgi-technology.rest</groupId>
+		   	<groupId>${project.groupId}</groupId>
 	    	<artifactId>org.eclipse.osgitech.rest.jetty</artifactId>
-	    	<version>1.1.0-SNAPSHOT</version>
+	    	<version>${project.version}</version>
 	    </dependency>
 		<dependency>
-		   	<groupId>org.eclipse.osgi-technology.rest</groupId>
+		   	<groupId>${project.groupId}</groupId>
 	    	<artifactId>org.eclipse.osgitech.rest.servlet.whiteboard</artifactId>
-	    	<version>1.1.0-SNAPSHOT</version>
+	    	<version>${project.version}</version>
 	    </dependency>
 	    <dependency>
-		   	<groupId>org.eclipse.osgi-technology.rest</groupId>
+		   	<groupId>${project.groupId}</groupId>
 		   	<artifactId>org.eclipse.osgitech.rest.sse</artifactId>
-		   	<version>1.1.0-SNAPSHOT</version>
+		   	<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
