@@ -6,8 +6,6 @@
 
 -resolve.effective: active;skip:="osgi.service"
 
--runtrace: true
-
 # enabled the runbundles for the Jersey dependencies
 # This sets -runbundles.jersey: ${jersey.deps}  
 -library: enableJakartaREST
@@ -18,6 +16,7 @@
 # we need to run our project
 -runbundles.project: \
 	org.eclipse.osgitech.rest.jetty;version=latest,\
+	org.eclipse.parsson.jakarta.json;version=latest,\
 	{{projectName}};version=snapshot
 
 -runblacklist: \

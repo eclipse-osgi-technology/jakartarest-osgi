@@ -25,6 +25,11 @@ import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsResource;
 /**
  * 
  * This is a Demo Resource for a Jakartars Whiteboard 
+ * You should see an log output like this, that mentions port and uri: 
+ * Started Jakartars whiteboard server for port: <port> and context: /rest/
+ * 
+ * So the application can be reached under:
+ * http://localhost:<port>/rest/hello-no-config
  * 
  * @since 1.0
  */
