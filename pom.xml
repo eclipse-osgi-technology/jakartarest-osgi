@@ -61,7 +61,7 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 		<bnd.version>6.4.0</bnd.version>
-		<junit-jupiter.version>5.10.0</junit-jupiter.version>
+		<junit-jupiter.version>5.9.2</junit-jupiter.version>
 		<assertj.version>3.24.2</assertj.version>
 		<mockito.version>5.4.0</mockito.version>
 		<osgi-test.version>1.2.1</osgi-test.version>
@@ -95,7 +95,7 @@
 				 <enabled>true</enabled>
 			 </snapshots>
 			 <releases>
-				 <enabled>false</enabled>
+				 <enabled>true</enabled>
 			 </releases>
 		</repository>
 	</repositories>
