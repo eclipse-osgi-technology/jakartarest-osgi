@@ -10,8 +10,8 @@ This implementation is **compliant** in respect to the corresponding OSGi Whiteb
 
 It uses:
 
-* Jersey 3.0.8
-* HK2 3.0.3. 
+* Jersey 3.1.3
+* HK2 3.0.5 
 
 When you want to run it, you currently have the choice between two different adapters / connectors:
 
