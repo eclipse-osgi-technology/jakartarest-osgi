@@ -6,8 +6,6 @@
 
 -resolve.effective: active;skip:="osgi.service"
 
--runtrace: true
-
 # enabled the runbundles for the Jersey dependencies
 # This sets -runbundles.jersey: ${jersey.deps}  
 -library: enableJakartaREST
