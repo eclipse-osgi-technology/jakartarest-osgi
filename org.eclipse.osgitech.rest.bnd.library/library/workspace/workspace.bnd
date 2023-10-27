@@ -6,5 +6,4 @@
         readOnly=true; \
         poll.time=-1; \
         name="OSGi Technology Jakarta REST"
-        
 		

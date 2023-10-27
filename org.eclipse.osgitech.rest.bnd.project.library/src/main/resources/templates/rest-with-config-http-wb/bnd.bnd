@@ -1,6 +1,5 @@
 -buildpath: \
-	osgi.annotation;version=latest,\
-	osgi.core;version=latest,\
+	org.osgi.service.component.annotations;version=latest,\
 	org.osgi.service.servlet;version=latest
 
 -library: enableJakartaREST
