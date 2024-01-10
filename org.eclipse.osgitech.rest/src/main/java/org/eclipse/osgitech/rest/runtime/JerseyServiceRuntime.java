@@ -149,17 +149,17 @@ public class JerseyServiceRuntime<C extends Container> {
 	/**
 	 * Empty Whiteboard Application services. Protected by {@link #lock}
 	 */
-	private final Map<String, JerseyApplicationProvider> applicationContainerMap = new HashMap<>();
+	private final Map<Long, JerseyApplicationProvider> applicationContainerMap = new HashMap<>();
 	
 	/**
 	 * Empty Whiteboard Extension services. Protected by {@link #lock}
 	 */
-	private final Map<String, JerseyExtensionProvider> extensionMap = new HashMap<>();
+	private final Map<Long, JerseyExtensionProvider> extensionMap = new HashMap<>();
 	
 	/**
 	 * Empty Whiteboard Resource services. Protected by {@link #lock}
 	 */
-	private final Map<String, JerseyResourceProvider> resourceMap = new HashMap<>();
+	private final Map<Long, JerseyResourceProvider> resourceMap = new HashMap<>();
 	
 	// The implicit default application, may be shadowed by a registered service
 	private final JerseyApplicationProvider defaultProvider = new JerseyApplicationProvider(new Application(), 
@@ -206,9 +206,7 @@ public class JerseyServiceRuntime<C extends Container> {
 	
 				@Override
 				public void removedService(ServiceReference<Object> reference, ServiceReference<?> service) {
-					JerseyResourceProvider provider = new JerseyResourceProvider(
-							null, getServiceProps(reference));
-					clearMap(resourceMap, provider);
+					clearMap(resourceMap, AbstractJakartarsProvider.getServiceId(getServiceProps(reference)));
 				}
 				
 			};
@@ -232,9 +230,7 @@ public class JerseyServiceRuntime<C extends Container> {
 				
 				@Override
 				public void removedService(ServiceReference<Object> reference, ServiceReference<?> service) {
-					JerseyExtensionProvider provider = new JerseyExtensionProvider(
-							null, getServiceProps(reference));
-					clearMap(extensionMap, provider);
+					clearMap(extensionMap, AbstractJakartarsProvider.getServiceId(getServiceProps(reference)));
 				}
 				
 			};
@@ -260,9 +256,7 @@ public class JerseyServiceRuntime<C extends Container> {
 	
 				@Override
 				public void removedService(ServiceReference<Application> reference, Application service) {
-					JerseyApplicationProvider provider = new JerseyApplicationProvider(
-							null, getServiceProps(reference));
-					clearMap(applicationContainerMap, provider);
+					clearMap(applicationContainerMap, AbstractJakartarsProvider.getServiceId(getServiceProps(reference)));
 					super.removedService(reference, service);
 				}
 				
@@ -277,18 +271,18 @@ public class JerseyServiceRuntime<C extends Container> {
 			.collect(toMap(identity(), ref::getProperty));
 	}
 	
-	private <R, T extends AbstractJakartarsProvider<R>> void updateMap(Map<String, T> map, T provider) {
+	private <R, T extends AbstractJakartarsProvider<R>> void updateMap(Map<Long, T> map, T provider) {
 		synchronized (lock) {
 			scheduleUpdate();
-			map.put(provider.getId(), provider);
+			map.put(provider.getServiceId(), provider);
 			updateCount++;
 		}
 	}
 
-	private <R, T extends AbstractJakartarsProvider<R>> void clearMap(Map<String, T> map, T provider) {
+	private <R, T extends AbstractJakartarsProvider<R>> void clearMap(Map<Long, T> map, Long id) {
 		synchronized (lock) {
 			scheduleUpdate();
-			map.remove(provider.getId());
+			map.remove(id);
 			updateCount++;
 		}
 	}

@@ -206,10 +206,7 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsConstants
 	 */
 	protected void validateProperties() {
 		updateStatus(NO_FAILURE);
-		serviceId = (Long) properties.get(Constants.SERVICE_ID);
-		if (serviceId == null) {
-			serviceId = (Long) properties.get(ComponentConstants.COMPONENT_ID);
-		}
+		serviceId = getServiceId(properties);
 		id = calculateProviderId();
 		name = getProviderName();
 		Object sr = properties.get(Constants.SERVICE_RANKING);
@@ -217,9 +214,6 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsConstants
 			serviceRank = (Integer)sr;
 		} else {
 			serviceRank = Integer.valueOf(0);
-		}
-		if (serviceId == null) {
-			serviceId = (Long) properties.get(ComponentConstants.COMPONENT_ID);
 		}
 		String filter = (String) properties.get(JakartarsWhiteboardConstants.JAKARTA_RS_WHITEBOARD_TARGET);
 		if (filter != null) {
@@ -247,6 +241,14 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsConstants
 		}
 		extensionFilters = List.copyOf(extensionFilters);
 		doValidateProperties(properties);
+	}
+	
+	public static Long getServiceId(Map<String, Object> properties) {
+		Long serviceId = (Long) properties.get(Constants.SERVICE_ID);
+		if (serviceId == null) {
+			serviceId = (Long) properties.get(ComponentConstants.COMPONENT_ID);
+		}
+		return serviceId;
 	}
 
 	/**
