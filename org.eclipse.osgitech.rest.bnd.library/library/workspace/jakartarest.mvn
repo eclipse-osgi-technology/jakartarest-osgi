@@ -1,10 +1,10 @@
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.bnd.project.library:${project.version}
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest:${project.version}
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.jetty:${project.version}
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.servlet.whiteboard:${project.version}
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.config:${project.version}
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.sse:${project.version}
-org.eclipse.osgitech.rest:org.eclipse.osgitech.rest.multipart:${project.version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.bnd.project.library:${project.version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest:${project.version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.jetty:${project.version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.servlet.whiteboard:${project.version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.config:${project.version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.sse:${project.version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.multipart:${project.version}
 
 org.apache.felix:org.apache.felix.http.jetty:5.0.4
 org.apache.felix:org.apache.felix.http.servlet-api:2.1.0
