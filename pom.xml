@@ -4,7 +4,7 @@
 
 	<groupId>org.eclipse.osgi-technology.rest</groupId>
 	<artifactId>parent</artifactId>
-	<version>1.2.2-SNAPSHOT</version>
+	<version>1.2.2</version>
 	<packaging>pom</packaging>
 	<name>Eclipse OSGi Technology Jakarta REST</name>
 	<description>Eclipse OSGi Technology Jakarta RESTful Services Whiteboard</description>
@@ -14,7 +14,7 @@
 		<url>https://github.com/osgi/jakartarest-osgi</url>
 		<connection>scm:git:git@github.com:osgi/jakartarest-osgi.git</connection>
 		<developerConnection>scm:git:git@github.com:osgi/jakartarest-osgi.git</developerConnection>
-		<tag>release</tag>		
+		<tag>v1.2.2</tag>		
 	</scm>
 	
 	<issueManagement>
