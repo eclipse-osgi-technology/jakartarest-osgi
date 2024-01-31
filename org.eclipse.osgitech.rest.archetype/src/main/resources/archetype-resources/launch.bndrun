@@ -36,7 +36,7 @@ jersey.deps: \
 	org.apache.felix.http.jetty;version='[5.0.0,5.1)',\
 	org.apache.felix.http.servlet-api;version='[2.1.0,2.2)',\
 	org.apache.felix.scr;version='[2.2.6,2.3)',\
-	org.eclipse.parsson.jakarta.json;version='[1.1.2,1.2)',\
+	org.eclipse.parsson.jakarta.json;version='[1.1.5,1.2)',\
 	com.sun.xml.bind.jaxb-osgi;version='[4,4.1)',\
 	com.sun.activation.jakarta.activation;version='[2,2.1)',\
 	org.glassfish.hk2.api;version='[3.0.4,3.1)',\
