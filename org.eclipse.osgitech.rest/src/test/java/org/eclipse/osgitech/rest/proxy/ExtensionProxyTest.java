@@ -29,21 +29,25 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ContextResolver;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.MessageBodyReader;
 import jakarta.ws.rs.ext.MessageBodyWriter;
-
-import org.eclipse.osgitech.rest.proxy.ExtensionProxyFactory;
-import org.junit.jupiter.api.Test;
 
 /**
  * 
@@ -119,6 +123,204 @@ public class ExtensionProxyTest {
 		
 		assertEquals(814, ((ExceptionMapper)instance)
 				.toResponse(new OutOfMemoryError()).getStatus());
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testParameterExceptionMapper() throws Exception {
+		
+		ExceptionMapper<?> em = new ParameterExceptionMapper<>();
+		
+		Class<?> proxyClazz = pcl.define("test.ExceptionMapper", em, 
+				singletonList(ExceptionMapper.class));
+		
+		assertTrue(ExceptionMapper.class.isAssignableFrom(proxyClazz));
+		
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(1, typeParameters.length);
+		assertTrue(TypeVariable.class.isInstance(typeParameters[0]));
+		assertEquals("T", typeParameters[0].toString());
+		Type[] bounds = ((TypeVariable<?>)typeParameters[0]).getBounds();
+		assertEquals(1, bounds.length);
+		assertEquals(Throwable.class, bounds[0]);
+		
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ExceptionMapper.class, pt.getRawType());
+		assertTrue(TypeVariable.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("T", pt.getActualTypeArguments()[0].toString());
+	
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+			.newInstance((Supplier<?>) () -> em);
+		
+		assertEquals(451, ((ExceptionMapper<Throwable>)instance)
+				.toResponse(new RuntimeException()).getStatus());
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testChildReifiedExceptionMapper() throws Exception {
+		
+		ExceptionMapper<WebApplicationException> em = new ChildReifiedExceptionMapper();
+		
+		Class<?> proxyClazz = pcl.define("test.ExceptionMapper", em, 
+				singletonList(ExceptionMapper.class));
+		
+		assertTrue(ExceptionMapper.class.isAssignableFrom(proxyClazz));
+		
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(0, typeParameters.length);
+		
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ExceptionMapper.class, pt.getRawType());
+		assertEquals(WebApplicationException.class, pt.getActualTypeArguments()[0]);
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> em);
+		
+		assertEquals(404, ((ExceptionMapper<WebApplicationException>)instance)
+				.toResponse(new NotFoundException()).getStatus());
+		
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testParameterContext() throws Exception {
+		
+		ContextResolver<? extends CharSequence> cr = new ParameterContext<>();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(1, typeParameters.length);
+		assertTrue(TypeVariable.class.isInstance(typeParameters[0]));
+		assertEquals("T", typeParameters[0].toString());
+		Type[] bounds = ((TypeVariable<?>)typeParameters[0]).getBounds();
+		assertEquals(1, bounds.length);
+		assertEquals(Object.class, bounds[0]);
+		
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertTrue(TypeVariable.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("T", pt.getActualTypeArguments()[0].toString());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals("", ((ContextResolver<? extends CharSequence>)instance)
+				.getContext(String.class));
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testExtendsParameterContext() throws Exception {
+		
+		ContextResolver<List<Integer>> cr = new ExtendsParameterContext<>();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(1, typeParameters.length);
+		assertTrue(TypeVariable.class.isInstance(typeParameters[0]));
+		assertEquals("R", typeParameters[0].toString());
+		Type[] bounds = ((TypeVariable<?>)typeParameters[0]).getBounds();
+		assertEquals(1, bounds.length);
+		assertEquals(Number.class, bounds[0]);
+		
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertTrue(ParameterizedType.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("java.util.List<R>", pt.getActualTypeArguments()[0].toString());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals(Collections.emptyList(), ((ContextResolver<List<Integer>>)instance)
+				.getContext(String.class));
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testChildExtendsParameterContext() throws Exception {
+		
+		ContextResolver<List<Double>> cr = new ChildExtendsParameterContext();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(0, typeParameters.length);
+		
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertTrue(ParameterizedType.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("java.util.List<java.lang.Double>", pt.getActualTypeArguments()[0].toString());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals(Collections.singletonList(42.0d), ((ContextResolver<List<Double>>)instance)
+				.getContext(String.class));
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testWildcardParameterContext() throws Exception {
+		
+		ContextResolver<List<? super Integer>> cr = new WildcardParameterContext();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertTrue(ParameterizedType.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("java.util.List<? super java.lang.Integer>", pt.getActualTypeArguments()[0].toString());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals(Collections.emptyList(), ((ContextResolver<List<Integer>>)instance)
+				.getContext(String.class));
 		
 	}
 	
@@ -225,6 +427,70 @@ public class ExtensionProxyTest {
 		public Response toResponse(Throwable exception) {
 			// What's an 8xx response?!?
 			return Response.status(814).build();
+		}
+		
+	}
+
+	public static class ParameterExceptionMapper<T extends Throwable> implements ExceptionMapper<T> {
+		
+		/* 
+		 * (non-Javadoc)
+		 * @see jakarta.ws.rs.ext.ExceptionMapper#toResponse(java.lang.Throwable)
+		 */
+		@Override
+		public Response toResponse(T exception) {
+			// Unavailable for legal reasons
+			return Response.status(451).build();
+		}
+		
+	}
+	
+	public static class ChildReifiedExceptionMapper extends ParameterExceptionMapper<WebApplicationException> {
+
+		@Override
+		public Response toResponse(WebApplicationException exception) {
+			return Response.status(exception.getResponse().getStatus()).build();
+		}
+		
+	}
+
+	public static class ParameterContext<T> implements ContextResolver<T> {
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public T getContext(Class<?> type) {
+			try {
+				return (T) type.getConstructor().newInstance();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+		
+	}
+
+	public static class ExtendsParameterContext<R extends Number> implements ContextResolver<List<R>> {
+		
+		@Override
+		public List<R> getContext(Class<?> type) {
+			return new ArrayList<>();
+		}
+		
+	}
+
+	public static class ChildExtendsParameterContext extends ExtendsParameterContext<Double> {
+		
+		@Override
+		public List<Double> getContext(Class<?> type) {
+			return Collections.singletonList(42.0d);
+		}
+		
+	}
+
+	public static class WildcardParameterContext implements ContextResolver<List<? super Integer>> {
+		
+		@Override
+		public List<? super Integer> getContext(Class<?> type) {
+			return new ArrayList<>();
 		}
 		
 	}
