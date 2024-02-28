@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
@@ -323,6 +324,153 @@ public class ExtensionProxyTest {
 				.getContext(String.class));
 		
 	}
+
+	@Test
+	public void testRedirectsParameterContext() throws Exception {
+		
+		ContextResolver<?> cr = new RedirectsParameterContext<>();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(1, typeParameters.length);
+		assertTrue(TypeVariable.class.isInstance(typeParameters[0]));
+		assertEquals("R", typeParameters[0].toString());
+		
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertTrue(TypeVariable.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("R", pt.getActualTypeArguments()[0].toString());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals("", ((ContextResolver<?>)instance)
+				.getContext(String.class));
+		
+	}
+	
+	@Test
+	public void testChildExtendsRedirectedParameterContext() throws Exception {
+		
+		ContextResolver<Double> cr = new ChildExtendsRedirectedParameterContext();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(0, typeParameters.length);
+		
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertEquals(Double.class, pt.getActualTypeArguments()[0]);
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals(42.0d, ((ContextResolver<?>)instance)
+				.getContext(String.class));
+		
+	}
+	@Test
+	public void testChildExtraExtendsRedirectedParameterContext() throws Exception {
+		
+		ContextResolver<List<Double>> cr = new ChildExtraExtendsRedirectedParameterContext();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertTrue(ParameterizedType.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("java.util.List<java.lang.Double>", pt.getActualTypeArguments()[0].getTypeName());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals(Collections.singletonList(17.0d), ((ContextResolver<?>)instance)
+				.getContext(String.class));
+		
+	}
+	
+	@Test
+	public void testIndirectlyRedirectsParameterContext() throws Exception {
+		
+		ContextResolver<?> cr = new IndirectlyRedirectsParameterContext<>();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(1, typeParameters.length);
+		assertTrue(TypeVariable.class.isInstance(typeParameters[0]));
+		assertEquals("R", typeParameters[0].toString());
+		
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertTrue(ParameterizedType.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("java.util.List<R>", pt.getActualTypeArguments()[0].toString());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals("", ((ContextResolver<?>)instance)
+				.getContext(String.class));
+		
+	}
+
+	@Test
+	public void testChildExtraExtendsIndirectlyRedirectsParameterContext() throws Exception {
+		
+		ContextResolver<?> cr = new ChildExtraExtendsIndirectlyRedirectedParameterContext();
+		
+		Class<?> proxyClazz = pcl.define("test.ContextResolver", cr, 
+				singletonList(ContextResolver.class));
+		
+		TypeVariable<?>[] typeParameters = proxyClazz.getTypeParameters();
+		assertEquals(0, typeParameters.length);
+		
+		assertTrue(ContextResolver.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(1, genericInterfaces.length);
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(ContextResolver.class, pt.getRawType());
+		assertTrue(ParameterizedType.class.isInstance(pt.getActualTypeArguments()[0]));
+		assertEquals("java.util.List<java.util.Map<java.lang.String, java.lang.Integer>>", pt.getActualTypeArguments()[0].toString());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> cr);
+		
+		assertEquals(Collections.singletonList(Collections.singletonMap("foo", 42)), ((ContextResolver<?>)instance)
+				.getContext(String.class));
+		
+	}
 	
 	@SuppressWarnings("unchecked")
 	@Test
@@ -491,6 +639,41 @@ public class ExtensionProxyTest {
 		@Override
 		public List<? super Integer> getContext(Class<?> type) {
 			return new ArrayList<>();
+		}
+		
+	}
+	
+	public static class RedirectsParameterContext<R> extends ParameterContext<R> {
+		
+	}
+	
+	public static class ChildExtendsRedirectedParameterContext extends RedirectsParameterContext<Double> {
+		
+		@Override
+		public Double getContext(Class<?> type) {
+			return 42.0d;
+		}
+		
+	}
+
+	public static class ChildExtraExtendsRedirectedParameterContext extends RedirectsParameterContext<List<Double>> {
+		
+		@Override
+		public List<Double> getContext(Class<?> type) {
+			return Collections.singletonList(17.0d);
+		}
+		
+	}
+	
+	public static class IndirectlyRedirectsParameterContext<R> extends ParameterContext<List<R>> {
+		
+	}
+	
+	public static class ChildExtraExtendsIndirectlyRedirectedParameterContext extends IndirectlyRedirectsParameterContext<Map<String, Integer>> {
+		
+		@Override
+		public List<Map<String, Integer>> getContext(Class<?> type) {
+			return Collections.singletonList(Collections.singletonMap("foo", 42));
 		}
 		
 	}

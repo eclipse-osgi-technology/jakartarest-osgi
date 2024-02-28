@@ -19,16 +19,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -62,10 +60,12 @@ public class ExtensionProxyFactory {
 	 */
 	public static byte[] generateClass(String className, Object delegate, List<Class<?>> contracts) {
 		Class<? extends Object> delegateClazz = delegate.getClass();
-		Map<String, ParameterizedType> typeInfo = getInterfacesAndGenericSuperclasses(delegateClazz, new ArrayList<>(), new HashSet<>(contracts))
-				.stream().collect(Collectors.toMap(i -> i.getRawType().getTypeName(), Function.identity()));
+		Map<String, ParameterizedType> typeInfo = new HashMap<>();
+		Map<String, String> contextMapping = new HashMap<>();
+				
+		populateInterfacesAndGenericSuperclasses(delegateClazz, typeInfo, contextMapping, new HashSet<>(contracts));
 		
-		String sig = generateGenericClassSignature(delegateClazz, typeInfo, contracts);
+		String sig = generateGenericClassSignature(delegateClazz, typeInfo, contextMapping, contracts);
 		
 		
 		try {
@@ -141,39 +141,72 @@ public class ExtensionProxyFactory {
 		}
 	}
 
-	private static List<ParameterizedType> getInterfacesAndGenericSuperclasses(Class<?> toCheck, List<ParameterizedType> fromChildren, Set<Class<?>> remainingContracts) {
+	private static void populateInterfacesAndGenericSuperclasses(Class<? extends Object> toCheck,
+			Map<String, ParameterizedType> typeInfo, Map<String, String> contextMapping, Set<Class<?>> remainingContracts) {
 		if(toCheck == Object.class) {
-			return fromChildren;
+			return;
 		}
 		
 		for (java.lang.reflect.Type type : toCheck.getGenericInterfaces()) {
 			if(type instanceof ParameterizedType) {
 				ParameterizedType pt = (ParameterizedType) type;
 				if(remainingContracts.remove(pt.getRawType())) {
-					fromChildren.add(pt);
+					String name = ((Class<?>)pt.getRawType()).getName();
+					typeInfo.put(name, pt);
+					contextMapping.put(name, toCheck.getName());
 				}
 			}
 		}
 		
 		java.lang.reflect.Type genericSuperclass = toCheck.getGenericSuperclass();
 		if(genericSuperclass instanceof ParameterizedType) {
-			fromChildren.add((ParameterizedType) genericSuperclass);
+			String name = toCheck.getSuperclass().getName();
+			typeInfo.put(name, (ParameterizedType) genericSuperclass);
+			contextMapping.put(toCheck.getName(), name);
 		}
 		
-		return getInterfacesAndGenericSuperclasses(toCheck.getSuperclass(), fromChildren, remainingContracts);
+		populateInterfacesAndGenericSuperclasses(toCheck.getSuperclass(), typeInfo, contextMapping, remainingContracts);
+		return;
 	}
 	
-	private static Predicate<TypeVariable<?>> isUsedInTypeInfo(Map<String, ParameterizedType> typeInfo) {
-		return tv -> typeInfo.values().stream()
+	private static <T> boolean isUsedInContracts(TypeVariable<Class<T>> tv, Map<String, ParameterizedType> typeInfo, Map<String, String> context, List<Class<?>> contracts) {
+		BiPredicate<String, String> contractUses = (varName, contextClass) -> contracts.stream()
+				.filter(c -> contextClass.equals(context.get(c.getName())))
+				.map(c -> typeInfo.get(c.getName()))
 				.flatMap(ExtensionProxyFactory::toTypeVariables)
-				.anyMatch(t -> tv.getName().equals(t.getName()));
+				.anyMatch(t -> varName.equals(t.getName()));
+
+		String decClassName = tv.getGenericDeclaration().getName();
+		String variableName = tv.getName();
+		
+		if(contractUses.test(variableName, decClassName)) {
+			return true;
+		}
+		// Check the super class next
+		ParameterizedType superType = typeInfo.get(context.get(decClassName));
+		if(superType == null) {
+			return false;
+		}
+		// Are any of the generic types of the super class linked to our type variable
+		// *and* then used in the contracts? Remember to check recursively up the hierarchy
+		java.lang.reflect.Type[] superTypeArguments = superType.getActualTypeArguments();
+		for (int i = 0; i < superTypeArguments.length; i++) {
+			if(ExtensionProxyFactory.toTypeVariables(superTypeArguments[i])
+					.anyMatch(t -> variableName.equals(t.getName()))) {
+				Class<?> raw = (Class<?>) superType.getRawType();
+				if(isUsedInContracts(raw.getTypeParameters()[i], typeInfo, context, contracts)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 	
 	/**
 	 * @param typeInfo
 	 * @return
 	 */
-	private static String generateGenericClassSignature(Class<?> delegateClazz, Map<String, ParameterizedType> typeInfo, List<Class<?>> contracts) {
+	private static String generateGenericClassSignature(Class<?> delegateClazz, Map<String, ParameterizedType> typeInfo, Map<String, String> context, List<Class<?>> contracts) {
 		if(typeInfo.isEmpty()) {
 			return null;
 		}
@@ -182,11 +215,11 @@ public class ExtensionProxyFactory {
 		
 		// Handle class
 		Arrays.stream(delegateClazz.getTypeParameters())
-			.filter(isUsedInTypeInfo(typeInfo))
+			.filter(tv -> isUsedInContracts(tv, typeInfo, context, contracts))
 			.forEach(tv -> {
 				writer.visitFormalTypeParameter(tv.getName());
 				SignatureVisitor cb = writer.visitClassBound();
-				Arrays.stream(tv.getBounds()).forEach(b -> visitTypeParameter(b, cb, delegateClazz, typeInfo));
+				Arrays.stream(tv.getBounds()).forEach(b -> visitTypeParameter(b, cb, typeInfo, context));
 				cb.visitEnd();
 			});
 		
@@ -198,26 +231,14 @@ public class ExtensionProxyFactory {
 		// Handle interfaces
 		for(Class<?> contract : contracts) {
 			if(typeInfo.containsKey(contract.getName())) {
-				Class<?> directDeclarer = delegateClazz;
-				check: for(;;) {
-					for(Class<?> iface : directDeclarer.getInterfaces()) {
-						if(iface == contract) {
-							break check;
-						}
-					}
-					directDeclarer = directDeclarer.getSuperclass();
-					if(directDeclarer == Object.class) {
-						throw new IllegalArgumentException("The contract " + contract + " is not implemented in the hierarchy");
-					}
-				}
 				SignatureVisitor iv = writer.visitInterface();
 				iv.visitClassType(Type.getInternalName(contract));
 				for(java.lang.reflect.Type t : typeInfo.get(contract.getName()).getActualTypeArguments()) {
 					if(TypeVariable.class.isInstance(t)) {
-						visitTypeParameter(t, iv, directDeclarer, typeInfo);
+						visitTypeParameter(t, iv, typeInfo, context);
 					} else {
 						SignatureVisitor tav = iv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
-						visitTypeParameter(t, tav, directDeclarer, typeInfo);
+						visitTypeParameter(t, tav, typeInfo, context);
 						tav.visitEnd();
 					}
 				}
@@ -229,14 +250,21 @@ public class ExtensionProxyFactory {
 		return writer.toString();
 	}
 	
-	private static java.lang.reflect.Type getPossibleReifiedTypeFor(TypeVariable<?> tv, Class<?> directDeclarer, Map<String, ParameterizedType> typeInfo) {
-		ParameterizedType pt = typeInfo.get(directDeclarer.getName());
+	private static java.lang.reflect.Type getPossibleReifiedTypeFor(TypeVariable<?> tv, Map<String, ParameterizedType> typeInfo, Map<String, String> context) {
+		Class<?> declaringType = (Class<?>) tv.getGenericDeclaration();
+		
+		ParameterizedType pt = typeInfo.get(declaringType.getName());
 		if(pt != null) {
-			TypeVariable<?>[] decParams = directDeclarer.getTypeParameters();
+			TypeVariable<?>[] decParams = declaringType.getTypeParameters();
 			for (int i = 0; i < decParams.length; i++) {
 				TypeVariable<?> decTv = decParams[i];
 				if(decTv.getName().equals(tv.getName())) {
-					return pt.getActualTypeArguments()[i];
+					java.lang.reflect.Type type = pt.getActualTypeArguments()[i];
+					if(type instanceof TypeVariable<?>) {
+						return getPossibleReifiedTypeFor((TypeVariable<?>) type, typeInfo, context);
+					} else {
+						return type;
+					}
 				}
 			}
 		} 
@@ -256,14 +284,14 @@ public class ExtensionProxyFactory {
 		}
 	}
 
-	private static void visitTypeParameter(java.lang.reflect.Type t, SignatureVisitor sv, Class<?> directDeclarer, Map<String, ParameterizedType> typeInfo) {
+	private static void visitTypeParameter(java.lang.reflect.Type t, SignatureVisitor sv, Map<String, ParameterizedType> typeInfo, Map<String, String> context) {
 		if(t instanceof Class<?>) {
 			Class<?> clazz = (Class<?>) t;
 			if(clazz.isPrimitive()) {
 				sv.visitBaseType(Type.getDescriptor(clazz).charAt(0));
 			} else if (clazz.isArray()) {
 				SignatureVisitor av = sv.visitArrayType();
-				visitTypeParameter(clazz.getComponentType(), av, directDeclarer, typeInfo);
+				visitTypeParameter(clazz.getComponentType(), av, typeInfo, context);
 				av.visitEnd();
 			} else {
 				sv.visitClassType(Type.getInternalName(clazz));
@@ -271,15 +299,19 @@ public class ExtensionProxyFactory {
 		} else if (t instanceof ParameterizedType){
 			ParameterizedType pt = (ParameterizedType) t;
 			sv.visitClassType(Type.getInternalName((Class<?>)pt.getRawType()));
-			Arrays.stream(pt.getActualTypeArguments()).forEach(ta -> visitTypeParameter(ta, sv, directDeclarer, typeInfo));
+			Arrays.stream(pt.getActualTypeArguments()).forEach(ta -> {
+				SignatureVisitor tav = sv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
+				visitTypeParameter(ta, tav, typeInfo, context);
+				tav.visitEnd();
+			});
 		} else if (t instanceof TypeVariable<?>) {
 			TypeVariable<?> tv = (TypeVariable<?>) t;
-			t = getPossibleReifiedTypeFor((TypeVariable<?>)t, directDeclarer, typeInfo);
+			t = getPossibleReifiedTypeFor((TypeVariable<?>)t, typeInfo, context);
 			if(t == tv) {
 				sv.visitTypeArgument(SignatureVisitor.INSTANCEOF).visitTypeVariable(tv.getName());
 			} else {
 				SignatureVisitor tav = sv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
-				visitTypeParameter(t, tav, directDeclarer, typeInfo);
+				visitTypeParameter(t, tav, typeInfo, context);
 				tav.visitEnd();
 			}
 		} else if (t instanceof WildcardType) {
@@ -293,7 +325,7 @@ public class ExtensionProxyFactory {
 				tav = sv.visitTypeArgument(SignatureVisitor.EXTENDS);
 				types = wt.getUpperBounds();
 			}
-			Arrays.stream(types).forEach(ty -> visitTypeParameter(ty, tav, directDeclarer, typeInfo));
+			Arrays.stream(types).forEach(ty -> visitTypeParameter(ty, tav, typeInfo, context));
 			tav.visitEnd();
 		} else {
 			throw new IllegalArgumentException("Unhandled generic type " + t.getClass() + " " + t.toString());
