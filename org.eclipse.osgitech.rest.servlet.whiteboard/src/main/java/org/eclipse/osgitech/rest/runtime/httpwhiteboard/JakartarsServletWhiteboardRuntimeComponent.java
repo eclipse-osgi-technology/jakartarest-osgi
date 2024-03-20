@@ -16,7 +16,6 @@ package org.eclipse.osgitech.rest.runtime.httpwhiteboard;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
 import org.osgi.framework.BundleContext;
@@ -50,7 +49,6 @@ immediate=true, configurationPolicy=ConfigurationPolicy.REQUIRE,
 	target = JerseyConstants.JERSEY_RUNTIME_CONDITION))
 public class JakartarsServletWhiteboardRuntimeComponent {
 
-	private static Logger logger = Logger.getLogger(JakartarsServletWhiteboardRuntimeComponent.class.getName());
 	private BundleContext context;
 	private String target;
 	private String basePath;

@@ -34,7 +34,6 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.annotations.ProvideRuntimeAdapter;
 import org.eclipse.osgitech.rest.helper.JerseyHelper;
@@ -61,7 +60,6 @@ import jakarta.servlet.Servlet;
 @RequireHttpWhiteboard
 public class ServletWhiteboardBasedJerseyServiceRuntime {
 
-	private final Logger logger = Logger.getLogger(ServletWhiteboardBasedJerseyServiceRuntime.class.getName());
 	private final BundleContext context;
 	private final String basePath;
 	private final ServiceReference<HttpServiceRuntime> runtimeTarget;

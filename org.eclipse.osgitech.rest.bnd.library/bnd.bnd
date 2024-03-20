@@ -7,6 +7,4 @@ Provide-Capability: \
 	bnd.library;\
         bnd.library     		= jakartaREST; \
         path            		= library/workspace
-        
--includeresource: {library=library}
 
