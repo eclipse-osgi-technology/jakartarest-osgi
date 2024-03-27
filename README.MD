@@ -77,18 +77,35 @@ You can change various server setting by using the OSGi Configurator or the Conf
 {
   ":configurator:resource-version": 1,
   
-	"JakartarsWhiteboardComponent": 
-  	{
-	    "jersey.port": 8081,
-		"jersey.jakartars.whiteboard.name" : "demo",
-		"jersey.context.path" : "demo" 
-	}
+  "JakartarsWhiteboardComponent": 
+  {
+    "jersey.port": 8081,
+    "jersey.jakartars.whiteboard.name" : "demo",
+    "jersey.context.path" : "demo" 
+  }
 }
 ```
 
 This would run the server at
 
 http://localhost:8081/demo
+
+The following properties are supported for configuring the Whiteboard on Jersey:
+
+| Parameter | Description | Default |
+| --- | --- | -- |
+|`jersey.schema`| The schema under which the services should be available. | http | 
+|`jersey.host`| The host under which the services should be available. | localhost | 
+|`jersey.port`| The port  under which the services should be available. | 8181 | 
+|`jersey.context.path`| The base context path of the whiteboard. | /rest | 
+|`jersey.jakartars.whiteboard.name`| The name of the whiteboard| Jersey REST | 
+|`jersey.disable.sessions`| Enable/disable session handling in Jetty.<br>Disabled by default as REST services are stateless. | `true` | 
+
+The definition of these properties is located in [JerseyConstants](https://github.com/osgi/jakartarest-osgi/blob/main/org.eclipse.osgitech.rest/src/main/java/org/eclipse/osgitech/rest/provider/JerseyConstants.java).
+
+**_Note:_**  
+The default value for `jersey.context.path` is `/rest`. So if you don't configure a value via the _configurator.json_ file, your services will be available via the `rest` context path. This is also the case for a custom Jakarta-RS application. If you don't want to use a context path, you explicitly have to set it to an empty value.
+
 
 Please note, that the Felix Jetty implementation runs the OSGi HTTP Service by default at port 8080. 
 
@@ -109,26 +126,38 @@ You can change various setting by using the OSGi Configurator or the Configurati
 
 ```json
 {
-	"org.apache.felix.http~demo":
-	{
-		"org.osgi.service.http.port": 8081,
-		"org.osgi.service.http.host": "localhost",
-		"org.apache.felix.http.context_path": "demo",
-		"org.apache.felix.http.name": "Demo HTTP Whiteboard",
-		"org.apache.felix.http.runtime.init.id": "demowb"
-	},
-	"JakartarsServletWhiteboardRuntimeComponent~demo":
-	{
-		"jersey.jakartars.whiteboard.name" : "Demo Jakarta REST Whiteboard",
-		"jersey.context.path" : "rest",
-		"osgi.http.whiteboard.target" : "(id=demowb)"
-	}
+  "org.apache.felix.http~demo":
+  {
+    "org.osgi.service.http.port": 8081,
+    "org.osgi.service.http.host": "localhost",
+    "org.apache.felix.http.context_path": "demo",
+    "org.apache.felix.http.name": "Demo HTTP Whiteboard",
+    "org.apache.felix.http.runtime.init.id": "demowb"
+  },
+  "JakartarsServletWhiteboardRuntimeComponent~demo":
+  {
+    "jersey.jakartars.whiteboard.name" : "Demo Jakarta REST Whiteboard",
+    "jersey.context.path" : "rest",
+    "osgi.http.whiteboard.target" : "(id=demowb)"
+  }
 }
 ```
 
 This would run the Jakarta REST Whiteboard implementation at:
 
 http://localhost:8081/demo/rest
+
+The first block `org.apache.felix.http~demo` is used to configure the _Apache Felix HTTP Service_ service factory. Details about the configuration options are available in the [Apache Felix HTTP Service Wiki](https://cwiki.apache.org/confluence/display/FELIX/Apache+Felix+HTTP+Service).
+
+The second block `JakartarsServletWhiteboardRuntimeComponent~demo` is used to configure the whiteboard service factory with the Servlet Whiteboard. The following properties are supported for configuring the Whiteboard on Servlet Whiteboard:
+
+| Parameter | Description | Default |
+| --- | --- | -- |
+|`jersey.context.path`| The base context path of the whiteboard. | / | 
+|`jersey.jakartars.whiteboard.name`| The name of the whiteboard| Jersey REST | 
+|`osgi.http.whiteboard.target`| Service property specifying the target filter to select the Http Whiteboard implementation to process the service.<br>The value is an LDAP style filter that points to the id defined in `org.apache.felix.http.runtime.init.id`. | - | 
+
+The definition of these properties is located in [JerseyConstants](https://github.com/osgi/jakartarest-osgi/blob/main/org.eclipse.osgitech.rest/src/main/java/org/eclipse/osgitech/rest/provider/JerseyConstants.java).
 
 Please note, that the Felix Jetty implementation runs the OSGi HTTP Service by default at port 8080. 
 
@@ -141,7 +170,6 @@ Therefore you may set the system property `org.osgi.service.http.port=-1` to dea
 When using the Jakarta REST Whiteboard, you just have to register your REST resources and extensions as a service. There are some useful Meta-Annotations, that create component properties for you.
 
 ```java
-@RequireJakartarsWhiteboard
 @JakartarsResource
 @JakartarsName("demo")
 @Component(service = DemoResource.class, scope = ServiceScope.PROTOTYPE)
@@ -156,10 +184,6 @@ public class DemoResource {
 
 }
 ```
-
-With the `@RequireJakartarsWhiteboard` annotation, you define the requirement to the Jakarta REST Whiteboard implementation. In our case it is Jersey. You then need the Whiteboard dependencies in you workspace. 
-
-Please note, that you only need to define `@RequireJakartarsWhiteboard` once in your bundle!
 
 ## Maven Example Archetype
 
