@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012 - 2022 Data In Motion and others.
+ * Copyright (c) 2012 - 2024 Data In Motion and others.
  * All rights reserved. 
  * 
  * This program and the accompanying materials are made available under the terms of the 
@@ -10,6 +10,7 @@
  *     Data In Motion - initial API and implementation
  *     Stefan Bishof - API and implementation
  *     Tim Ward - implementation
+ *     Dirk Fauth - add CRaC support
  */
 package org.eclipse.osgitech.rest.jetty;
 
@@ -62,6 +63,10 @@ public class JettyBackedWhiteboardComponent {
 	Logger logger = Logger.getLogger(JettyBackedWhiteboardComponent.class.getName());
 	
 	private JerseyServiceRuntime<WhiteboardServletContainer> serviceRuntime;
+	
+	// need to keep a strong reference to avoid that the resource gets garbage collected
+	@SuppressWarnings("unused")
+	private JettyCracResource cracHandler;
 
 	public enum State {
 		INIT, STARTED, STOPPED, EXCEPTION
@@ -93,6 +98,17 @@ public class JettyBackedWhiteboardComponent {
 		
 		
 		serviceRuntime.start(getServiceRuntimeProperties(properties));
+
+		try {
+			Class.forName("org.crac.Resource");
+			
+			// org.crac.Resource was found, so we create an instance of the JettyCracResource
+			cracHandler = new JettyCracResource(this);
+		} catch (ClassNotFoundException e) {
+			// org.crac.Resource could not be found
+			// we simply do nothing, as CRaC support is not available
+		}
+		
 	}
 
 	private Map<String, Object> getServiceRuntimeProperties(Map<String, Object> properties) {
@@ -347,5 +363,13 @@ public class JettyBackedWhiteboardComponent {
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Error stopping Jetty server", e);
 		}
+	}
+	
+	/**
+	 * 
+	 * @return the Jetty server managed by this class. Can be <code>null</code>.
+	 */
+	Server getJettyServer() {
+		return jettyServer;
 	}
 }

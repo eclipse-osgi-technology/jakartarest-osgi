@@ -74,6 +74,10 @@
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.http.jetty</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.crac</groupId>
+			<artifactId>crac</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -114,6 +118,27 @@
 								</artifactItem>
 							</artifactItems>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				 <groupId>biz.aQute.bnd</groupId>
+				 <artifactId>bnd-maven-plugin</artifactId>
+				 <extensions>true</extensions>
+				 <executions>
+					<execution>
+						<id>jar</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<bnd><![CDATA[
+							Import-Package: org.crac.*;resolution:=optional, *
+							-noextraheaders: true
+							-noimportjava: true
+							-fixupmessages: The JAR is empty:
+							]]></bnd>
+						 </configuration>
 					</execution>
 				</executions>
 			</plugin>
