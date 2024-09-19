@@ -83,16 +83,17 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 	}
 
 	public ServletWhiteboardBasedJerseyServiceRuntime(BundleContext context, String basePath,
-			ServiceReference<HttpServiceRuntime> runtimeTarget) {
+			ServiceReference<HttpServiceRuntime> runtimeTarget, Map<String, Object> props) {
 		this.context = context;
 		this.basePath = basePath;
 		this.runtimeTarget = runtimeTarget;
 		httpId = (Long) runtimeTarget.getProperty(SERVICE_ID);
 		this.httpWhiteboardTarget = String.format("(%s=%s)", SERVICE_ID, httpId);
 		this.runtime = new JerseyServiceRuntime<>(context, this::registerContainer, this::unregisterContainer);
-		
-		runtime.start(Map.of(JAKARTA_RS_SERVICE_ENDPOINT, getURLs(), 
-				SERVICE_DESCRIPTION, "REST whiteboard for HttpServiceRuntime " + httpId));
+		Map<String, Object> runtimeProperties = new HashMap<String, Object>(props);
+		runtimeProperties.put(JAKARTA_RS_SERVICE_ENDPOINT, getURLs());
+		runtimeProperties.put(SERVICE_DESCRIPTION, "REST whiteboard for HttpServiceRuntime " + httpId);
+		runtime.start(runtimeProperties);
 	}
 
 

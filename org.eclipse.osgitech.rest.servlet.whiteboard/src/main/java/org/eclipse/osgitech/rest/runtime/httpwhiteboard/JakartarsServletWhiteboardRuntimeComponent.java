@@ -53,6 +53,7 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 	private String target;
 	private String basePath;
 	private ServiceTracker<HttpServiceRuntime, ServletWhiteboardBasedJerseyServiceRuntime> httpRuntimeTracker;
+	private Map<String, Object> props;
 
 	/**
 	 * Called on component activation
@@ -63,6 +64,7 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 	public void activate(BundleContext context, Map<String, Object> props) throws ConfigurationException {
 		
 		this.context = context;
+		this.props = props;
 		target = (String) props.get(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET);
 		basePath = (String) props.getOrDefault(JerseyConstants.JERSEY_CONTEXT_PATH, "/");
 		openTracker();
@@ -121,7 +123,7 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 	
 		@Override
 		public ServletWhiteboardBasedJerseyServiceRuntime addingService(ServiceReference<HttpServiceRuntime> reference) {
-			return new ServletWhiteboardBasedJerseyServiceRuntime(context, basePath, reference);
+			return new ServletWhiteboardBasedJerseyServiceRuntime(context, basePath, reference, props);
 		}
 	
 		@Override

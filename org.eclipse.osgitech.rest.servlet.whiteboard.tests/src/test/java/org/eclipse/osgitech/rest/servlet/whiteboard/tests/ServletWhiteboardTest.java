@@ -263,5 +263,13 @@ public class ServletWhiteboardTest {
 		throw new IllegalArgumentException(
 				"The JAXRS Service Runtime did not declare an endpoint property");
 	}
+	
+	@Test
+	public void testWhiteboardPropertiesForward() throws Exception {
+		ServiceReference<JakartarsServiceRuntime> serviceRuntime = tracker.getServiceReference();
+		Object object = serviceRuntime.getProperties().get("addition.property");
+		assertEquals("test.property", object);
+	
+	}
 
 }
