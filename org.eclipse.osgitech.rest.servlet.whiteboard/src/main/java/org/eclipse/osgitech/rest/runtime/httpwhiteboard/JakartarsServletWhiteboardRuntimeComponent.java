@@ -16,7 +16,6 @@ package org.eclipse.osgitech.rest.runtime.httpwhiteboard;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
 import org.osgi.framework.BundleContext;
@@ -50,11 +49,11 @@ immediate=true, configurationPolicy=ConfigurationPolicy.REQUIRE,
 	target = JerseyConstants.JERSEY_RUNTIME_CONDITION))
 public class JakartarsServletWhiteboardRuntimeComponent {
 
-	private static Logger logger = Logger.getLogger(JakartarsServletWhiteboardRuntimeComponent.class.getName());
 	private BundleContext context;
 	private String target;
 	private String basePath;
 	private ServiceTracker<HttpServiceRuntime, ServletWhiteboardBasedJerseyServiceRuntime> httpRuntimeTracker;
+	private Map<String, Object> props;
 
 	/**
 	 * Called on component activation
@@ -65,6 +64,7 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 	public void activate(BundleContext context, Map<String, Object> props) throws ConfigurationException {
 		
 		this.context = context;
+		this.props = props;
 		target = (String) props.get(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET);
 		basePath = (String) props.getOrDefault(JerseyConstants.JERSEY_CONTEXT_PATH, "/");
 		openTracker();
@@ -123,7 +123,7 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 	
 		@Override
 		public ServletWhiteboardBasedJerseyServiceRuntime addingService(ServiceReference<HttpServiceRuntime> reference) {
-			return new ServletWhiteboardBasedJerseyServiceRuntime(context, basePath, reference);
+			return new ServletWhiteboardBasedJerseyServiceRuntime(context, basePath, reference, props);
 		}
 	
 		@Override

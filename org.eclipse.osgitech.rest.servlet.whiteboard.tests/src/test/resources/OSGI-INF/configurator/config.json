@@ -13,6 +13,7 @@
 	{
 		"jersey.jakartars.whiteboard.name" : "JRSWB",
 		"jersey.context.path" : "test",
-		"osgi.http.whiteboard.target" : "(id=SWB)"
+		"osgi.http.whiteboard.target" : "(id=SWB)",
+		"addition.property" : "test.property"
 	}  
 }

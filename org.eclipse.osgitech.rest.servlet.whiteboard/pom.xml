@@ -90,6 +90,11 @@
 								</artifactItem>
 								<artifactItem>
 									<groupId>org.slf4j</groupId>
+									<artifactId>slf4j-api</artifactId>
+									<destFileName>slf4j-api.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.slf4j</groupId>
 									<artifactId>slf4j-simple</artifactId>
 									<destFileName>slf4j-simple.jar</destFileName>
 								</artifactItem>
@@ -131,6 +136,7 @@
 								<bundle>${project.build.directory}/bundles/org.apache.felix.scr.jar</bundle>
 								<bundle>${project.build.directory}/bundles/org.apache.felix.http.jetty.jar</bundle>
 								<bundle>${project.build.directory}/bundles/org.apache.aries.spifly.dynamic.framework.extension.jar</bundle>
+								<bundle>${project.build.directory}/bundles/slf4j-api.jar</bundle>
 								<bundle>${project.build.directory}/bundles/slf4j-simple.jar</bundle>
 							</bundles>
 						</configuration>

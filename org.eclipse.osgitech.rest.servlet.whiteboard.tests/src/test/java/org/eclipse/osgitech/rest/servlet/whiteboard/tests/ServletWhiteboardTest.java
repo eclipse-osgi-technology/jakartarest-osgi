@@ -44,7 +44,6 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.jakartars.runtime.JakartarsServiceRuntime;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
-import org.osgi.service.servlet.whiteboard.HttpWhiteboardConstants;
 import org.osgi.test.common.annotation.InjectBundleContext;
 import org.osgi.test.common.annotation.config.InjectConfiguration;
 import org.osgi.test.common.annotation.config.WithFactoryConfiguration;
@@ -222,6 +221,9 @@ public class ServletWhiteboardTest {
 			properties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/servlet");
 			properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT, "(" + HTTP_WHITEBOARD_CONTEXT_NAME + "=" + HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
 			ctx.registerService(Servlet.class, new HttpServlet() {
+				/** serialVersionUID */
+				private static final long serialVersionUID = 1L;
+
 				@Override
 				protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 					resp.getWriter().print("Hello Servlet");
@@ -260,6 +262,14 @@ public class ServletWhiteboardTest {
 
 		throw new IllegalArgumentException(
 				"The JAXRS Service Runtime did not declare an endpoint property");
+	}
+	
+	@Test
+	public void testWhiteboardPropertiesForward() throws Exception {
+		ServiceReference<JakartarsServiceRuntime> serviceRuntime = tracker.getServiceReference();
+		Object object = serviceRuntime.getProperties().get("addition.property");
+		assertEquals("test.property", object);
+	
 	}
 
 }

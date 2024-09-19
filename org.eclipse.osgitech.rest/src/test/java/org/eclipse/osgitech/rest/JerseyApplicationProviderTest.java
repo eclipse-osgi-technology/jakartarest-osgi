@@ -16,33 +16,24 @@ package org.eclipse.osgitech.rest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import jakarta.ws.rs.core.Application;
-import jakarta.ws.rs.ext.MessageBodyReader;
-
-import org.eclipse.osgitech.rest.resources.TestApplication;
-import org.eclipse.osgitech.rest.resources.TestExtension;
 import org.eclipse.osgitech.rest.resources.TestLegacyApplication;
-import org.eclipse.osgitech.rest.resources.TestResource;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
-import org.eclipse.osgitech.rest.runtime.application.JerseyExtensionProvider;
-import org.eclipse.osgitech.rest.runtime.application.JerseyResourceProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.service.jakartars.runtime.dto.BaseApplicationDTO;
 import org.osgi.service.jakartars.runtime.dto.DTOConstants;
 import org.osgi.service.jakartars.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
+
+import jakarta.ws.rs.core.Application;
 
 /**
  * 
