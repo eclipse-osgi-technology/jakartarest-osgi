@@ -339,7 +339,7 @@ public class ExtensionProxyFactory {
 	 * @param typeInfo - the known type name to type information mapping
 	 * @param context - A mapping of type names to the class which defines them
 	 */
-	private static void visitTypeParameter(java.lang.reflect.Type t, SignatureVisitor sv, Map<String, ParameterizedType> typeInfo, Map<String, String> context) {
+	private static boolean visitTypeParameter(java.lang.reflect.Type t, SignatureVisitor sv, Map<String, ParameterizedType> typeInfo, Map<String, String> context) {
 		if(t instanceof Class<?>) {
 			Class<?> clazz = (Class<?>) t;
 			if(clazz.isPrimitive()) {
@@ -350,6 +350,7 @@ public class ExtensionProxyFactory {
 				// Do not visit the end
 			} else {
 				sv.visitClassType(Type.getInternalName(clazz));
+				return true;
 			}
 		} else if (t instanceof ParameterizedType){
 			ParameterizedType pt = (ParameterizedType) t;
@@ -367,8 +368,9 @@ public class ExtensionProxyFactory {
 				sv.visitTypeArgument(SignatureVisitor.INSTANCEOF).visitTypeVariable(tv.getName());
 			} else {
 				SignatureVisitor tav = sv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
-				visitTypeParameter(t, tav, typeInfo, context);
-				// Do not visit the end
+				if(visitTypeParameter(t, tav, typeInfo, context)) {
+					tav.visitEnd();
+				}
 			}
 		} else if (t instanceof WildcardType) {
 			WildcardType wt = (WildcardType) t;
@@ -386,6 +388,7 @@ public class ExtensionProxyFactory {
 		} else {
 			throw new IllegalArgumentException("Unhandled generic type " + t.getClass() + " " + t.toString());
  		}
+		return false;
 	}
 	
 	/**
