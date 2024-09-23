@@ -550,6 +550,100 @@ public class ExtensionProxyTest {
 		
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testMultiInterfaceGenericComplex() throws Exception {
+		
+		TestMultiInterfaceGenericComplex<Object, Object> mi = new TestMultiInterfaceGenericComplex<>();
+		
+		// Deliberately re-order the interfaces relative to the implements clause
+		Class<?> proxyClazz = pcl.define("test.MultiInterfaceGenericComplex", mi, 
+				Arrays.asList(MessageBodyWriter.class, MessageBodyReader.class));
+		
+		assertTrue(MessageBodyReader.class.isAssignableFrom(proxyClazz));
+		assertTrue(MessageBodyWriter.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(2, genericInterfaces.length);
+		
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(MessageBodyWriter.class, pt.getRawType());
+		TypeVariable<?> tv = (TypeVariable) pt.getActualTypeArguments()[0];
+		assertEquals("W", tv.getName());
+		assertArrayEquals(new Type[] {Object.class}, tv.getBounds());
+		
+		assertTrue(genericInterfaces[1] instanceof ParameterizedType);
+		pt = (ParameterizedType) genericInterfaces[1];
+		assertEquals(MessageBodyReader.class, pt.getRawType());
+		tv = (TypeVariable) pt.getActualTypeArguments()[0];
+		assertEquals("R", tv.getName());
+		assertArrayEquals(new Type[] {Object.class}, tv.getBounds());
+		
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> mi);
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		((MessageBodyWriter) instance).writeTo("ignore me", Object.class, null, null, null, null, baos);
+		
+		assertArrayEquals(new byte[]{0x42}, baos.toByteArray());
+		
+		
+		ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+		
+		
+		assertEquals("tada", ((MessageBodyReader) instance).readFrom(Object.class, null, null, null, null, bais));
+		
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void testMultiInterfaceGenericComplexTwo() throws Exception {
+		
+		TestMultiInterfaceGenericComplexTwo<Integer, String> mi = new TestMultiInterfaceGenericComplexTwo<>();
+		
+		// Deliberately re-order the interfaces relative to the implements clause
+		Class<?> proxyClazz = pcl.define("test.MultiInterfaceGenericComplexTwo", mi, 
+				Arrays.asList(MessageBodyWriter.class, MessageBodyReader.class));
+		
+		assertTrue(MessageBodyReader.class.isAssignableFrom(proxyClazz));
+		assertTrue(MessageBodyWriter.class.isAssignableFrom(proxyClazz));
+		Type[] genericInterfaces = proxyClazz.getGenericInterfaces();
+		
+		assertEquals(2, genericInterfaces.length);
+		
+		assertTrue(genericInterfaces[0] instanceof ParameterizedType);
+		ParameterizedType pt = (ParameterizedType) genericInterfaces[0];
+		assertEquals(MessageBodyWriter.class, pt.getRawType());
+		TypeVariable<?> tv = (TypeVariable) pt.getActualTypeArguments()[0];
+		assertEquals("W", tv.getName());
+		assertArrayEquals(new Type[] {CharSequence.class}, tv.getBounds());
+		
+		assertTrue(genericInterfaces[1] instanceof ParameterizedType);
+		pt = (ParameterizedType) genericInterfaces[1];
+		assertEquals(MessageBodyReader.class, pt.getRawType());
+		tv = (TypeVariable) pt.getActualTypeArguments()[0];
+		assertEquals("R", tv.getName());
+		assertArrayEquals(new Type[] {Number.class}, tv.getBounds());
+		
+		Object instance = proxyClazz.getConstructor(Supplier.class)
+				.newInstance((Supplier<?>) () -> mi);
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		((MessageBodyWriter) instance).writeTo("banana", CharSequence.class, null, null, null, null, baos);
+		
+		// 4 characters, "anan" 
+		assertArrayEquals(new byte[]{0,4,97,110,97,110}, baos.toByteArray());
+		
+		
+		ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+		
+		
+		assertEquals(17, ((MessageBodyReader) instance).readFrom(Number.class, null, null, null, null, bais));
+		
+	}
+
 	public static class TestExceptionMapper implements ExceptionMapper<NullPointerException> {
 
 		/* 
@@ -739,7 +833,71 @@ public class ExtensionProxyTest {
 			}
 		}
 	}
+
+	public static abstract class BaseTestMultiInterfaceGenericCompelex<R, W>
+	implements MessageBodyReader<R>, MessageBodyWriter<W> {
+
+	}
+
+	public static class TestMultiInterfaceGenericComplex<R extends Object, W extends Object>
+		extends BaseTestMultiInterfaceGenericCompelex<R, W> {
+	
+		@Override
+		public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+			return false;
+		}
+
+		@Override
+		public void writeTo(W t, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType,
+				MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
+				throws IOException, WebApplicationException {
+			entityStream.write(0x42);
+		}
+
+		@Override
+		public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+			return false;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public R readFrom(Class<R> type, Type genericType, Annotation[] annotations, MediaType mediaType,
+				MultivaluedMap<String, String> httpHeaders, InputStream entityStream)
+				throws IOException, WebApplicationException {
+			return (R) "tada";
+		}
+	}
+
+	public static class TestMultiInterfaceGenericComplexTwo<R extends Number, W extends CharSequence>
+	extends BaseTestMultiInterfaceGenericCompelex<R, W> {
 		
+		@Override
+		public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+			return false;
+		}
+		
+		@Override
+		public void writeTo(W t, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType,
+				MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
+						throws IOException, WebApplicationException {
+			try(DataOutputStream daos = new DataOutputStream(entityStream)) {
+				daos.writeUTF(t.subSequence(1, t.length() - 1).toString());
+			}
+		}
+		
+		@Override
+		public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+			return false;
+		}
+		
+		@SuppressWarnings("unchecked")
+		@Override
+		public R readFrom(Class<R> type, Type genericType, Annotation[] annotations, MediaType mediaType,
+				MultivaluedMap<String, String> httpHeaders, InputStream entityStream)
+						throws IOException, WebApplicationException {
+			return (R) Integer.valueOf(17);
+		}
+	}
 	
 	public static class PublicClassLoader extends ClassLoader {
 		
