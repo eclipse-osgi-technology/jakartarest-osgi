@@ -251,6 +251,8 @@ public class ExtensionProxyFactory {
 			.forEach(tv -> {
 				writer.visitFormalTypeParameter(tv.getName());
 				SignatureVisitor cb = writer.visitClassBound();
+				// Class bounds are special and do not require a visitEnd
+				// even if a new class context is set
 				Arrays.stream(tv.getBounds()).forEach(b -> visitTypeParameter(b, cb, typeInfo, context));
 				cb.visitEnd();
 			});
@@ -266,12 +268,14 @@ public class ExtensionProxyFactory {
 				SignatureVisitor iv = writer.visitInterface();
 				iv.visitClassType(Type.getInternalName(contract));
 				for(java.lang.reflect.Type t : typeInfo.get(contract.getName()).getActualTypeArguments()) {
+					SignatureVisitor v;
 					if(TypeVariable.class.isInstance(t)) {
-						visitTypeParameter(t, iv, typeInfo, context);
+						v = iv;
 					} else {
-						SignatureVisitor tav = iv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
-						visitTypeParameter(t, tav, typeInfo, context);
-						tav.visitEnd();
+						v = iv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
+					}
+					if(visitTypeParameter(t, v, typeInfo, context)) {
+						v.visitEnd();
 					}
 				}
 				iv.visitEnd();
@@ -338,6 +342,7 @@ public class ExtensionProxyFactory {
 	 * @param sv - the visitor to update with type information
 	 * @param typeInfo - the known type name to type information mapping
 	 * @param context - A mapping of type names to the class which defines them
+	 * @return true if a new class type has been established and an additional close is needed
 	 */
 	private static boolean visitTypeParameter(java.lang.reflect.Type t, SignatureVisitor sv, Map<String, ParameterizedType> typeInfo, Map<String, String> context) {
 		if(t instanceof Class<?>) {
@@ -346,8 +351,9 @@ public class ExtensionProxyFactory {
 				sv.visitBaseType(Type.getDescriptor(clazz).charAt(0));
 			} else if (clazz.isArray()) {
 				SignatureVisitor av = sv.visitArrayType();
-				visitTypeParameter(clazz.getComponentType(), av, typeInfo, context);
-				// Do not visit the end
+				if(visitTypeParameter(clazz.getComponentType(), av, typeInfo, context)) {
+					av.visitEnd();
+				}
 			} else {
 				sv.visitClassType(Type.getInternalName(clazz));
 				return true;
@@ -357,10 +363,11 @@ public class ExtensionProxyFactory {
 			sv.visitClassType(Type.getInternalName((Class<?>)pt.getRawType()));
 			Arrays.stream(pt.getActualTypeArguments()).forEach(ta -> {
 				SignatureVisitor tav = sv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
-				visitTypeParameter(ta, tav, typeInfo, context);
-				// Here we must visit the end as we created a new class type context
-				tav.visitEnd();
+				if(visitTypeParameter(ta, tav, typeInfo, context)) {
+					tav.visitEnd();
+				}
 			});
+			return true;
 		} else if (t instanceof TypeVariable<?>) {
 			TypeVariable<?> tv = (TypeVariable<?>) t;
 			t = getPossibleReifiedTypeFor((TypeVariable<?>)t, typeInfo, context);
@@ -383,8 +390,11 @@ public class ExtensionProxyFactory {
 				tav = sv.visitTypeArgument(SignatureVisitor.EXTENDS);
 				types = wt.getUpperBounds();
 			}
-			Arrays.stream(types).forEach(ty -> visitTypeParameter(ty, tav, typeInfo, context));
-			// Do not visit the end
+			Arrays.stream(types).forEach(ty -> {
+				if(visitTypeParameter(ty, tav, typeInfo, context)) {
+					tav.visitEnd();
+				}
+			});
 		} else {
 			throw new IllegalArgumentException("Unhandled generic type " + t.getClass() + " " + t.toString());
  		}
