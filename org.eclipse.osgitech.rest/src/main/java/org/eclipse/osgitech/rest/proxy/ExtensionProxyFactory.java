@@ -56,7 +56,11 @@ public class ExtensionProxyFactory {
 	private static final String OBJECT_INTERNAL_NAME = Type.getInternalName(Object.class);
 
 	/**
-	 * @param simpleName
+	 * Generate a proxy class which copies the signature of the delegate
+	 * 
+	 * @param className - the name to use for the new class
+	 * @param delegate - the object to proxy
+	 * @param contracts - the extension contracts to honour 
 	 */
 	public static byte[] generateClass(String className, Object delegate, List<Class<?>> contracts) {
 		Class<? extends Object> delegateClazz = delegate.getClass();
@@ -141,6 +145,15 @@ public class ExtensionProxyFactory {
 		}
 	}
 
+	/**
+	 * Gather information about the type variables and generic superclasses for
+	 * the supplied class
+	 * 
+	 * @param toCheck - the class to check
+	 * @param typeInfo - the known type name to type information mapping (modified by this method)
+	 * @param contextMapping - A mapping of type names to the class which defines them (modified by this method)
+	 * @param remainingContracts - the extension contracts left to be checked
+	 */
 	private static void populateInterfacesAndGenericSuperclasses(Class<? extends Object> toCheck,
 			Map<String, ParameterizedType> typeInfo, Map<String, String> contextMapping, Set<Class<?>> remainingContracts) {
 		if(toCheck == Object.class) {
@@ -169,6 +182,16 @@ public class ExtensionProxyFactory {
 		return;
 	}
 	
+	/**
+	 * Determine whether the given Type Variable is used (possibly indirectly) in
+	 * one or more contract interfaces
+	 * 
+	 * @param tv - the type variable to check
+	 * @param typeInfo - the known type name to type information mapping
+	 * @param context - A mapping of type names to the class which defines them
+	 * @param contracts - the interfaces that we're proxying
+	 * @return true if <code>tv</code> is used in the contracts
+	 */
 	private static <T> boolean isUsedInContracts(TypeVariable<Class<T>> tv, Map<String, ParameterizedType> typeInfo, Map<String, String> context, List<Class<?>> contracts) {
 		BiPredicate<String, String> contractUses = (varName, contextClass) -> contracts.stream()
 				.filter(c -> contextClass.equals(context.get(c.getName())))
@@ -203,8 +226,17 @@ public class ExtensionProxyFactory {
 	}
 	
 	/**
-	 * @param typeInfo
-	 * @return
+	 * Generate the Generic class signature for this proxy class.
+	 * <p>
+	 * The syntax is available at <a 
+	 * href="https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.7.9.1"/>
+	 * but we use ASM's generator to help.
+	 * 
+	 * @param delegateClazz - the class that we're creating a proxy for
+	 * @param typeInfo - the known type name to type information mapping
+	 * @param context - A mapping of type names to the class which defines them
+	 * @param contracts - the interfaces that we're proxying
+	 * @return the class signature
 	 */
 	private static String generateGenericClassSignature(Class<?> delegateClazz, Map<String, ParameterizedType> typeInfo, Map<String, String> context, List<Class<?>> contracts) {
 		if(typeInfo.isEmpty()) {
@@ -250,6 +282,13 @@ public class ExtensionProxyFactory {
 		return writer.toString();
 	}
 	
+	/**
+	 * Find the reified type information, if any, for the supplied type variable
+	 * 
+	 * @param t - the type to reify
+	 * @param typeInfo - the known type name to type information mapping
+	 * @param context - A mapping of type names to the class which defines them
+	 */
 	private static java.lang.reflect.Type getPossibleReifiedTypeFor(TypeVariable<?> tv, Map<String, ParameterizedType> typeInfo, Map<String, String> context) {
 		Class<?> declaringType = (Class<?>) tv.getGenericDeclaration();
 		
@@ -271,6 +310,11 @@ public class ExtensionProxyFactory {
 		return tv;
 	}
 	
+	/**
+	 * Maps a type variable to a stream of nested variables
+	 * @param t the variable to map
+	 * @return
+	 */
 	private static Stream<TypeVariable<?>> toTypeVariables(java.lang.reflect.Type t) {
 		if(t instanceof Class<?>) {
 			return Stream.empty();
@@ -284,6 +328,17 @@ public class ExtensionProxyFactory {
 		}
 	}
 
+	/**
+	 * Fill in the signature for the supplied type variable
+	 * <p>
+	 * Note that we don't visit the end of any type parameter that we create. This is
+	 * expected to be handled by the caller closing their SignatureVisitor
+	 * 
+	 * @param t - the type to visit
+	 * @param sv - the visitor to update with type information
+	 * @param typeInfo - the known type name to type information mapping
+	 * @param context - A mapping of type names to the class which defines them
+	 */
 	private static void visitTypeParameter(java.lang.reflect.Type t, SignatureVisitor sv, Map<String, ParameterizedType> typeInfo, Map<String, String> context) {
 		if(t instanceof Class<?>) {
 			Class<?> clazz = (Class<?>) t;
@@ -292,7 +347,7 @@ public class ExtensionProxyFactory {
 			} else if (clazz.isArray()) {
 				SignatureVisitor av = sv.visitArrayType();
 				visitTypeParameter(clazz.getComponentType(), av, typeInfo, context);
-				av.visitEnd();
+				// Do not visit the end
 			} else {
 				sv.visitClassType(Type.getInternalName(clazz));
 			}
@@ -302,6 +357,7 @@ public class ExtensionProxyFactory {
 			Arrays.stream(pt.getActualTypeArguments()).forEach(ta -> {
 				SignatureVisitor tav = sv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
 				visitTypeParameter(ta, tav, typeInfo, context);
+				// Here we must visit the end as we created a new class type context
 				tav.visitEnd();
 			});
 		} else if (t instanceof TypeVariable<?>) {
@@ -312,7 +368,7 @@ public class ExtensionProxyFactory {
 			} else {
 				SignatureVisitor tav = sv.visitTypeArgument(SignatureVisitor.INSTANCEOF);
 				visitTypeParameter(t, tav, typeInfo, context);
-				tav.visitEnd();
+				// Do not visit the end
 			}
 		} else if (t instanceof WildcardType) {
 			WildcardType wt = (WildcardType) t;
@@ -326,12 +382,22 @@ public class ExtensionProxyFactory {
 				types = wt.getUpperBounds();
 			}
 			Arrays.stream(types).forEach(ty -> visitTypeParameter(ty, tav, typeInfo, context));
-			tav.visitEnd();
+			// Do not visit the end
 		} else {
 			throw new IllegalArgumentException("Unhandled generic type " + t.getClass() + " " + t.toString());
  		}
 	}
 	
+	/**
+	 * Visit the member information of a defined annotation and write it into the
+	 * class file.
+	 * 
+	 * @param a - the annotation to copy from
+	 * @param av - the visitor to copy into
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
+	 * @throws InvocationTargetException
+	 */
 	private static void visitAnnotationMembers(Annotation a, AnnotationVisitor av) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		for (Method method : a.annotationType().getDeclaredMethods()) {
 			Class<?> returnType = method.getReturnType();
@@ -367,6 +433,8 @@ public class ExtensionProxyFactory {
 	}
 	
 	/**
+	 * Get the simple name for this generated class
+	 * 
 	 * @return
 	 */
 	public static String getSimpleName(Integer rank, Long id) {
