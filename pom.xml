@@ -68,6 +68,7 @@
 		<hk2.version>3.0.5</hk2.version>
 		<asm.version>9.5</asm.version>
 		<jackson.version>2.15.2</jackson.version>
+		<parsson.version>1.1.5</parsson.version>
 	</properties>
 
 	<modules>
@@ -189,12 +190,12 @@
 			 <dependency>
 				<groupId>org.eclipse.parsson</groupId>
 				<artifactId>jakarta.json</artifactId>
-				<version>1.1.2</version>
+				<version>${parsson.version}</version>
 			 </dependency>
 			 <dependency>
 				<groupId>org.eclipse.parsson</groupId>
 				<artifactId>parsson-media</artifactId>
-				<version>1.1.2</version>
+				<version>${parsson.version}</version>
 			 </dependency>
 			 <dependency>
 				<groupId>org.javassist</groupId>
