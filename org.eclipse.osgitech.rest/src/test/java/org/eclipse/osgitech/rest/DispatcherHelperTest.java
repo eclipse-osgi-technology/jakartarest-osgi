@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Application;
 
-import org.eclipse.osgitech.rest.helper.DispatcherHelper;
+import org.eclipse.osgitech.rest.helper.internal.DispatcherHelper;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;
 import org.junit.jupiter.api.Test;
 import org.osgi.framework.Constants;

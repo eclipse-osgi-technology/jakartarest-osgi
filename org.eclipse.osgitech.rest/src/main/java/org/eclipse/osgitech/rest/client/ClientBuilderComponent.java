@@ -11,7 +11,7 @@
  *     Stefan Bishof - API and implementation
  *     Tim Ward - implementation
  */
-package org.eclipse.osgitech.rest.runtime.common;
+package org.eclipse.osgitech.rest.client;
 
 import static org.osgi.namespace.service.ServiceNamespace.CAPABILITY_OBJECTCLASS_ATTRIBUTE;
 import static org.osgi.namespace.service.ServiceNamespace.SERVICE_NAMESPACE;
@@ -21,6 +21,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
+import org.eclipse.osgitech.rest.runtime.common.RxInvokerProviderImpl;
 import org.eclipse.osgitech.rest.sse.SseEventSourceFactoryImpl;
 import org.glassfish.jersey.client.JerseyClientBuilder;
 import org.osgi.annotation.bundle.Capability;
@@ -48,7 +49,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 @Component(immediate = true, 
 	reference = @Reference(name = "runtimeCondition", 
 		service = Condition.class , 
-		target = JerseyConstants.JERSEY_RUNTIME_CONDITION)
+		target = JerseyConstants.JERSEY_CLIENT_CONDITION)
 )
 @Capability(
 		namespace = SERVICE_NAMESPACE,

@@ -11,7 +11,7 @@
  *     Stefan Bishof - API and implementation
  *     Tim Ward - implementation
  */
-package org.eclipse.osgitech.rest.runtime.common;
+package org.eclipse.osgitech.rest.client.check;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
@@ -22,19 +22,19 @@ import org.osgi.service.condition.Condition;
 import aQute.bnd.annotation.service.ServiceCapability;
 
 /**
- * Component to check the Jersey readiness and raises a condition
- * @author mark
- * @since 12.07.2022
+ * Component to check the Jersey client readiness and raises a condition
+ * @author Mark Hoffmann
+ * @since 28.01.2025
  */
 @Component(immediate = true)
 @ServiceCapability(value = Condition.class)
-public class JerseyRuntimeCheck {
+public class JerseyClientRuntimeCheck {
 	
-	private JerseyBundleTracker jerseyTracker;
+	private JerseyClientBundleTracker jerseyTracker;
 	
 	@Activate
 	public void activate(BundleContext ctx) {
-		jerseyTracker = new JerseyBundleTracker(ctx);
+		jerseyTracker = new JerseyClientBundleTracker(ctx);
 		jerseyTracker.open();
 		
 	}
