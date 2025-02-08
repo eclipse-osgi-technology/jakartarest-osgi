@@ -24,7 +24,10 @@ import org.eclipse.osgitech.rest.provider.JerseyConstants;
 import org.eclipse.osgitech.rest.runtime.common.RxInvokerProviderImpl;
 import org.eclipse.osgitech.rest.sse.SseEventSourceFactoryImpl;
 import org.glassfish.jersey.client.JerseyClientBuilder;
+import org.glassfish.jersey.internal.spi.AutoDiscoverable;
+import org.glassfish.jersey.logging.LoggingFeatureAutoDiscoverable;
 import org.osgi.annotation.bundle.Capability;
+import org.osgi.annotation.bundle.Referenced;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -39,6 +42,7 @@ import org.osgi.service.condition.Condition;
 import org.osgi.service.jakartars.client.PromiseRxInvoker;
 import org.osgi.service.jakartars.client.SseEventSourceFactory;
 
+import aQute.bnd.annotation.spi.ServiceProvider;
 import jakarta.ws.rs.client.ClientBuilder;
 
 /**
@@ -70,9 +74,11 @@ import jakarta.ws.rs.client.ClientBuilder;
 @Capability(
 		namespace = SERVICELOADER_NAMESPACE,
 		name = "jakarta.ws.rs.client.ClientBuilder",
-		attribute = "register:=\"\"",
+		attribute = "register:=\"org.glassfish.jersey.client.JerseyClientBuilder\"",
 		uses = ClientBuilder.class
 )
+@ServiceProvider(value = AutoDiscoverable.class, register = LoggingFeatureAutoDiscoverable.class)
+@Referenced(LoggingFeatureAutoDiscoverable.class)
 public class ClientBuilderComponent {
 
 	/** ECLIPSE_OS_GI_TECHNOLOGY */

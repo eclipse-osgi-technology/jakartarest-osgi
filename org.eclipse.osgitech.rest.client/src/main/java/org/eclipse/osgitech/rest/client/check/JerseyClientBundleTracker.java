@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
+import org.glassfish.jersey.internal.RuntimeDelegateImpl;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -29,6 +30,7 @@ import org.osgi.util.tracker.BundleTracker;
 import org.osgi.util.tracker.BundleTrackerCustomizer;
 
 import aQute.bnd.annotation.service.ServiceCapability;
+import jakarta.ws.rs.ext.RuntimeDelegate;
 
 /**
  * Checker that ensures that all Jersey client bundles are started properly
@@ -43,6 +45,7 @@ public class JerseyClientBundleTracker implements BundleTrackerCustomizer<Boolea
 	private final Map<String, Boolean> bsns =new HashMap<>(5);
 	private final BundleTracker<Boolean> tracker;
 	private final BundleContext context;
+	private RuntimeDelegate currentDelegate = null;
 	private ServiceRegistration<Condition> jerseyRuntimeCondition;
 
 	/**
@@ -136,6 +139,8 @@ public class JerseyClientBundleTracker implements BundleTrackerCustomizer<Boolea
 			if (jerseyRuntimeCondition != null) {
 				logger.info(()->"Jersey runtime condition is already registered! This should not happen! Doing nothing ...");
 			}
+			currentDelegate = RuntimeDelegate.getInstance();
+			RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
 			Dictionary<String, Object> properties = new Hashtable<String, Object>();
 			properties.put(Condition.CONDITION_ID, JerseyConstants.JERSEY_CLIENT);
 			properties.put(JerseyConstants.JERSEY_CLIENT_ONLY, Boolean.TRUE);
@@ -143,6 +148,7 @@ public class JerseyClientBundleTracker implements BundleTrackerCustomizer<Boolea
 			logger.info(()->"Registered Jersey runtime condition");
 		} else {
 			if (jerseyRuntimeCondition != null) {
+				RuntimeDelegate.setInstance(currentDelegate);
 				jerseyRuntimeCondition.unregister();
 				jerseyRuntimeCondition = null;
 				logger.info(()->"Un-registered Jersey runtime condition");

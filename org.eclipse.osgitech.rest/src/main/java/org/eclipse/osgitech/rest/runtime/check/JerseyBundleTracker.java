@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
-import org.eclipse.osgitech.rest.provider.jakartars.RuntimeDelegateService;
+import org.glassfish.jersey.internal.RuntimeDelegateImpl;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -44,7 +44,6 @@ public class JerseyBundleTracker implements BundleTrackerCustomizer<Boolean>{
 
 	private static final Logger logger = Logger.getLogger("runtime.check");
 	private final Map<String, Boolean> bsns =new HashMap<>(5);
-	private final boolean isClientOnly;
 	private final BundleTracker<Boolean> tracker;
 	private final BundleContext context;
 	private ServiceRegistration<Condition> jerseyRuntimeCondition;
@@ -54,26 +53,15 @@ public class JerseyBundleTracker implements BundleTrackerCustomizer<Boolean>{
 	/**
 	 * Creates a new instance.
 	 * @param context the {@link BundleContext}
-	 */
-	public JerseyBundleTracker(BundleContext context) {
-		this(context, false);
-	}
-
-	/**
-	 * Creates a new instance.
-	 * @param context the {@link BundleContext}
 	 * @param isClientOnly indicator that marks a client only mode 
 	 */
-	public JerseyBundleTracker(BundleContext context, boolean isClientOnly) {
+	public JerseyBundleTracker(BundleContext context) {
 		this.context = context;
-		this.isClientOnly = isClientOnly;
 		bsns.put("org.glassfish.hk2.osgi-resource-locator", Boolean.FALSE);
 		bsns.put("org.glassfish.jersey.inject.jersey-hk2", Boolean.FALSE);
 		bsns.put("org.glassfish.jersey.core.jersey-common", Boolean.FALSE);
 		bsns.put("org.glassfish.jersey.core.jersey-client", Boolean.FALSE);
-		if (isClientOnly) {
-			bsns.put("org.glassfish.jersey.core.jersey-server", Boolean.FALSE);
-		}
+		bsns.put("org.glassfish.jersey.core.jersey-server", Boolean.FALSE);
 		startBundles();
 		tracker = new BundleTracker<Boolean>(context, Bundle.ACTIVE, this);
 	}
@@ -165,12 +153,9 @@ public class JerseyBundleTracker implements BundleTrackerCustomizer<Boolean>{
 			if (jerseyRuntimeCondition != null) {
 				logger.info(()->"Jersey runtime condition is already registered! This should not happen! Doing nothing ...");
 			}
-			if (!isClientOnly) {
-				RuntimeDelegate.setInstance(new RuntimeDelegateService());
-			}
+			RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
 			Dictionary<String, Object> properties = new Hashtable<String, Object>();
 			properties.put(Condition.CONDITION_ID, JerseyConstants.JERSEY_RUNTIME);
-			properties.put(JerseyConstants.JERSEY_CLIENT_ONLY, isClientOnly);
 			jerseyRuntimeCondition = context.registerService(Condition.class, Condition.INSTANCE, properties);
 			logger.info(()->"Registered Jersey runtime condition");
 			if (upConsumer != null) {

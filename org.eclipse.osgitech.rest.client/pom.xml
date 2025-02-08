@@ -72,7 +72,8 @@ Export-Package: \
 	org.eclipse.osgitech.rest.client,\
 	org.eclipse.osgitech.rest.client.annotations,\
 	org.eclipse.osgitech.rest.runtime.common,\
-	org.eclipse.osgitech.rest.provider
+	org.eclipse.osgitech.rest.provider,\
+	org.eclipse.osgitech.rest.provider.jakartars
 	
 Private-Package: \
 	org.eclipse.osgitech.rest.client.check
