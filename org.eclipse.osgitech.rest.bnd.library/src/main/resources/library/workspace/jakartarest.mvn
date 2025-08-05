@@ -1,5 +1,6 @@
 org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.bnd.project.library:${project.version}
 org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest:${project.version}
+org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.client:${project.version}
 org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.jetty:${project.version}
 org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.servlet.whiteboard:${project.version}
 org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.config:${project.version}

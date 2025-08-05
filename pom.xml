@@ -59,7 +59,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<bnd.version>7.0.0</bnd.version>
+		<bnd.version>7.1.0</bnd.version>
 		<junit-jupiter.version>5.9.2</junit-jupiter.version>
 		<assertj.version>3.24.2</assertj.version>
 		<mockito.version>5.4.0</mockito.version>
@@ -737,22 +737,27 @@
 						<artifactId>maven-release-plugin</artifactId>
 					</plugin>
 					<plugin>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
+						<version>0.8.0</version>
+          				<extensions>true</extensions>
+          				<configuration>
+            				<publishingServerId>central</publishingServerId>
+            				<autoPublish>true</autoPublish>
+            				<centralSnapshotsUrl>https://central.sonatype.com/repository/maven-snapshots</centralSnapshotsUrl>
+          				</configuration>
+					</plugin>
+					<!-- <plugin>
 						<groupId>org.sonatype.plugins</groupId>
 						<artifactId>nexus-staging-maven-plugin</artifactId>
 						<configuration>
 							<serverId>ossrh</serverId>
-							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+							<nexusUrl>https://central.sonatype.com</nexusUrl>
 							<autoReleaseAfterClose>true</autoReleaseAfterClose>
 						</configuration>
-					</plugin>
+					</plugin>-->
 				</plugins>
 			</build>
-			<distributionManagement>
-				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-				</snapshotRepository>
-			</distributionManagement>
 		</profile>
 		<profile>
 			<id>eclipse-licenses-check</id>
