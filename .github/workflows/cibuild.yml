@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         java:
-        - '11'
+        - '21'
         - '17'
         os:
         - 'ubuntu-latest'
