@@ -59,7 +59,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<bnd.version>7.1.0</bnd.version>
+		<bnd.version>7.0.0</bnd.version>
 		<junit-jupiter.version>5.9.2</junit-jupiter.version>
 		<assertj.version>3.24.2</assertj.version>
 		<mockito.version>5.4.0</mockito.version>
@@ -87,20 +87,6 @@
 		<module>org.eclipse.osgitech.rest.tests</module>
 		<module>org.eclipse.osgitech.rest.client</module>
 	</modules>
-	
-	<repositories>
-		<repository>
-			 <id>OSSRH</id>
-			 <name>Maven OSSRH Snapshots</name>
-			 <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-			 <snapshots>
-				 <enabled>true</enabled>
-			 </snapshots>
-			 <releases>
-				 <enabled>true</enabled>
-			 </releases>
-		</repository>
-	</repositories>
 	
 	<dependencyManagement>
 		<dependencies>
