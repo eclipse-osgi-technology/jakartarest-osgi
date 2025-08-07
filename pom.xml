@@ -71,6 +71,17 @@
 		<parsson.version>1.1.7</parsson.version>
 		<javassist.version>3.30.2-GA</javassist.version>
 	</properties>
+	
+	<distributionManagement>
+		<snapshotRepository>
+			<id>central</id>
+			<url>https://central.sonatype.com/repository/maven-snapshots/</url>
+		</snapshotRepository>
+		<repository>
+			<id>central</id>
+			<url>https://central.sonatype.com/service/local/</url>
+			</repository>
+	</distributionManagement>
 
 	<modules>
 		<module>org.eclipse.osgitech.rest.bnd.library</module>
@@ -730,7 +741,6 @@
           				<configuration>
             				<publishingServerId>central</publishingServerId>
             				<autoPublish>true</autoPublish>
-            				<centralSnapshotsUrl>https://central.sonatype.com/repository/maven-snapshots</centralSnapshotsUrl>
           				</configuration>
 					</plugin>
 					<!-- <plugin>
