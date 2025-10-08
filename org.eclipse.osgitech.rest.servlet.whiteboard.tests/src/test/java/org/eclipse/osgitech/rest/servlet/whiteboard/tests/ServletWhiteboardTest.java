@@ -28,9 +28,12 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -69,19 +72,19 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 @ExtendWith(ServiceExtension.class)
 @ExtendWith(ConfigurationExtension.class)
 public class ServletWhiteboardTest {
-	
+
 	private ServiceTracker<JakartarsServiceRuntime, Semaphore> tracker;
 
 	private static HttpClient httpClient;
-	
+
 	@BeforeAll
 	public static void setupHttpClient() {
 		httpClient = HttpClient.newBuilder()
-	            .version(HttpClient.Version.HTTP_1_1)
-	            .connectTimeout(Duration.ofSeconds(10))
-	            .build();
+				.version(HttpClient.Version.HTTP_1_1)
+				.connectTimeout(Duration.ofSeconds(10))
+				.build();
 	}
-	
+
 	@BeforeEach
 	public void before(@InjectBundleContext BundleContext ctx) throws InterruptedException {
 		this.tracker = new ServiceTracker<>(ctx, JakartarsServiceRuntime.class, null) {
@@ -101,27 +104,27 @@ public class ServletWhiteboardTest {
 				service.release();
 			}
 		};
-		
+
 		tracker.open();
-		
+
 		Semaphore semaphore = tracker.waitForService(5000);
 		assertNotNull(semaphore);
 		// Wait for the whiteboard to be in a steady state
 		while(semaphore.tryAcquire(500, TimeUnit.MILLISECONDS));
 	}
-	
+
 	@AfterEach
 	public void after() {
 		this.tracker.close();
 	}
-	
+
 	@Test
 	public void testWhiteboard(@InjectBundleContext BundleContext ctx) throws Exception {
-		
+
 		Semaphore semaphore = tracker.waitForService(5000);
 		assertNotNull(semaphore);
 		semaphore.drainPermits();
-		
+
 		Dictionary<String,Object> properties = new Hashtable<>();
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, Boolean.TRUE);
 
@@ -130,7 +133,7 @@ public class ServletWhiteboardTest {
 		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
 
 		String baseURI = getBaseURI(tracker.getServiceReference());
-		
+
 		HttpRequest request = HttpRequest.newBuilder()
 				.GET()
 				.uri(URI.create(baseURI + "whiteboard/resource"))
@@ -143,16 +146,16 @@ public class ServletWhiteboardTest {
 
 	@Test
 	public void testWhiteboardExtension(@InjectBundleContext BundleContext ctx) throws Exception {
-		
+
 		Semaphore semaphore = tracker.waitForService(5000);
 		assertNotNull(semaphore);
 		semaphore.drainPermits();
-		
+
 		Dictionary<String,Object> properties = new Hashtable<>();
 		properties.put(JAKARTA_RS_RESOURCE, Boolean.TRUE);
-		
+
 		ctx.registerService(WhiteboardResource.class, new WhiteboardResource(), properties);
-		
+
 		properties.remove(JAKARTA_RS_RESOURCE);
 		properties.put(JAKARTA_RS_EXTENSION, true);
 		ctx.registerService(ContainerResponseFilter.class, new ContainerResponseFilter() {
@@ -165,31 +168,31 @@ public class ServletWhiteboardTest {
 					responseContext.setEntity(entity.replace("World", "Universe"));
 				}
 			}
-			
+
 		}, properties);
-		
-		
+
+
 		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
-		
+
 		String baseURI = getBaseURI(tracker.getServiceReference());
-		
+
 		HttpRequest request = HttpRequest.newBuilder()
 				.GET()
 				.uri(URI.create(baseURI + "whiteboard/resource"))
 				.build();
-		
+
 		HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 		assertEquals(200, response.statusCode());
 		assertEquals("Hello Universe", response.body());
 	}
-	
+
 	@Test
 	public void testServletWhiteboardDefaultContext(@InjectBundleContext BundleContext ctx,
 			@InjectConfiguration(withFactoryConfig = 
-				@WithFactoryConfiguration(
-						factoryPid = "JakartarsServletWhiteboardRuntimeComponent",
-						name = "JRSWB")) Configuration config) throws Exception {
-		
+			@WithFactoryConfiguration(
+					factoryPid = "JakartarsServletWhiteboardRuntimeComponent",
+					name = "JRSWB")) Configuration config) throws Exception {
+
 		Dictionary<String,Object> cfg = config.getProperties();
 		Object oldContext = cfg.remove("jersey.context.path");
 		config.update(cfg);
@@ -198,25 +201,25 @@ public class ServletWhiteboardTest {
 			Semaphore semaphore = tracker.waitForService(5000);
 			assertNotNull(semaphore);
 			semaphore.drainPermits();
-			
+
 			Dictionary<String,Object> properties = new Hashtable<>();
 			properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, Boolean.TRUE);
-	
+
 			ctx.registerService(WhiteboardResource.class, new WhiteboardResource(), properties);
-	
+
 			assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
-	
+
 			String baseURI = getBaseURI(tracker.getServiceReference());
-			
+
 			HttpRequest request = HttpRequest.newBuilder()
 					.GET()
 					.uri(URI.create(baseURI + "whiteboard/resource"))
 					.build();
-	
+
 			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			assertEquals(200, response.statusCode());
 			assertEquals("Hello World", response.body());
-			
+
 			properties = new Hashtable<>();
 			properties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/servlet");
 			properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT, "(" + HTTP_WHITEBOARD_CONTEXT_NAME + "=" + HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
@@ -229,12 +232,12 @@ public class ServletWhiteboardTest {
 					resp.getWriter().print("Hello Servlet");
 				}
 			}, properties);
-			
+
 			request = HttpRequest.newBuilder()
 					.GET()
 					.uri(URI.create(baseURI + "servlet"))
 					.build();
-	
+
 			response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			assertEquals(200, response.statusCode());
 			assertEquals("Hello Servlet", response.body());
@@ -243,7 +246,152 @@ public class ServletWhiteboardTest {
 			config.update(cfg);
 		}
 	}
+
+	@Test
+	public void testWhiteboardEndpoints(@InjectBundleContext BundleContext ctx,
+			@InjectConfiguration(withFactoryConfig = 
+			@WithFactoryConfiguration(
+					factoryPid = "JakartarsServletWhiteboardRuntimeComponent",
+					name = "JRSWB")) Configuration config) throws Exception {
+
+		Semaphore semaphore = tracker.waitForService(5000);
+		assertNotNull(semaphore);
+		semaphore.drainPermits();
+
+		Dictionary<String,Object> properties = new Hashtable<>();
+		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, Boolean.TRUE);
+
+		ctx.registerService(WhiteboardResource.class, new WhiteboardResource(), properties);
+
+		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
+
+		String baseURI = getBaseURI(tracker.getServiceReference());
+
+		HttpRequest request = HttpRequest.newBuilder()
+				.GET()
+				.uri(URI.create(baseURI + "whiteboard/resource"))
+				.build();
+
+		HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+		assertEquals(200, response.statusCode());
+		assertEquals("Hello World", response.body());
+
+		properties = new Hashtable<>();
+		properties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/servlet");
+		properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT, "(" + HTTP_WHITEBOARD_CONTEXT_NAME + "=" + HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
+		ctx.registerService(Servlet.class, new HttpServlet() {
+			/** serialVersionUID */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+				resp.getWriter().print("Hello Servlet");
+			}
+		}, properties);
+		
+		// We call on the REST URI, we have to remove the REST context here
+		String servletBaseURI = baseURI.replace("test/", "");
+
+		request = HttpRequest.newBuilder()
+				.GET()
+				.uri(URI.create(servletBaseURI + "servlet"))
+				.build();
+
+		response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+		assertEquals(200, response.statusCode());
+		assertEquals("Hello Servlet", response.body());
+
+		List<String> endpoints = getBaseURIs(tracker.getServiceReference());
+		assertTrue(endpoints.stream().filter(e->e.contains("swb/servlet")).findFirst().isEmpty());
+		assertTrue(endpoints.stream().filter(e->e.contains("swb/test")).findFirst().isPresent());
+
+
+	}
 	
+	@Test
+	public void testWhiteboardEndpointsTrailingSlash(@InjectBundleContext BundleContext ctx,
+			@InjectConfiguration(withFactoryConfig = 
+			@WithFactoryConfiguration(
+					factoryPid = "JakartarsServletWhiteboardRuntimeComponent",
+					name = "JRSWB2")) Configuration config) throws Exception {
+		
+		Semaphore semaphore = tracker.waitForService(5000);
+		assertNotNull(semaphore);
+		semaphore.drainPermits();
+		
+		Dictionary<String,Object> properties = new Hashtable<>();
+		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, Boolean.TRUE);
+		
+		ctx.registerService(WhiteboardResource.class, new WhiteboardResource(), properties);
+		
+		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
+		
+		String baseURI = getBaseURI(tracker.getServiceReference());
+		
+		HttpRequest request = HttpRequest.newBuilder()
+				.GET()
+				.uri(URI.create(baseURI + "whiteboard/resource"))
+				.build();
+		
+		HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+		assertEquals(200, response.statusCode());
+		assertEquals("Hello World", response.body());
+		
+		properties = new Hashtable<>();
+		properties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/servlet");
+		properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT, "(" + HTTP_WHITEBOARD_CONTEXT_NAME + "=" + HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
+		ctx.registerService(Servlet.class, new HttpServlet() {
+			/** serialVersionUID */
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+				resp.getWriter().print("Hello Servlet");
+			}
+		}, properties);
+		
+		// We call on the REST URI, we have to remove the REST context here
+		String servletBaseURI = baseURI.replace("test/", "");
+		
+		request = HttpRequest.newBuilder()
+				.GET()
+				.uri(URI.create(servletBaseURI + "servlet"))
+				.build();
+		
+		response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+		assertEquals(200, response.statusCode());
+		assertEquals("Hello Servlet", response.body());
+		
+		List<String> endpoints = getBaseURIs(tracker.getServiceReference());
+		assertTrue(endpoints.stream().filter(e->e.contains("swb/servlet")).findFirst().isEmpty());
+		assertTrue(endpoints.stream().filter(e->e.contains("swb/test")).findFirst().isPresent());
+		
+		
+	}
+
+	@SuppressWarnings("unchecked")
+	protected List<String> getBaseURIs(ServiceReference<JakartarsServiceRuntime> runtime) {
+		Object value = runtime.getProperty(JAKARTA_RS_SERVICE_ENDPOINT);
+
+		if (value instanceof String) {
+			return Collections.singletonList((String) value);
+		} else if (value instanceof String[]) {
+			String[] values = (String[]) value;
+			if (values.length > 0) {
+				return Arrays.asList(values);
+			} else {
+				return Collections.emptyList();
+			}
+		} else if (value instanceof Collection) {
+			if (!((Collection<?>)value).isEmpty()) { 
+				return (List<String>) value;
+			}
+		}
+
+		throw new IllegalArgumentException(
+				"The JAXRS Service Runtime did not declare an endpoint property");
+	}
+
 	protected String getBaseURI(ServiceReference<JakartarsServiceRuntime> runtime) {
 		Object value = runtime.getProperty(JAKARTA_RS_SERVICE_ENDPOINT);
 
@@ -263,13 +411,13 @@ public class ServletWhiteboardTest {
 		throw new IllegalArgumentException(
 				"The JAXRS Service Runtime did not declare an endpoint property");
 	}
-	
+
 	@Test
 	public void testWhiteboardPropertiesForward() throws Exception {
 		ServiceReference<JakartarsServiceRuntime> serviceRuntime = tracker.getServiceReference();
 		Object object = serviceRuntime.getProperties().get("addition.property");
 		assertEquals("test.property", object);
-	
+
 	}
 
 }

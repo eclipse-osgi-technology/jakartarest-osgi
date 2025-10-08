@@ -13,6 +13,7 @@
  */
 package org.eclipse.osgitech.rest.runtime.httpwhiteboard;
 
+import static java.util.Objects.isNull;
 import static org.osgi.framework.Constants.SERVICE_DESCRIPTION;
 import static org.osgi.framework.Constants.SERVICE_ID;
 import static org.osgi.framework.FrameworkUtil.asMap;
@@ -31,9 +32,11 @@ import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.eclipse.osgitech.rest.annotations.ProvideRuntimeAdapter;
 import org.eclipse.osgitech.rest.helper.JerseyHelper;
@@ -104,11 +107,48 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 	private String[] getURLs() {
 		//first look which http whiteboards would fit
 		String[] endpoints = JerseyHelper.getStringPlusProperty(HTTP_SERVICE_ENDPOINT, asMap(runtimeTarget.getProperties()));
-		
-		return Arrays.stream(endpoints)
-				.sorted(this::preferIPv4)
-				.map(s -> buildEndPoint(s, basePath))
-				.toArray(String[]::new);
+		/* 
+		 * https://docs.osgi.org/specification/osgi.cmpn/8.1.0/service.servlet.html#org.osgi.service.servlet.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT
+		 * mentions that all endpoints for all servlets are stated in this property. The Jersey REST Servlet must be listed as well. 
+		 * Earlier versions of e.g. Felix Jetty Whiteboard dont deliver the endpoint information correctly
+		 */
+		List<String> filteredEndpoints = Arrays.stream(endpoints).sorted(this::preferIPv4).filter(s->filterBasePath(s, basePath)).collect(Collectors.toList());
+		if (!filteredEndpoints.isEmpty()) {
+			// take only endpoints, that match our REST basePath
+			return filteredEndpoints.toArray(String[]::new);
+		} else {
+			// for consistency not to change already integrated behavior
+			return Arrays.stream(endpoints)
+					.sorted(this::preferIPv4)
+					.map(s -> buildEndPoint(s, basePath))
+					.toArray(String[]::new);
+		}
+	}
+	
+	private boolean filterBasePath(String endpoint, String basePath) {
+		if (isNull(endpoint) || isNull(basePath)) {
+			return false;
+		}
+		String path = trimPathSegment(basePath);
+		if (endpoint.endsWith("/")) {
+			return endpoint.endsWith(path + "/");
+		} else {
+			return endpoint.endsWith(path);
+		}
+	}
+	
+	private String trimPathSegment(String path) {
+		if (isNull(path)) {
+			return null;
+		}
+		String trimmed = path;
+		if (trimmed.startsWith("/")) {
+			trimmed = trimmed.substring(1);
+		}
+		if (trimmed.endsWith("/")) {
+			trimmed = trimmed.substring(0, trimmed.length() - 1);
+		}
+		return trimmed;
 	}
 	
 
@@ -133,27 +173,24 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 		}
 	}
 
-
 	private String buildEndPoint(String endpoint, String path) {
 		String rsEndpoint = endpoint;
 		if(!endpoint.endsWith("/")) {
 			rsEndpoint += "/";
 		}
-		if (basePath.startsWith("/")) {
-			rsEndpoint += basePath.substring(1);
+		if (path.startsWith("/")) {
+			rsEndpoint += path.substring(1);
 		} else {
-			rsEndpoint += basePath;
+			rsEndpoint += path;
 		}
 		if (!rsEndpoint.endsWith("/")) {
 			rsEndpoint += "/";
-		}
-		if(path != null && path.startsWith("/")) {
-			rsEndpoint += path.substring(1); 
 		}
 		return rsEndpoint;
 	}
 	
 	private final AtomicInteger counter = new AtomicInteger();
+	
 	/* (non-Javadoc)
 	 * @see org.eclipse.osgitech.rest.runtime.common.AbstractJerseyServiceRuntime#doRegisterServletContainer(org.eclipse.osgitech.rest.provider.application.JakartarsApplicationProvider, java.lang.String, org.glassfish.jersey.server.ResourceConfig)
 	 */
