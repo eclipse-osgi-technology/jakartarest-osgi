@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export JAVA_HOME=\"/n/tools/java/jdk-11.0.2\")",
+      "Bash(mvn verify:*)",
+      "Bash(unzip:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)"
+    ]
+  }
+}
