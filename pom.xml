@@ -9,23 +9,23 @@
 	<name>Eclipse OSGi Technology Jakarta REST</name>
 	<description>Eclipse OSGi Technology Jakarta RESTful Services Whiteboard</description>
 	<url>https://github.com/osgi/jakartarest-osgi</url>
-	
+
 	<scm>
 		<url>https://github.com/osgi/jakartarest-osgi</url>
 		<connection>scm:git:git@github.com:osgi/jakartarest-osgi.git</connection>
 		<developerConnection>scm:git:git@github.com:osgi/jakartarest-osgi.git</developerConnection>
-		<tag>release</tag>		
+		<tag>HEAD</tag>
 	</scm>
-	
+
 	<issueManagement>
- 		<system>GitHub</system>
- 		<url>https://github.com/osgi/jakartarest-osgi/issues</url>
-	 </issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/osgi/jakartarest-osgi/issues</url>
+	</issueManagement>
 
 	<organization>
 		<name>Eclipse Foundation - OSGi Technology Project</name>
 	</organization>
- 
+
 	<developers>
 		<developer>
 			<id>mark.hoffmann</id>
@@ -85,139 +85,139 @@
 		<module>org.eclipse.osgitech.rest.tck</module>
 		<module>org.eclipse.osgitech.rest.tests</module>
 	</modules>
-	
+
 	<repositories>
 		<repository>
-			 <id>OSSRH</id>
-			 <name>Maven OSSRH Snapshots</name>
-			 <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-			 <snapshots>
-				 <enabled>true</enabled>
-			 </snapshots>
-			 <releases>
-				 <enabled>true</enabled>
-			 </releases>
+			<id>OSSRH</id>
+			<name>Maven OSSRH Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
 		</repository>
 	</repositories>
-	
+
 	<dependencyManagement>
 		<dependencies>
-			 <dependency>
+			<dependency>
 				<groupId>net.bytebuddy</groupId>
 				<artifactId>byte-buddy</artifactId>
 				<version>1.12.21</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.servlet</groupId>
 				<artifactId>jakarta.servlet-api</artifactId>
 				<version>6.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.activation</groupId>
 				<artifactId>jakarta.activation-api</artifactId>
 				<version>2.1.2</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.annotation</groupId>
 				<artifactId>jakarta.annotation-api</artifactId>
 				<version>2.1.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.interceptor</groupId>
 				<artifactId>jakarta.interceptor-api</artifactId>
 				<version>2.1.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.json</groupId>
 				<artifactId>jakarta.json-api</artifactId>
 				<version>2.1.2</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.json.bind</groupId>
 				<artifactId>jakarta.json.bind-api</artifactId>
 				<version>3.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.jws</groupId>
 				<artifactId>jakarta.jws-api</artifactId>
 				<version>3.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.el</groupId>
 				<artifactId>jakarta.el-api</artifactId>
 				<version>5.0.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.transaction</groupId>
 				<artifactId>jakarta.transaction-api</artifactId>
 				<version>2.0.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.validation</groupId>
 				<artifactId>jakarta.validation-api</artifactId>
 				<version>3.0.2</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.xml.bind</groupId>
 				<artifactId>jakarta.xml.bind-api</artifactId>
 				<version>4.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.xml.ws</groupId>
 				<artifactId>jakarta.xml.ws-api</artifactId>
 				<version>4.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.ws.rs</groupId>
 				<artifactId>jakarta.ws.rs-api</artifactId>
 				<version>3.1.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>jakarta.inject</groupId>
 				<artifactId>jakarta.inject-api</artifactId>
 				<version>2.0.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-api</artifactId>
 				<version>1.7.36</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-simple</artifactId>
 				<version>1.7.36</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.eclipse.parsson</groupId>
 				<artifactId>jakarta.json</artifactId>
 				<version>${parsson.version}</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.eclipse.parsson</groupId>
 				<artifactId>parsson-media</artifactId>
 				<version>${parsson.version}</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.javassist</groupId>
 				<artifactId>javassist</artifactId>
 				<version>3.29.2-GA</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.jvnet.mimepull</groupId>
 				<artifactId>mimepull</artifactId>
 				<version>1.10.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>com.sun.xml.bind</groupId>
 				<artifactId>jaxb-osgi</artifactId>
 				<version>4.0.2</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>com.sun.activation</groupId>
 				<artifactId>jakarta.activation</artifactId>
 				<version>2.0.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.glassfish.hk2</groupId>
 				<artifactId>hk2-bom</artifactId>
 				<version>${hk2.version}</version>
@@ -229,241 +229,241 @@
 						<artifactId>osgi-resource-locator</artifactId>
 					</exclusion>
 				</exclusions>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.glassfish.hk2</groupId>
 				<artifactId>osgi-resource-locator</artifactId>
 				<version>1.0.3</version>
-		 	 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.glassfish.jersey</groupId>
 				<artifactId>jersey-bom</artifactId>
 				<version>${jersey.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.ow2.asm</groupId>
 				<artifactId>asm-bom</artifactId>
 				<version>${asm.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>com.fasterxml.jackson</groupId>
 				<artifactId>jackson-bom</artifactId>
 				<version>${jackson.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.test.bom</artifactId>
 				<version>${osgi-test.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>osgi.annotation</artifactId>
 				<version>8.1.0</version>
 				<scope>provided</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>osgi.core</artifactId>
 				<version>8.0.0</version>
 				<scope>provided</scope>
-			 </dependency>
-			 <dependency>
-					<groupId>org.osgi</groupId>
-					<artifactId>org.osgi.resource</artifactId>
+			</dependency>
+			<dependency>
+				<groupId>org.osgi</groupId>
+				<artifactId>org.osgi.resource</artifactId>
 				<version>1.0.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.namespace.service</artifactId>
 				<version>1.0.0</version>
 				<scope>provided</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.namespace.implementation</artifactId>
 				<version>1.0.0</version>
 				<scope>provided</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.framework</artifactId>
 				<version>1.10.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.component</artifactId>
 				<version>1.5.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.component.annotations</artifactId>
 				<version>1.5.1</version>
 				<scope>provided</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.configurator</artifactId>
 				<version>1.0.1</version>
-			 </dependency>	 
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.cm</artifactId>
 				<version>1.6.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.log</artifactId>
 				<version>1.5.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.event</artifactId>
 				<version>1.4.1</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.servlet</artifactId>
 				<version>2.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.http</artifactId>
 				<version>1.2.2</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.jakartars</artifactId>
 				<version>2.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.condition</artifactId>
 				<version>1.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.util.tracker</artifactId>
 				<version>1.5.4</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.util.converter</artifactId>
 				<version>1.0.9</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.util.function</artifactId>
 				<version>1.2.0</version>
 				<scope>compile</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.util.promise</artifactId>
 				<version>1.3.0</version>
 				<scope>compile</scope>
-			 </dependency>	 
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.dto</artifactId>
 				<version>1.1.1</version>
 				<scope>compile</scope>
-			 </dependency>	 
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.scr</artifactId>
 				<version>2.2.6</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.framework</artifactId>
 				<version>7.0.5</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.http.jetty</artifactId>
 				<version>5.0.4</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.http.servlet-api</artifactId>
 				<version>2.1.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.cm.json</artifactId>
 				<version>2.0.0</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.configurator</artifactId>
 				<version>1.0.18</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.configadmin</artifactId>
 				<version>1.9.24</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.gogo.runtime</artifactId>
 				<version>1.1.6</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.gogo.shell</artifactId>
 				<version>1.1.4</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.apache.felix.gogo.command</artifactId>
 				<version>1.1.2</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.aries.spifly</groupId>
 				<artifactId>org.apache.aries.spifly.dynamic.framework.extension</artifactId>
 				<version>1.3.6</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.assertj</groupId>
 				<artifactId>assertj-core</artifactId>
 				<version>${assertj.version}</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.junit</groupId>
 				<artifactId>junit-bom</artifactId>
 				<version>${junit-jupiter.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-core</artifactId>
 				<version>${mockito.version}</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-junit-jupiter</artifactId>
 				<version>${mockito.version}</version>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.servicemix.bundles</groupId>
 				<artifactId>org.apache.servicemix.bundles.junit</artifactId>
 				<version>4.13.2_1</version>
 				<scope>test</scope>
-			 </dependency>
-			 <dependency>
+			</dependency>
+			<dependency>
 				<groupId>biz.aQute.bnd</groupId>
 				<artifactId>biz.aQute.bnd.annotation</artifactId>
-				<version>6.4.0</version>
-			 </dependency>
+				<version>${bnd.version}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -471,11 +471,11 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
-					 <groupId>biz.aQute.bnd</groupId>
-					 <artifactId>bnd-maven-plugin</artifactId>
-				 	 <version>${bnd.version}</version>
-					 <extensions>true</extensions>
-					 <executions>
+					<groupId>biz.aQute.bnd</groupId>
+					<artifactId>bnd-maven-plugin</artifactId>
+					<version>${bnd.version}</version>
+					<extensions>true</extensions>
+					<executions>
 						<execution>
 							<id>jar</id>
 							<goals>
@@ -487,15 +487,15 @@
 								-noimportjava: true
 								-fixupmessages: The JAR is empty:
 								]]></bnd>
-							 </configuration>
+							</configuration>
 						</execution>
 					</executions>
 				</plugin>
 				<plugin>
-					 <groupId>biz.aQute.bnd</groupId>
-					 <artifactId>bnd-resolver-maven-plugin</artifactId>
-					 <version>${bnd.version}</version>
-					 <executions>
+					<groupId>biz.aQute.bnd</groupId>
+					<artifactId>bnd-resolver-maven-plugin</artifactId>
+					<version>${bnd.version}</version>
+					<executions>
 						<execution>
 							<id>resolve-test</id>
 							<phase>pre-integration-test</phase>
@@ -533,7 +533,7 @@
 							<configuration>
 								<bndrunDir>${project.build.directory}</bndrunDir>
 								<bndruns>
-									 <include>test.bndrun</include>
+									<include>test.bndrun</include>
 								</bndruns>
 								<failOnChanges>false</failOnChanges>
 								<includeDependencyManagement>true</includeDependencyManagement>
@@ -583,7 +583,7 @@
 						<compilerArgs>
 							<arg>-Xlint:unchecked</arg>
 						</compilerArgs>
-					 </configuration>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -602,12 +602,12 @@
 								<goal>sign</goal>
 							</goals>
 							<configuration>
-                            <!-- This is necessary for gpg to not try to use the pinentry programs. This will endup with: gpg: signing failed: No pinentry -->
-	                            <gpgArguments>
-	                                <arg>--pinentry-mode</arg>
-	                                <arg>loopback</arg>
-	                            </gpgArguments>
-	                        </configuration>
+								<!-- This is necessary for gpg to not try to use the pinentry programs. This will endup with: gpg: signing failed: No pinentry -->
+								<gpgArguments>
+									<arg>--pinentry-mode</arg>
+									<arg>loopback</arg>
+								</gpgArguments>
+							</configuration>
 						</execution>
 					</executions>
 				</plugin>
@@ -620,12 +620,6 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.sonatype.central</groupId>
-					<artifactId>central-publishing-maven-plugin</artifactId>
-					<version>0.10.0</version>
-					<extensions>true</extensions>
-				</plugin>
-				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-install-plugin</artifactId>
 					<version>3.1.4</version>
@@ -634,29 +628,11 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-source-plugin</artifactId>
 					<version>3.4.0</version>
-					<executions>
-						<execution>
-							<id>attach-sources</id>
-							<phase>verify</phase>
-							<goals>
-								<goal>jar-no-fork</goal>
-							</goals>
-						</execution>
-					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>3.12.0</version>
-					<executions>
-						<execution>
-							<id>attach-javadocs</id>
-							<phase>verify</phase>
-							<goals>
-								<goal>jar</goal>
-							</goals>
-						</execution>
-					</executions>
 					<configuration>
 						<detectJavaApiLink>false</detectJavaApiLink>
 						<doclint>none</doclint>
@@ -682,17 +658,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-install-plugin</artifactId>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-			</plugin>
 		</plugins>
 	</build>
- 
+
 	<profiles>
 		<profile>
 			<id>release</id>
@@ -709,10 +677,28 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
@@ -721,6 +707,8 @@
 					<plugin>
 						<groupId>org.sonatype.central</groupId>
 						<artifactId>central-publishing-maven-plugin</artifactId>
+						<version>0.10.0</version>
+						<extensions>true</extensions>
 						<configuration>
 							<publishingServerId>central</publishingServerId>
 							<autoPublish>true</autoPublish>
@@ -729,42 +717,6 @@
 				</plugins>
 			</build>
 		</profile>
-		<profile>
-			<id>eclipse-licenses-check</id>
-			<activation>
-				<property>
-					<name>licenses-check</name>
-					<value>true</value>
-				</property>
-			</activation>
-			<pluginRepositories>
-				<pluginRepository>
-					<id>dash-licenses-snapshots</id>
-					<url>https://repo.eclipse.org/content/repositories/dash-licenses-releases/</url>
-					<snapshots>
-						<enabled>true</enabled>
-					</snapshots>
-				</pluginRepository>
-			</pluginRepositories>
-			<build>
-				<plugins>
-					<!-- https://github.com/eclipse/dash-licenses/blob/master/README.md#maven-plugin-options -->
-					<plugin>
-						<groupId>org.eclipse.dash</groupId>
-						<artifactId>license-tool-plugin</artifactId>
-						<version>1.0.2</version>
-						<executions>
-							<execution>
-								<id>license-check</id>
-								<goals>
-									<goal>license-check</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 	</profiles>
-	
+
 </project>
