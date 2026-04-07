@@ -22,7 +22,7 @@
 	junit-platform-commons;version='[1.14.0,2)',\
 	junit-platform-engine;version='[1.14.0,2)',\
 	junit-platform-launcher;version='[1.14.0,2)',\
-	net.bytebuddy.byte-buddy;version='[1.17.0,2)',\
+	net.bytebuddy.byte-buddy;version='[1.18.0,2)',\
 	org.apache.felix.cm.json;version='[2.0.0,2.1)',\
 	org.apache.felix.configadmin;version='[1.9.24,1.10)',\
 	org.apache.felix.configurator;version='[1.0.18,1.1)',\
