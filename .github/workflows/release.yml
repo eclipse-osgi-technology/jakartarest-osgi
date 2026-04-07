@@ -56,7 +56,7 @@ jobs:
           ./mvnw --batch-mode --no-transfer-progress deploy
           -Prelease
           -Dbnd.testing.skip=true
-          -pl '!org.eclipse.osgitech.rest.tck'
+          -pl '!org.eclipse.osgitech.rest.tck,!org.eclipse.osgitech.rest.servlet.whiteboard.tests,!org.eclipse.osgitech.rest.tests'
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           CENTRAL_TOKEN: ${{ secrets.CENTRAL_TOKEN }}
