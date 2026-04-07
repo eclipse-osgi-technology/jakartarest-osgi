@@ -4,7 +4,7 @@
 
 	<groupId>org.eclipse.osgi-technology.rest</groupId>
 	<artifactId>parent</artifactId>
-	<version>1.4.0-SNAPSHOT</version>
+	<version>2.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Eclipse OSGi Technology Jakarta REST</name>
 	<description>Eclipse OSGi Technology Jakarta RESTful Services Whiteboard</description>
@@ -57,8 +57,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
+		<maven.compiler.release>17</maven.compiler.release>
 		<bnd.version>7.2.1</bnd.version>
 		<junit-jupiter.version>5.14.3</junit-jupiter.version>
 		<assertj.version>3.27.7</assertj.version>
@@ -362,19 +361,16 @@
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.util.function</artifactId>
 				<version>1.2.0</version>
-				<scope>compile</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.util.promise</artifactId>
 				<version>1.3.0</version>
-				<scope>compile</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.dto</artifactId>
 				<version>1.1.1</version>
-				<scope>compile</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.felix</groupId>
@@ -435,6 +431,7 @@
 				<groupId>org.assertj</groupId>
 				<artifactId>assertj-core</artifactId>
 				<version>${assertj.version}</version>
+				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.junit</groupId>
@@ -447,11 +444,13 @@
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-core</artifactId>
 				<version>${mockito.version}</version>
+				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-junit-jupiter</artifactId>
 				<version>${mockito.version}</version>
+				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.servicemix.bundles</groupId>
@@ -621,6 +620,11 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>3.10.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-install-plugin</artifactId>
 					<version>3.1.4</version>
 				</plugin>
@@ -666,7 +670,6 @@
 			<id>release</id>
 			<properties>
 				<gpg.executable>gpg</gpg.executable>
-				<skipTests>true</skipTests>
 				<maven.test.skip>true</maven.test.skip>
 				<bnd.baseline.skip>true</bnd.baseline.skip>
 				<bnd.resolve.skip>true</bnd.resolve.skip>
