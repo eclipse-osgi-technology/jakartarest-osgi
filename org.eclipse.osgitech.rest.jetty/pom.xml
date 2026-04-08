@@ -69,10 +69,47 @@
 		<dependency>
 			<groupId>org.apache.felix</groupId>
 			<artifactId>org.apache.felix.http.servlet-api</artifactId>
+			<version>6.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
-			<artifactId>org.apache.felix.http.jetty</artifactId>
+			<artifactId>org.apache.felix.http.jetty12</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-fileupload</groupId>
+			<artifactId>commons-fileupload</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-util</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-tree</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-analysis</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.javassist</groupId>
+			<artifactId>javassist</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.hk2</groupId>
+			<artifactId>osgi-resource-locator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.annotation</groupId>
+			<artifactId>jakarta.annotation-api</artifactId>
 		</dependency>
 	</dependencies>
 
@@ -103,8 +140,8 @@
 								</artifactItem>
 								<artifactItem>
 									<groupId>org.apache.aries.spifly</groupId>
-									<artifactId>org.apache.aries.spifly.dynamic.framework.extension</artifactId>
-									<destFileName>org.apache.aries.spifly.dynamic.framework.extension.jar</destFileName>
+									<artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+									<destFileName>org.apache.aries.spifly.dynamic.bundle.jar</destFileName>
 								</artifactItem>
 								<artifactItem>
 									<groupId>org.slf4j</groupId>
@@ -147,7 +184,7 @@
 							<bundles>
 								<bundle>${project.build.directory}/bundles/org.apache.felix.framework.jar</bundle>
 								<bundle>${project.build.directory}/bundles/org.apache.felix.scr.jar</bundle>
-								<bundle>${project.build.directory}/bundles/org.apache.aries.spifly.dynamic.framework.extension.jar</bundle>
+								<bundle>${project.build.directory}/bundles/org.apache.aries.spifly.dynamic.bundle.jar</bundle>
 								<bundle>${project.build.directory}/bundles/slf4j-simple.jar</bundle>
 							</bundles>
 						</configuration>

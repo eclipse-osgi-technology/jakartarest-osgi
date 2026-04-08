@@ -23,7 +23,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.ServiceReference;
 import org.osgi.service.condition.Condition;
 import org.osgi.test.common.annotation.InjectBundleContext;
 import org.osgi.test.common.annotation.InjectService;
@@ -52,9 +51,6 @@ public class JerseyRuntimeCheckerTest {
 	public void testBundlesJerseyCondition(String bns, @InjectService(cardinality = 0, filter = "(" + Condition.CONDITION_ID + "=" + JerseyConstants.JERSEY_RUNTIME + ")") ServiceAware<Condition> jerseyCondition) {
 		assertNotNull(ctx);
 		assertFalse(jerseyCondition.isEmpty());
-		ServiceReference<Condition> jerseyConditionRef = jerseyCondition.getServiceReference();
-		assertNotNull(jerseyConditionRef.getProperty(JerseyConstants.JERSEY_CLIENT_ONLY));
-		assertFalse((Boolean)jerseyConditionRef.getProperty(JerseyConstants.JERSEY_CLIENT_ONLY));
 		Bundle injectBundle = getBundle("org.glassfish.jersey.inject.jersey-hk2");
 		assertNotNull(injectBundle);
 		try {

@@ -73,6 +73,26 @@
 			<groupId>jakarta.annotation</groupId>
 			<artifactId>jakarta.annotation-api</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-util</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-tree</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-analysis</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -128,8 +148,8 @@ Private-Package: \
 								</artifactItem>
 								<artifactItem>
 									<groupId>org.apache.aries.spifly</groupId>
-									<artifactId>org.apache.aries.spifly.dynamic.framework.extension</artifactId>
-									<destFileName>org.apache.aries.spifly.dynamic.framework.extension.jar</destFileName>
+									<artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+									<destFileName>org.apache.aries.spifly.dynamic.bundle.jar</destFileName>
 								</artifactItem>
 								<artifactItem>
 									<groupId>org.slf4j</groupId>
@@ -172,7 +192,7 @@ Private-Package: \
 							<bundles>
 								<bundle>${project.build.directory}/bundles/org.apache.felix.framework.jar</bundle>
 								<bundle>${project.build.directory}/bundles/org.apache.felix.scr.jar</bundle>
-								<bundle>${project.build.directory}/bundles/org.apache.aries.spifly.dynamic.framework.extension.jar</bundle>
+								<bundle>${project.build.directory}/bundles/org.apache.aries.spifly.dynamic.bundle.jar</bundle>
 								<bundle>${project.build.directory}/bundles/slf4j-simple.jar</bundle>
 							</bundles>
 						</configuration>

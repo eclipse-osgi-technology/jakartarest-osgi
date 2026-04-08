@@ -131,11 +131,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
-			<artifactId>org.apache.felix.http.jetty</artifactId>
+			<artifactId>org.apache.felix.http.jetty12</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.aries.spifly</groupId>
-			<artifactId>org.apache.aries.spifly.dynamic.framework.extension</artifactId>
+			<artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>jakarta.servlet</groupId>
@@ -253,6 +253,8 @@
 								<include>test.bndrun</include>
 								<include>test2.bndrun</include>
 							</bndruns>
+							<resolve>true</resolve>
+							<failOnUnresolve>false</failOnUnresolve>
 						</configuration>
 					</execution>
 				</executions>

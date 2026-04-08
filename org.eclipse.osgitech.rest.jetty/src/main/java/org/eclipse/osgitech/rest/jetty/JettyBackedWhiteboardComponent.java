@@ -28,11 +28,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.SessionHandler;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.server.session.SessionHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.osgitech.rest.annotations.ProvideRuntimeAdapter;
 import org.eclipse.osgitech.rest.helper.JakartarsHelper;
 import org.eclipse.osgitech.rest.helper.JerseyHelper;
@@ -73,7 +73,7 @@ public class JettyBackedWhiteboardComponent {
 			+ ":" + WHITEBOARD_DEFAULT_PORT + WHITEBOARD_DEFAULT_CONTEXT_PATH};
 	private boolean disableSession;
 	private final Map<String, ServletContextHandler> handlerMap = new HashMap<>();
-	private final HandlerList handlers = new HandlerList();
+	private final Handler.Sequence handlers = new Handler.Sequence();
 
 	/**
 	 * Called on component activation
@@ -175,7 +175,7 @@ public class JettyBackedWhiteboardComponent {
 		if ("/".equals(path)) {
 			handlers.addHandler(handler);
 		} else {
-			handlers.prependHandler(handler);
+			handlers.getHandlers().add(0, handler);
 		}
 		try {
 			handler.start();
