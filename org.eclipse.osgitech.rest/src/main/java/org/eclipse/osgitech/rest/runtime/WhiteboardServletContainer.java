@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.eclipse.osgitech.rest.annotations.RequireJerseyServlet;
-import org.eclipse.osgitech.rest.provider.jakartars.RuntimeDelegateService;
 import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -63,7 +62,7 @@ public class WhiteboardServletContainer extends ServletContainer {
 		try {
 			ClassLoader oldTccl = Thread.currentThread().getContextClassLoader();
 			try {
-				Thread.currentThread().setContextClassLoader(RuntimeDelegateService.class.getClassLoader());
+				Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
 				
 				super.init();
 				// we have to wait until the injection manager is available on first start

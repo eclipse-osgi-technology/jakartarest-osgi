@@ -58,7 +58,7 @@ import java.util.stream.Stream;
 import org.eclipse.osgitech.rest.annotations.RequireJerseyExtras;
 import org.eclipse.osgitech.rest.annotations.RequireRuntimeAdapter;
 import org.eclipse.osgitech.rest.dto.DTOConverter;
-import org.eclipse.osgitech.rest.helper.DispatcherHelper;
+import org.eclipse.osgitech.rest.helper.internal.DispatcherHelper;
 import org.eclipse.osgitech.rest.runtime.application.AbstractJakartarsProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationContentProvider;
 import org.eclipse.osgitech.rest.runtime.application.JerseyApplicationProvider;

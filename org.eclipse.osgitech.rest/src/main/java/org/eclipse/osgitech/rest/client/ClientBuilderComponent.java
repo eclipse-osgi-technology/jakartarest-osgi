@@ -11,7 +11,7 @@
  *     Stefan Bishof - API and implementation
  *     Tim Ward - implementation
  */
-package org.eclipse.osgitech.rest.runtime.common;
+package org.eclipse.osgitech.rest.client;
 
 import static org.osgi.namespace.service.ServiceNamespace.CAPABILITY_OBJECTCLASS_ATTRIBUTE;
 import static org.osgi.namespace.service.ServiceNamespace.SERVICE_NAMESPACE;
@@ -21,9 +21,13 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.eclipse.osgitech.rest.provider.JerseyConstants;
+import org.eclipse.osgitech.rest.runtime.common.RxInvokerProviderImpl;
 import org.eclipse.osgitech.rest.sse.SseEventSourceFactoryImpl;
 import org.glassfish.jersey.client.JerseyClientBuilder;
+import org.glassfish.jersey.internal.spi.AutoDiscoverable;
+import org.glassfish.jersey.logging.LoggingFeatureAutoDiscoverable;
 import org.osgi.annotation.bundle.Capability;
+import org.osgi.annotation.bundle.Referenced;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -38,6 +42,7 @@ import org.osgi.service.condition.Condition;
 import org.osgi.service.jakartars.client.PromiseRxInvoker;
 import org.osgi.service.jakartars.client.SseEventSourceFactory;
 
+import aQute.bnd.annotation.spi.ServiceProvider;
 import jakarta.ws.rs.client.ClientBuilder;
 
 /**
@@ -46,9 +51,9 @@ import jakarta.ws.rs.client.ClientBuilder;
  * @since Jun 11, 2020
  */
 @Component(immediate = true, 
-	reference = @Reference(name = "runtimeCondition", 
-		service = Condition.class , 
-		target = JerseyConstants.JERSEY_RUNTIME_CONDITION)
+	reference = @Reference(name = "runtimeCondition",
+		service = Condition.class ,
+		target = JerseyConstants.JERSEY_CLIENT_CONDITION)
 )
 @Capability(
 		namespace = SERVICE_NAMESPACE,
@@ -69,9 +74,11 @@ import jakarta.ws.rs.client.ClientBuilder;
 @Capability(
 		namespace = SERVICELOADER_NAMESPACE,
 		name = "jakarta.ws.rs.client.ClientBuilder",
-		attribute = "register:=\"\"",
+		attribute = "register:=\"org.glassfish.jersey.client.JerseyClientBuilder\"",
 		uses = ClientBuilder.class
 )
+@ServiceProvider(value = AutoDiscoverable.class, register = LoggingFeatureAutoDiscoverable.class)
+@Referenced(LoggingFeatureAutoDiscoverable.class)
 public class ClientBuilderComponent {
 
 	/** ECLIPSE_OS_GI_TECHNOLOGY */

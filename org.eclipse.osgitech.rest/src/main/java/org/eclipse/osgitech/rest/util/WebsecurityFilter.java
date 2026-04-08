@@ -11,7 +11,7 @@
  *     Stefan Bishof - API and implementation
  *     Tim Ward - implementation
  */
-package org.eclipse.osgitech.rest.runtime.common;
+package org.eclipse.osgitech.rest.util;
 
 import java.io.IOException;
 import java.util.Collections;

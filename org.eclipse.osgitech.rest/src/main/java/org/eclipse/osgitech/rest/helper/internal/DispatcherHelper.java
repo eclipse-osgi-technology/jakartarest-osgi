@@ -11,7 +11,7 @@
  *     Stefan Bishof - API and implementation
  *     Tim Ward - implementation
  */
-package org.eclipse.osgitech.rest.helper;
+package org.eclipse.osgitech.rest.helper.internal;
 
 import java.util.Collection;
 import java.util.Collections;
