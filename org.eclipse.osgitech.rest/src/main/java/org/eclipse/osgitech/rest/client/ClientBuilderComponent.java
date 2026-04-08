@@ -15,7 +15,6 @@ package org.eclipse.osgitech.rest.client;
 
 import static org.osgi.namespace.service.ServiceNamespace.CAPABILITY_OBJECTCLASS_ATTRIBUTE;
 import static org.osgi.namespace.service.ServiceNamespace.SERVICE_NAMESPACE;
-import static org.osgi.service.serviceloader.ServiceLoaderNamespace.SERVICELOADER_NAMESPACE;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -71,12 +70,6 @@ import jakarta.ws.rs.client.ClientBuilder;
 				"service.scope=bundle"
 		}
 )
-@Capability(
-		namespace = SERVICELOADER_NAMESPACE,
-		name = "jakarta.ws.rs.client.ClientBuilder",
-		attribute = "register:=\"org.glassfish.jersey.client.JerseyClientBuilder\"",
-		uses = ClientBuilder.class
-)
 @ServiceProvider(value = AutoDiscoverable.class, register = LoggingFeatureAutoDiscoverable.class)
 @Referenced(LoggingFeatureAutoDiscoverable.class)
 public class ClientBuilderComponent {
@@ -91,7 +84,6 @@ public class ClientBuilderComponent {
 
 		Dictionary<String, Object> properties = new Hashtable<>();
 		properties.put(Constants.SERVICE_VENDOR, SERVICE_VENDOR);
-		properties.put(Constants.SERVICE_SCOPE, Constants.SCOPE_PROTOTYPE);
 		properties.put(Constants.SERVICE_DESCRIPTION, "An Eclipse Jersey based ClientBuilder");
 
 		registerClientBuilderService = ctx.registerService(ClientBuilder.class, new PrototypeServiceFactory<ClientBuilder>() {

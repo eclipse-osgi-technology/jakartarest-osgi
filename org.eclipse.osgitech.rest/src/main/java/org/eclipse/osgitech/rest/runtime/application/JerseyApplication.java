@@ -33,8 +33,6 @@ import org.eclipse.osgitech.rest.factories.JerseyResourceInstanceFactory;
 import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
-import org.glassfish.jersey.servlet.async.AsyncContextDelegateProviderImpl;
-import org.glassfish.jersey.servlet.init.FilterUrlMappingsProviderImpl;
 import org.glassfish.jersey.server.spi.Container;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
@@ -102,7 +100,7 @@ public class JerseyApplication extends Application {
 	@Override
 	public Set<Class<?>> getClasses() {
 		return Stream.of(classes.values().stream(), sourceApplication.getClasses().stream(),
-				Stream.of(PromiseResponseHandlerBinder.class, AsyncContextDelegateProviderImpl.class, FilterUrlMappingsProviderImpl.class))
+				Stream.<Class<?>>of(PromiseResponseHandlerBinder.class))
 				.flatMap(Function.identity())
 				.collect(toUnmodifiableSet());
 	}
