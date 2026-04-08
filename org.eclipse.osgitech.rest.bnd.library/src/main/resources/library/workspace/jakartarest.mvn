@@ -56,7 +56,7 @@ org.glassfish.jersey.inject:jersey-hk2:${jersey.version}
 org.glassfish.jersey.containers:jersey-container-jetty-http:${jersey.version}
 org.glassfish.jersey.containers:jersey-container-jetty-servlet:${jersey.version}
 org.glassfish.jersey.containers:jersey-container-servlet:${jersey.version}
-org.glassfish.jersey.containers:jersey-container-servlet-core:${jersey.version}
+org.glassfish.jersey.containers:jersey-container-servlet:${jersey.version}
 org.glassfish.jersey.core:jersey-client:${jersey.version}
 org.glassfish.jersey.core:jersey-common:${jersey.version}
 org.glassfish.jersey.core:jersey-server:${jersey.version}

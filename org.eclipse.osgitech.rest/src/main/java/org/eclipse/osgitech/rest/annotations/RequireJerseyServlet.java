@@ -37,7 +37,7 @@ import org.osgi.framework.namespace.IdentityNamespace;
 @Requirements(value = {
 		@Requirement(namespace = IdentityNamespace.IDENTITY_NAMESPACE, name = "org.glassfish.jersey.core.jersey-common"),
 		@Requirement(namespace = IdentityNamespace.IDENTITY_NAMESPACE, name = "org.glassfish.jersey.core.jersey-server"),
-		@Requirement(namespace = IdentityNamespace.IDENTITY_NAMESPACE, name = "org.glassfish.jersey.containers.jersey-container-servlet-core"),
+		@Requirement(namespace = IdentityNamespace.IDENTITY_NAMESPACE, name = "org.glassfish.jersey.containers.jersey-container-servlet"),
 		@Requirement(namespace = IdentityNamespace.IDENTITY_NAMESPACE, name = "org.glassfish.jersey.containers.jersey-container-servlet")
 })
 public @interface RequireJerseyServlet {

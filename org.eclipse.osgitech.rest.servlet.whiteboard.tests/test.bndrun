@@ -65,7 +65,7 @@
 	org.glassfish.hk2.locator;version='[3.0.5,3.0.6)',\
 	org.glassfish.hk2.utils;version='[3.0.5,3.0.6)',\
 	org.glassfish.jersey.containers.jersey-container-servlet;version='[3.1.3,3.1.4)',\
-	org.glassfish.jersey.containers.jersey-container-servlet-core;version='[3.1.3,3.1.4)',\
+	org.glassfish.jersey.containers.jersey-container-servlet;version='[3.1.3,3.1.4)',\
 	org.glassfish.jersey.core.jersey-client;version='[3.1.3,3.1.4)',\
 	org.glassfish.jersey.core.jersey-common;version='[3.1.3,3.1.4)',\
 	org.glassfish.jersey.core.jersey-server;version='[3.1.3,3.1.4)',\

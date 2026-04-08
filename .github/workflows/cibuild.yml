@@ -62,14 +62,14 @@ jobs:
       - name: Build with Tests
         if: matrix.run-tests
         run: >-
-          ./mvnw --batch-mode --no-transfer-progress install
+          ./mvnw --batch-mode --no-transfer-progress verify
           -Dbnd.testing.skip=true
           -pl '!org.eclipse.osgitech.rest.tck,!org.eclipse.osgitech.rest.servlet.whiteboard.tests,!org.eclipse.osgitech.rest.tests'
 
       - name: Build without Tests
         if: ${{ !matrix.run-tests }}
         run: >-
-          ./mvnw --batch-mode --no-transfer-progress install
+          ./mvnw --batch-mode --no-transfer-progress verify
           -DskipTests
           -Dbnd.testing.skip=true
           -pl '!org.eclipse.osgitech.rest.tck,!org.eclipse.osgitech.rest.servlet.whiteboard.tests,!org.eclipse.osgitech.rest.tests'
