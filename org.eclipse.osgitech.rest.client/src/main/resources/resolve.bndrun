@@ -1,0 +1,5 @@
+-runrequires: \
+	bnd.identity;id='org.eclipse.osgitech.rest.client'
+
+-runfw: org.apache.felix.framework
+-runee: JavaSE-17
