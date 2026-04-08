@@ -101,7 +101,7 @@ public class ClientBuilderComponent {
 			 */
 			@Override
 			public ClientBuilder getService(Bundle bundle, ServiceRegistration<ClientBuilder> registration) {
-				ClientBuilder clientBuilder = new JerseyClientBuilder().register(RxInvokerProviderImpl.class);
+				ClientBuilder clientBuilder = new JerseyClientBuilder().register(new RxInvokerProviderImpl());
 				return clientBuilder;
 			}
 

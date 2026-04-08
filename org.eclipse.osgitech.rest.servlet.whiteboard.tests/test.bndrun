@@ -8,9 +8,10 @@
 	
 -runfw: org.apache.felix.framework
 -runee: JavaSE-17
+-runtrace: true
 
 -runproperties: \
-	org.osgi.service.http.port=-1
+	org.osgi.service.http.port=0
 	
 -runbundles.junit: \
 	org.opentest4j;version='[1.3.0,2)',\
@@ -35,49 +36,54 @@
 	bnd.identity;id='jakarta.json-api'
 -runbundles: \
 	jakarta.activation-api;version='[2.1.2,2.1.3)',\
-	jakarta.annotation-api;version='[2.1.1,2.1.2)',\
+	jakarta.annotation-api;version='[3.0.0,3.0.1)',\
 	jakarta.inject.jakarta.inject-api;version='[2.0.1,2.0.2)',\
 	jakarta.validation.jakarta.validation-api;version='[3.0.2,3.0.3)',\
 	jakarta.ws.rs-api;version='[3.1.0,3.1.1)',\
-	jakarta.xml.bind-api;version='[4.0.0,4.0.1)',\
-	javassist;version='[3.29.2,3.29.3)',\
-	org.apache.aries.spifly.dynamic.bundle;version='[1.3.7,1.4)',\
+	jakarta.xml.bind-api;version='[4.0.5,4.0.6)',\
+	javassist;version='[3.30.2,3.30.3)',\
+	org.apache.aries.spifly.dynamic.bundle;version='[1.3.7,1.3.8)',\
+	org.apache.commons.commons-fileupload;version='[1.6.0,1.6.1)',\
+	org.apache.commons.commons-io;version='[2.19.0,2.19.1)',\
 	org.apache.felix.cm.json;version='[2.0.0,2.0.1)',\
 	org.apache.felix.configadmin;version='[1.9.24,1.9.25)',\
 	org.apache.felix.configurator;version='[1.0.18,1.0.19)',\
-	org.apache.felix.http.jetty12;version='[1.1.8,1.2)',\
-	org.apache.felix.http.servlet-api;version='[2.1.0,2.1.1)',\
+	org.apache.felix.http.jetty12;version='[1.1.8,1.1.9)',\
+	org.apache.felix.http.servlet-api;version='[3.0.0,3.0.1)',\
 	org.apache.felix.scr;version='[2.2.6,2.2.7)',\
-	org.glassfish.hk2.osgi-resource-locator;version='[1.0.3,1.0.4)',\
-	org.osgi.service.component;version='[1.5.1,1.5.2)',\
-	org.osgi.service.jakartars;version='[2.0.0,2.0.1)',\
-	org.osgi.test.common;version='[1.3.0,1.3.1)',\
-	org.osgi.test.junit5;version='[1.3.0,1.3.1)',\
-	org.osgi.test.junit5.cm;version='[1.3.0,1.3.1)',\
-	org.osgi.util.converter;version='[1.0.9,1.0.10)',\
-	org.osgi.util.function;version='[1.2.0,1.2.1)',\
-	org.osgi.util.promise;version='[1.3.0,1.3.1)',\
-	slf4j.api;version='[1.7.36,1.7.37)',\
-	slf4j.simple;version='[1.7.36,1.7.37)',\
-	org.eclipse.parsson.jakarta.json;version='[1.1.5,1.1.6)',\
-	org.glassfish.hk2.api;version='[3.0.5,3.0.6)',\
-	org.glassfish.hk2.external.aopalliance-repackaged;version='[3.0.5,3.0.6)',\
-	org.glassfish.hk2.locator;version='[3.0.5,3.0.6)',\
-	org.glassfish.hk2.utils;version='[3.0.5,3.0.6)',\
-	org.glassfish.jersey.containers.jersey-container-servlet;version='[3.1.3,3.1.4)',\
-	org.glassfish.jersey.containers.jersey-container-servlet;version='[3.1.3,3.1.4)',\
-	org.glassfish.jersey.core.jersey-client;version='[3.1.3,3.1.4)',\
-	org.glassfish.jersey.core.jersey-common;version='[3.1.3,3.1.4)',\
-	org.glassfish.jersey.core.jersey-server;version='[3.1.3,3.1.4)',\
-	org.glassfish.jersey.inject.jersey-hk2;version='[3.1.3,3.1.4)',\
-	org.glassfish.jersey.media.jersey-media-jaxb;version='[3.1.3,3.1.4)',\
-	org.glassfish.jersey.media.jersey-media-sse;version='[3.1.3,3.1.4)',\
-	org.objectweb.asm;version='[9.6.0,9.6.1)',\
 	org.eclipse.osgitech.rest;version='[2.0.0,2.0.1)',\
 	org.eclipse.osgitech.rest.servlet.whiteboard;version='[2.0.0,2.0.1)',\
 	org.eclipse.osgitech.rest.servlet.whiteboard.tests-tests;version='[2.0.0,2.0.1)',\
 	org.eclipse.osgitech.rest.sse;version='[2.0.0,2.0.1)',\
+	org.eclipse.parsson.jakarta.json;version='[1.1.5,1.1.6)',\
+	org.glassfish.hk2.api;version='[4.0.0,4.0.1)',\
+	org.glassfish.hk2.external.aopalliance-repackaged;version='[4.0.0,4.0.1)',\
+	org.glassfish.hk2.locator;version='[4.0.0,4.0.1)',\
+	org.glassfish.hk2.osgi-resource-locator;version='[3.0.0,3.0.1)',\
+	org.glassfish.hk2.utils;version='[4.0.0,4.0.1)',\
+	org.glassfish.jersey.containers.jersey-container-servlet;version='[4.0.2,4.0.3)',\
+	org.glassfish.jersey.core.jersey-client;version='[4.0.2,4.0.3)',\
+	org.glassfish.jersey.core.jersey-common;version='[4.0.2,4.0.3)',\
+	org.glassfish.jersey.core.jersey-server;version='[4.0.2,4.0.3)',\
+	org.glassfish.jersey.inject.jersey-hk2;version='[4.0.2,4.0.3)',\
+	org.glassfish.jersey.media.jersey-media-jaxb;version='[4.0.2,4.0.3)',\
+	org.glassfish.jersey.media.jersey-media-sse;version='[4.0.2,4.0.3)',\
+	org.objectweb.asm;version='[9.9.1,9.9.2)',\
+	org.objectweb.asm.commons;version='[9.9.1,9.9.2)',\
+	org.objectweb.asm.tree;version='[9.9.1,9.9.2)',\
+	org.objectweb.asm.tree.analysis;version='[9.9.1,9.9.2)',\
+	org.objectweb.asm.util;version='[9.9.1,9.9.2)',\
+	org.osgi.service.component;version='[1.5.1,1.5.2)',\
+	org.osgi.service.jakartars;version='[2.1.0,2.1.1)',\
+	org.osgi.util.converter;version='[1.0.9,1.0.10)',\
+	org.osgi.util.function;version='[1.2.0,1.2.1)',\
+	org.osgi.util.promise;version='[1.3.0,1.3.1)',\
+	slf4j.api;version='[2.0.16,2.0.17)',\
+	slf4j.simple;version='[2.0.16,2.0.17)',\
 	junit-jupiter-api;version='[5.14.3,5.14.4)',\
 	junit-jupiter-params;version='[5.14.3,5.14.4)',\
 	junit-platform-commons;version='[1.14.3,1.14.4)',\
-	org.opentest4j;version='[1.3.0,1.3.1)'
+	org.opentest4j;version='[1.3.0,1.3.1)',\
+	org.osgi.test.common;version='[1.3.0,1.3.1)',\
+	org.osgi.test.junit5;version='[1.3.0,1.3.1)',\
+	org.osgi.test.junit5.cm;version='[1.3.0,1.3.1)'

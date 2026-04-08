@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2012 - 2022 Data In Motion and others.
- * All rights reserved. 
- * 
- * This program and the accompanying materials are made available under the terms of the 
+ * All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the terms of the
  * Eclipse Public License v2.0 which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
- * 
+ *
  * Contributors:
  *     Data In Motion - initial API and implementation
  *     Stefan Bishof - API and implementation
@@ -42,9 +42,9 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
  * @author Mark Hoffmann
  * @since 30.07.2017
  */
-@Component(name="JakartarsServletWhiteboardRuntimeComponent", 
-immediate=true, configurationPolicy=ConfigurationPolicy.REQUIRE, 
-	reference = @Reference(name = "runtimeCondition", 
+@Component(name="JakartarsServletWhiteboardRuntimeComponent",
+immediate=true, configurationPolicy=ConfigurationPolicy.REQUIRE,
+	reference = @Reference(name = "runtimeCondition",
 	service = Condition.class,
 	target = JerseyConstants.JERSEY_RUNTIME_CONDITION))
 public class JakartarsServletWhiteboardRuntimeComponent {
@@ -58,11 +58,10 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 	/**
 	 * Called on component activation
 	 * @param componentContext the component context
-	 * @throws ConfigurationException 
+	 * @throws ConfigurationException
 	 */
 	@Activate
 	public void activate(BundleContext context, Map<String, Object> props) throws ConfigurationException {
-		
 		this.context = context;
 		this.props = props;
 		target = (String) props.get(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET);
@@ -89,7 +88,7 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 	/**
 	 * Called on component modification
 	 * @param context the component context
-	 * @throws ConfigurationException 
+	 * @throws ConfigurationException
 	 */
 	@Modified
 	public void modified(Map<String, Object> props) throws ConfigurationException {
@@ -97,7 +96,7 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 		String oldBase = basePath;
 		target = (String) props.get(HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET);
 		basePath = (String) props.getOrDefault(JerseyConstants.JERSEY_CONTEXT_PATH, "/");
-		
+
 		if(!Objects.equals(oldTarget, target) || !Objects.equals(oldBase, basePath)) {
 			httpRuntimeTracker.close();
 			openTracker();
@@ -120,12 +119,12 @@ public class JakartarsServletWhiteboardRuntimeComponent {
 				ServiceTrackerCustomizer<HttpServiceRuntime, ServletWhiteboardBasedJerseyServiceRuntime> customizer) {
 			super(context, filter, customizer);
 		}
-	
+
 		@Override
 		public ServletWhiteboardBasedJerseyServiceRuntime addingService(ServiceReference<HttpServiceRuntime> reference) {
 			return new ServletWhiteboardBasedJerseyServiceRuntime(context, basePath, reference, props);
 		}
-	
+
 		@Override
 		public void removedService(ServiceReference<HttpServiceRuntime> reference, ServletWhiteboardBasedJerseyServiceRuntime runtime) {
 			runtime.teardown(5, TimeUnit.SECONDS);

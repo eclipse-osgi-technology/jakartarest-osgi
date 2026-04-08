@@ -33,9 +33,9 @@ import org.eclipse.osgitech.rest.factories.JerseyResourceInstanceFactory;
 import org.eclipse.osgitech.rest.runtime.application.feature.WhiteboardFeature;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
-import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.servlet.async.AsyncContextDelegateProviderImpl;
 import org.glassfish.jersey.servlet.init.FilterUrlMappingsProviderImpl;
+import org.glassfish.jersey.server.spi.Container;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
 
@@ -60,7 +60,6 @@ public class JerseyApplication extends Application {
 	private final WhiteboardFeature whiteboardFeature;
 	private final Set<Object> appSingletons;
 
-	@SuppressWarnings("deprecation")
 	public JerseyApplication(String applicationName, Application sourceApplication, Map<String, Object> additionalProperites,
 			List<JerseyApplicationContentProvider> providers) {
 		this.applicationName = applicationName;
@@ -83,7 +82,8 @@ public class JerseyApplication extends Application {
 		
 		appSingletons = new HashSet<>();
 		appSingletons.addAll(this.singletons.values());
-		appSingletons.addAll(sourceApplication.getSingletons());
+		Set<Object> sourceSingletons = sourceApplication.getSingletons();
+		appSingletons.addAll(sourceSingletons);
 		appSingletons.add(whiteboardFeature);
 		appSingletons.add(resourceFactory);
 		appSingletons.add(new ContainerLifecycleTracker());
@@ -107,10 +107,6 @@ public class JerseyApplication extends Application {
 				.collect(toUnmodifiableSet());
 	}
 
-	/* 
-	 * (non-Javadoc)
-	 * @see jakarta.ws.rs.core.Application#getSingletons()
-	 */
 	@Override
 	public Set<Object> getSingletons() {
 		return Collections.unmodifiableSet(appSingletons);

@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2012 - 2022 Data In Motion and others.
- * All rights reserved. 
- * 
- * This program and the accompanying materials are made available under the terms of the 
+ * All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the terms of the
  * Eclipse Public License v2.0 which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
- * 
+ *
  * Contributors:
  *     Data In Motion - initial API and implementation
  *     Stefan Bishof - API and implementation
@@ -29,16 +29,15 @@ import aQute.bnd.annotation.service.ServiceCapability;
 @Component(immediate = true)
 @ServiceCapability(value = Condition.class)
 public class JerseyRuntimeCheck {
-	
+
 	private JerseyBundleTracker jerseyTracker;
-	
+
 	@Activate
 	public void activate(BundleContext ctx) {
 		jerseyTracker = new JerseyBundleTracker(ctx);
 		jerseyTracker.open();
-		
 	}
-	
+
 	@Deactivate
 	public void deactivate() {
 		jerseyTracker.close();

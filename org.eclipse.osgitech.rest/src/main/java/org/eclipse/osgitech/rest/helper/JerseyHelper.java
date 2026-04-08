@@ -54,7 +54,7 @@ public class JerseyHelper {
 		if (application == null) {
 			return true;
 		}
-		return application.getClasses().isEmpty() && 
+		return application.getClasses().isEmpty() &&
 				application.getSingletons().isEmpty();
 
 	}

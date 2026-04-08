@@ -34,6 +34,11 @@
 	    	<artifactId>org.eclipse.osgitech.rest.servlet.whiteboard</artifactId>
 	    	<version>${project.version}</version>
 	    </dependency>
+		<dependency>
+		   	<groupId>${project.groupId}</groupId>
+	    	<artifactId>org.eclipse.osgitech.rest.servlet.whiteboard.tests</artifactId>
+	    	<version>${project.version}</version>
+	    </dependency>
 	    <dependency>
 		   	<groupId>${project.groupId}</groupId>
 		   	<artifactId>org.eclipse.osgitech.rest.sse</artifactId>

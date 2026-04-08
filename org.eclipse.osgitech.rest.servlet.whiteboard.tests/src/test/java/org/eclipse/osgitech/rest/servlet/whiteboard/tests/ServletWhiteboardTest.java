@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2012 - 2022 Data In Motion and others.
- * All rights reserved. 
- * 
- * This program and the accompanying materials are made available under the terms of the 
+ * All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the terms of the
  * Eclipse Public License v2.0 which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
- * 
+ *
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
@@ -45,6 +45,8 @@ import org.osgi.service.cm.Configuration;
 import org.osgi.service.jakartars.runtime.JakartarsServiceRuntime;
 import org.osgi.service.jakartars.whiteboard.JakartarsWhiteboardConstants;
 import org.osgi.test.common.annotation.InjectBundleContext;
+import org.osgi.test.common.annotation.Property;
+import org.osgi.test.common.annotation.Property.Scalar;
 import org.osgi.test.common.annotation.config.InjectConfiguration;
 import org.osgi.test.common.annotation.config.WithFactoryConfiguration;
 import org.osgi.test.junit5.cm.ConfigurationExtension;
@@ -68,12 +70,33 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 @ExtendWith(BundleContextExtension.class)
 @ExtendWith(ServiceExtension.class)
 @ExtendWith(ConfigurationExtension.class)
+@WithFactoryConfiguration(
+	factoryPid = "org.apache.felix.http",
+	name = "test",
+	properties = {
+		@Property(key = "org.osgi.service.http.port", value = "0", scalar = Scalar.Integer),
+		@Property(key = "org.osgi.service.http.host", value = "localhost"),
+		@Property(key = "org.apache.felix.http.context_path", value = "swb"),
+		@Property(key = "org.apache.felix.http.name", value = "SWB"),
+		@Property(key = "org.apache.felix.http.runtime.init.id", value = "SWB")
+	}
+)
+@WithFactoryConfiguration(
+	factoryPid = "JakartarsServletWhiteboardRuntimeComponent",
+	name = "JRSWB",
+	properties = {
+		@Property(key = "jersey.jakartars.whiteboard.name", value = "JRSWB"),
+		@Property(key = "jersey.context.path", value = "test"),
+		@Property(key = "osgi.http.whiteboard.target", value = "(id=SWB)"),
+		@Property(key = "addition.property", value = "test.property")
+	}
+)
 public class ServletWhiteboardTest {
-	
+
 	private ServiceTracker<JakartarsServiceRuntime, Semaphore> tracker;
 
 	private static HttpClient httpClient;
-	
+
 	@BeforeAll
 	public static void setupHttpClient() {
 		httpClient = HttpClient.newBuilder()
@@ -81,7 +104,7 @@ public class ServletWhiteboardTest {
 	            .connectTimeout(Duration.ofSeconds(10))
 	            .build();
 	}
-	
+
 	@BeforeEach
 	public void before(@InjectBundleContext BundleContext ctx) throws InterruptedException {
 		this.tracker = new ServiceTracker<>(ctx, JakartarsServiceRuntime.class, null) {
@@ -101,27 +124,27 @@ public class ServletWhiteboardTest {
 				service.release();
 			}
 		};
-		
+
 		tracker.open();
-		
-		Semaphore semaphore = tracker.waitForService(5000);
+
+		Semaphore semaphore = tracker.waitForService(10000);
 		assertNotNull(semaphore);
 		// Wait for the whiteboard to be in a steady state
 		while(semaphore.tryAcquire(500, TimeUnit.MILLISECONDS));
 	}
-	
+
 	@AfterEach
 	public void after() {
 		this.tracker.close();
 	}
-	
+
 	@Test
 	public void testWhiteboard(@InjectBundleContext BundleContext ctx) throws Exception {
-		
+
 		Semaphore semaphore = tracker.waitForService(5000);
 		assertNotNull(semaphore);
 		semaphore.drainPermits();
-		
+
 		Dictionary<String,Object> properties = new Hashtable<>();
 		properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, Boolean.TRUE);
 
@@ -130,7 +153,7 @@ public class ServletWhiteboardTest {
 		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
 
 		String baseURI = getBaseURI(tracker.getServiceReference());
-		
+
 		HttpRequest request = HttpRequest.newBuilder()
 				.GET()
 				.uri(URI.create(baseURI + "whiteboard/resource"))
@@ -143,16 +166,16 @@ public class ServletWhiteboardTest {
 
 	@Test
 	public void testWhiteboardExtension(@InjectBundleContext BundleContext ctx) throws Exception {
-		
+
 		Semaphore semaphore = tracker.waitForService(5000);
 		assertNotNull(semaphore);
 		semaphore.drainPermits();
-		
+
 		Dictionary<String,Object> properties = new Hashtable<>();
 		properties.put(JAKARTA_RS_RESOURCE, Boolean.TRUE);
-		
+
 		ctx.registerService(WhiteboardResource.class, new WhiteboardResource(), properties);
-		
+
 		properties.remove(JAKARTA_RS_RESOURCE);
 		properties.put(JAKARTA_RS_EXTENSION, true);
 		ctx.registerService(ContainerResponseFilter.class, new ContainerResponseFilter() {
@@ -165,31 +188,31 @@ public class ServletWhiteboardTest {
 					responseContext.setEntity(entity.replace("World", "Universe"));
 				}
 			}
-			
+
 		}, properties);
-		
-		
+
+
 		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
-		
+
 		String baseURI = getBaseURI(tracker.getServiceReference());
-		
+
 		HttpRequest request = HttpRequest.newBuilder()
 				.GET()
 				.uri(URI.create(baseURI + "whiteboard/resource"))
 				.build();
-		
+
 		HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 		assertEquals(200, response.statusCode());
 		assertEquals("Hello Universe", response.body());
 	}
-	
+
 	@Test
 	public void testServletWhiteboardDefaultContext(@InjectBundleContext BundleContext ctx,
-			@InjectConfiguration(withFactoryConfig = 
+			@InjectConfiguration(withFactoryConfig =
 				@WithFactoryConfiguration(
 						factoryPid = "JakartarsServletWhiteboardRuntimeComponent",
 						name = "JRSWB")) Configuration config) throws Exception {
-		
+
 		Dictionary<String,Object> cfg = config.getProperties();
 		Object oldContext = cfg.remove("jersey.context.path");
 		config.update(cfg);
@@ -198,25 +221,25 @@ public class ServletWhiteboardTest {
 			Semaphore semaphore = tracker.waitForService(5000);
 			assertNotNull(semaphore);
 			semaphore.drainPermits();
-			
+
 			Dictionary<String,Object> properties = new Hashtable<>();
 			properties.put(JakartarsWhiteboardConstants.JAKARTA_RS_RESOURCE, Boolean.TRUE);
-	
+
 			ctx.registerService(WhiteboardResource.class, new WhiteboardResource(), properties);
-	
+
 			assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
-	
+
 			String baseURI = getBaseURI(tracker.getServiceReference());
-			
+
 			HttpRequest request = HttpRequest.newBuilder()
 					.GET()
 					.uri(URI.create(baseURI + "whiteboard/resource"))
 					.build();
-	
+
 			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			assertEquals(200, response.statusCode());
 			assertEquals("Hello World", response.body());
-			
+
 			properties = new Hashtable<>();
 			properties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/servlet");
 			properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT, "(" + HTTP_WHITEBOARD_CONTEXT_NAME + "=" + HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
@@ -229,12 +252,12 @@ public class ServletWhiteboardTest {
 					resp.getWriter().print("Hello Servlet");
 				}
 			}, properties);
-			
+
 			request = HttpRequest.newBuilder()
 					.GET()
 					.uri(URI.create(baseURI + "servlet"))
 					.build();
-	
+
 			response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 			assertEquals(200, response.statusCode());
 			assertEquals("Hello Servlet", response.body());
@@ -243,7 +266,7 @@ public class ServletWhiteboardTest {
 			config.update(cfg);
 		}
 	}
-	
+
 	protected String getBaseURI(ServiceReference<JakartarsServiceRuntime> runtime) {
 		Object value = runtime.getProperty(JAKARTA_RS_SERVICE_ENDPOINT);
 
@@ -255,7 +278,7 @@ public class ServletWhiteboardTest {
 				return values[values.length -1];
 			}
 		} else if (value instanceof Collection) {
-			if (!((Collection<?>)value).isEmpty()) { 
+			if (!((Collection<?>)value).isEmpty()) {
 				return String.valueOf(((Collection< ? >) value).iterator().next());
 			}
 		}
@@ -263,13 +286,13 @@ public class ServletWhiteboardTest {
 		throw new IllegalArgumentException(
 				"The JAXRS Service Runtime did not declare an endpoint property");
 	}
-	
+
 	@Test
 	public void testWhiteboardPropertiesForward() throws Exception {
 		ServiceReference<JakartarsServiceRuntime> serviceRuntime = tracker.getServiceReference();
 		Object object = serviceRuntime.getProperties().get("addition.property");
 		assertEquals("test.property", object);
-	
+
 	}
 
 }

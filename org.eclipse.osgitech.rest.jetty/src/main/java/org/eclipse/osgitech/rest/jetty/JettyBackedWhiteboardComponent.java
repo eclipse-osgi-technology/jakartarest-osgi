@@ -21,7 +21,9 @@ import static org.eclipse.osgitech.rest.provider.JerseyConstants.WHITEBOARD_DEFA
 import static org.osgi.service.jakartars.runtime.JakartarsServiceRuntimeConstants.JAKARTA_RS_SERVICE_ENDPOINT;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -175,7 +177,9 @@ public class JettyBackedWhiteboardComponent {
 		if ("/".equals(path)) {
 			handlers.addHandler(handler);
 		} else {
-			handlers.getHandlers().add(0, handler);
+			List<Handler> current = new ArrayList<>(handlers.getHandlers());
+			current.add(0, handler);
+			handlers.setHandlers(current);
 		}
 		try {
 			handler.start();

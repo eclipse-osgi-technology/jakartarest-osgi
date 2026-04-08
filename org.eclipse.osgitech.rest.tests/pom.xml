@@ -201,18 +201,6 @@
 			<groupId>org.ow2.asm</groupId>
 			<artifactId>asm-analysis</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.javassist</groupId>
-			<artifactId>javassist</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.glassfish.hk2</groupId>
-			<artifactId>osgi-resource-locator</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.annotation</groupId>
-			<artifactId>jakarta.annotation-api</artifactId>
-		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
