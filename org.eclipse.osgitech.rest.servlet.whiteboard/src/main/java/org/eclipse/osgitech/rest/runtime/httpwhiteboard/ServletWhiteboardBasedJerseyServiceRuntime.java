@@ -112,7 +112,11 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 		 * mentions that all endpoints for all servlets are stated in this property. The Jersey REST Servlet must be listed as well. 
 		 * Earlier versions of e.g. Felix Jetty Whiteboard dont deliver the endpoint information correctly
 		 */
-		List<String> filteredEndpoints = Arrays.stream(endpoints).sorted(this::preferIPv4).filter(s->filterBasePath(s, basePath)).collect(Collectors.toList());
+		List<String> filteredEndpoints = Arrays.stream(endpoints)
+				.sorted(this::preferIPv4)
+				.filter(s -> filterBasePath(s, basePath))
+				.map(this::ensureTrailingSlash)
+				.collect(Collectors.toList());
 		if (!filteredEndpoints.isEmpty()) {
 			// take only endpoints, that match our REST basePath
 			return filteredEndpoints.toArray(String[]::new);
@@ -130,11 +134,23 @@ public class ServletWhiteboardBasedJerseyServiceRuntime {
 			return false;
 		}
 		String path = trimPathSegment(basePath);
+		if (path.isEmpty()) {
+			/*
+			 * Without a base path every endpoint would match, because every String ends with
+			 * the empty String. Report no match, so the caller falls back to building the
+			 * endpoints itself.
+			 */
+			return false;
+		}
 		if (endpoint.endsWith("/")) {
 			return endpoint.endsWith(path + "/");
 		} else {
 			return endpoint.endsWith(path);
 		}
+	}
+	
+	private String ensureTrailingSlash(String endpoint) {
+		return endpoint.endsWith("/") ? endpoint : endpoint + "/";
 	}
 	
 	private String trimPathSegment(String path) {

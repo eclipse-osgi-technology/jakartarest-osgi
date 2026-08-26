@@ -49,6 +49,25 @@
 			<artifactId>org.osgi.test.cases.jakartars</artifactId>
 			<version>8.1.0-SNAPSHOT</version>
 			<scope>test</scope>
+			<exclusions>
+				<!-- org.osgi.testci is an internal alias of the OSGi CI build,
+				     not published to Maven Central - the real org.osgi artifacts
+				     are declared below instead -->
+				<exclusion>
+					<groupId>org.osgi.testci</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.service.jakartars</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.util.promise</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>

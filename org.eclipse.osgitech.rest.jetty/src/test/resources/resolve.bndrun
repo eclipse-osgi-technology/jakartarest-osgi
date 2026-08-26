@@ -24,11 +24,11 @@
 	org.eclipse.osgitech.rest;version='[2.0.0,2.0.1)',\
 	org.eclipse.osgitech.rest.jetty;version='[2.0.0,2.0.1)',\
 	org.eclipse.osgitech.rest.sse;version='[2.0.0,2.0.1)',\
-	org.glassfish.hk2.api;version='[4.0.0,4.0.1)',\
-	org.glassfish.hk2.external.aopalliance-repackaged;version='[4.0.0,4.0.1)',\
-	org.glassfish.hk2.locator;version='[4.0.0,4.0.1)',\
+	org.glassfish.hk2.api;version='[4.0.1,4.0.2)',\
+	org.glassfish.hk2.external.aopalliance-repackaged;version='[4.0.1,4.0.2)',\
+	org.glassfish.hk2.locator;version='[4.0.1,4.0.2)',\
 	org.glassfish.hk2.osgi-resource-locator;version='[3.0.0,3.0.1)',\
-	org.glassfish.hk2.utils;version='[4.0.0,4.0.1)',\
+	org.glassfish.hk2.utils;version='[4.0.1,4.0.2)',\
 	org.glassfish.jersey.containers.jersey-container-servlet;version='[4.0.2,4.0.3)',\
 	org.glassfish.jersey.core.jersey-client;version='[4.0.2,4.0.3)',\
 	org.glassfish.jersey.core.jersey-common;version='[4.0.2,4.0.3)',\
