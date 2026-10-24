@@ -4,22 +4,21 @@
 
 	<groupId>org.eclipse.osgi-technology.rest</groupId>
 	<artifactId>parent</artifactId>
-	<version>1.2.3-SNAPSHOT</version>
+	<version>${revision}</version>
 	<packaging>pom</packaging>
 	<name>Eclipse OSGi Technology Jakarta REST</name>
 	<description>Eclipse OSGi Technology Jakarta RESTful Services Whiteboard</description>
-	<url>https://github.com/osgi/jakartarest-osgi</url>
-	
+	<url>https://github.com/eclipse-osgi-technology/jakartarest-osgi</url>
+
 	<scm>
-		<url>https://github.com/osgi/jakartarest-osgi</url>
-		<connection>scm:git:git@github.com:osgi/jakartarest-osgi.git</connection>
-		<developerConnection>scm:git:git@github.com:osgi/jakartarest-osgi.git</developerConnection>
-		<tag>release</tag>		
+		<url>https://github.com/eclipse-osgi-technology/jakartarest-osgi</url>
+		<connection>scm:git:https://github.com/eclipse-osgi-technology/jakartarest-osgi.git</connection>
+		<developerConnection>scm:git:git@github.com:eclipse-osgi-technology/jakartarest-osgi.git</developerConnection>
 	</scm>
-	
+
 	<issueManagement>
  		<system>GitHub</system>
- 		<url>https://github.com/osgi/jakartarest-osgi/issues</url>
+ 		<url>https://github.com/eclipse-osgi-technology/jakartarest-osgi/issues</url>
 	 </issueManagement>
 
 	<organization>
@@ -56,6 +55,7 @@
 	</licenses>
 
 	<properties>
+		<revision>1.2.4-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
@@ -671,16 +671,29 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-   					<artifactId>maven-release-plugin</artifactId>
-   					<version>3.0.1</version>
-   					<configuration>
-      					<tagNameFormat>v@{project.version}</tagNameFormat>
-      					<autoVersionSubmodules>true</autoVersionSubmodules>
-      					<autoResolveSnapshots>1</autoResolveSnapshots>
-      					<releaseProfiles>release</releaseProfiles>
-      					<allowTimestampedSnapshots>true</allowTimestampedSnapshots>
-   					</configuration>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>flatten-maven-plugin</artifactId>
+					<version>1.7.3</version>
+					<configuration>
+						<flattenMode>oss</flattenMode>
+						<updatePomFile>true</updatePomFile>
+					</configuration>
+					<executions>
+						<execution>
+							<id>flatten</id>
+							<phase>process-resources</phase>
+							<goals>
+								<goal>flatten</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>flatten-clean</id>
+							<phase>clean</phase>
+							<goals>
+								<goal>clean</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -709,6 +722,10 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
 		</plugins>
 	</build>
  
@@ -736,10 +753,6 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-release-plugin</artifactId>
 					</plugin>
 					<plugin>
 						<groupId>org.sonatype.plugins</groupId>
