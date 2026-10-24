@@ -2,4 +2,4 @@
 	bnd.identity;id='org.eclipse.osgitech.rest.jetty'
 	
 -runfw: org.apache.felix.framework
--runee: JavaSE-11
+-runee: JavaSE-17

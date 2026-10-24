@@ -7,7 +7,7 @@
 	bnd.identity;id=junit-platform-launcher
 	
 -runfw: org.apache.felix.framework
--runee: JavaSE-11
+-runee: JavaSE-17
 
 # the embedded asm of the spifly framework extension cannot read Java 21+ classes, use spifly.dynamic.bundle
 -runblacklist: \
