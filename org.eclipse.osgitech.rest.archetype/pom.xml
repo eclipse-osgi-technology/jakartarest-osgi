@@ -13,6 +13,7 @@
 	<name>JakartaREST / Jersey Whiteboard Example Archetype</name>
   
 	<properties>
+		<javadoc.empty.phase>package</javadoc.empty.phase>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>  
 	

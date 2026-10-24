@@ -58,6 +58,8 @@
 		<revision>1.2.4-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.release>17</maven.compiler.release>
+		<!-- modules without Java sources set it to package, Central requires a javadoc jar -->
+		<javadoc.empty.phase>none</javadoc.empty.phase>
 		<bnd.version>7.2.1</bnd.version>
 		<junit-jupiter.version>5.14.4</junit-jupiter.version>
 		<assertj.version>3.27.7</assertj.version>
@@ -856,6 +858,23 @@
 					<plugin>
 						<groupId>org.sonatype.central</groupId>
 						<artifactId>central-publishing-maven-plugin</artifactId>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>empty-javadoc-jar</id>
+								<phase>${javadoc.empty.phase}</phase>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+								<configuration>
+									<classifier>javadoc</classifier>
+									<classesDirectory>${project.build.directory}/empty-javadoc</classesDirectory>
+								</configuration>
+							</execution>
+						</executions>
 					</plugin>
 				</plugins>
 			</build>

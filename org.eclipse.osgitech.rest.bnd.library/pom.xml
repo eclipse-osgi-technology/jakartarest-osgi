@@ -11,5 +11,9 @@
 	<artifactId>org.eclipse.osgitech.rest.bnd.library</artifactId>
 	<name>JakartaREST / Jersey Workspace Library</name>
 	<description>Bndtools JakartaREST Jersey Workspace Library</description>
+
+	<properties>
+		<javadoc.empty.phase>package</javadoc.empty.phase>
+	</properties>
     
 </project>
