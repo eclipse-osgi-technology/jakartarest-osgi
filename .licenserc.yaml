@@ -56,3 +56,5 @@ header:
     - 'settings.gradle'
  
   comment: always
+  # the license text follows the copyright line of the header
+  license-location-threshold: 200
