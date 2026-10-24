@@ -8,9 +8,8 @@
   
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
-		<bnd.version>6.4.0</bnd.version>
+		<maven.compiler.release>17</maven.compiler.release>
+		<bnd.version>7.2.1</bnd.version>
 		<jersey.version>3.1.3</jersey.version>
 	</properties>  
 	
@@ -24,7 +23,7 @@
 		 <dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.service.jakartars</artifactId>
-			<version>2.0.0</version>
+			<version>@jakartars.spec.version@</version>
 			<scope>compile</scope>
 		 </dependency>
 		 <dependency>
@@ -36,13 +35,13 @@
 		 <dependency>
 			<groupId>org.eclipse.osgi-technology.rest</groupId>
 			<artifactId>org.eclipse.osgitech.rest.servlet.whiteboard</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<version>@project.version@</version>
 			<scope>runtime</scope>
 		 </dependency>
 		 <dependency>
 			<groupId>org.eclipse.osgi-technology.rest</groupId>
 			<artifactId>org.eclipse.osgitech.rest.sse</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<version>@project.version@</version>
 			<scope>runtime</scope>
 		 </dependency>
 		 <dependency>
@@ -168,19 +167,19 @@
 		 <dependency>
 			<groupId>org.ow2.asm</groupId>
 			<artifactId>asm</artifactId>
-			<version>9.11.1</version>
+			<version>@asm.version@</version>
 			<scope>runtime</scope>
 		 </dependency>
 		 <dependency>
 			<groupId>org.ow2.asm</groupId>
 			<artifactId>asm-commons</artifactId>
-			<version>9.11.1</version>
+			<version>@asm.version@</version>
 			<scope>runtime</scope>
 		 </dependency>
 		 <dependency>
 			<groupId>org.ow2.asm</groupId>
 			<artifactId>asm-util</artifactId>
-			<version>9.11.1</version>
+			<version>@asm.version@</version>
 			<scope>runtime</scope>
 		 </dependency>
 	</dependencies>

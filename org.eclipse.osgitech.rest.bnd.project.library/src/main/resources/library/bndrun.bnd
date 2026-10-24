@@ -1,7 +1,7 @@
 -runbundles.jersey: \
 	${jersey.deps}
 
--require-bnd: "(version>=6.4.0)"
+-require-bnd: "(version>=7.2.1)"
 
 -runproperties: \
 	org.osgi.service.http.port=-1

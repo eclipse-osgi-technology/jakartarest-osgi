@@ -1,4 +1,5 @@
 -runfw: org.apache.felix.framework
+-runee: JavaSE-17
 
 -runrequires: \
 	bnd.identity;id='${artifactId}',\
@@ -15,7 +16,7 @@
 runbundles.jersey: \
 	${jersey.deps}
 
--require-bnd: "(version>=6.4.0)"
+-require-bnd: "(version>=7.2.1)"
 
 jersey.deps: \
 	org.apache.aries.spifly.dynamic.bundle;version='[1.3.8,1.4)',\
