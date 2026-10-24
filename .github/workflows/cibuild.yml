@@ -88,13 +88,46 @@ jobs:
         path: '**/target/test-reports/**/*.xml'
         if-no-files-found: ignore
 
-  # main: deploys the SNAPSHOT to Central snapshots.
-  # release: deploys the version without -SNAPSHOT to Central, tags it as
-  # v<version> and opens a pull request bumping main to the next patch SNAPSHOT.
+  # Eclipse Dash license check of all published modules
+  ip-check:
+    name: Eclipse Dash IP check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1
+      with:
+        egress-policy: audit
+
+    - name: Git Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Set up Java
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: maven
+    - name: License check
+      run: |
+        ./.github/scripts/ip-check.sh
+    - name: Upload DEPENDENCIES
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: dash-dependencies
+        path: DEPENDENCIES
+        if-no-files-found: ignore
+
+  # main: deploys the SNAPSHOT to Central snapshots, even if the IP check fails.
+  # release: requires a passing IP check, deploys the version without -SNAPSHOT
+  # to Central, tags it as v<version> and opens a pull request bumping main to
+  # the next patch SNAPSHOT.
   deploy:
-    needs: build
+    needs: [build, ip-check]
     if: >-
-      github.repository == 'eclipse-osgi-technology/jakartarest-osgi'
+      !cancelled()
+      && needs.build.result == 'success'
+      && (needs.ip-check.result == 'success' || github.ref != 'refs/heads/release')
+      && github.repository == 'eclipse-osgi-technology/jakartarest-osgi'
       && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
       && github.event_name == 'push'
     runs-on: ubuntu-latest
