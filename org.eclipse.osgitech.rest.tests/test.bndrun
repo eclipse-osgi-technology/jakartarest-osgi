@@ -8,6 +8,10 @@
 	
 -runfw: org.apache.felix.framework
 -runee: JavaSE-11
+
+# the embedded asm of the spifly framework extension cannot read Java 21+ classes, use spifly.dynamic.bundle
+-runblacklist: \
+	bnd.identity;id='org.apache.aries.spifly.dynamic.framework.extension'
 	
 -runbundles: \
 	jakarta.activation-api;version='[2.1.2,2.1.3)',\

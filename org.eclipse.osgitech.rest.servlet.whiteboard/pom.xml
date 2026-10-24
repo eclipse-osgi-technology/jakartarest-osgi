@@ -92,8 +92,33 @@
 								</artifactItem>
 								<artifactItem>
 									<groupId>org.apache.aries.spifly</groupId>
-									<artifactId>org.apache.aries.spifly.dynamic.framework.extension</artifactId>
-									<destFileName>org.apache.aries.spifly.dynamic.framework.extension.jar</destFileName>
+									<artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+									<destFileName>org.apache.aries.spifly.dynamic.bundle.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.ow2.asm</groupId>
+									<artifactId>asm</artifactId>
+									<destFileName>asm.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.ow2.asm</groupId>
+									<artifactId>asm-commons</artifactId>
+									<destFileName>asm-commons.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.ow2.asm</groupId>
+									<artifactId>asm-tree</artifactId>
+									<destFileName>asm-tree.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.ow2.asm</groupId>
+									<artifactId>asm-analysis</artifactId>
+									<destFileName>asm-analysis.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.ow2.asm</groupId>
+									<artifactId>asm-util</artifactId>
+									<destFileName>asm-util.jar</destFileName>
 								</artifactItem>
 								<artifactItem>
 									<groupId>org.slf4j</groupId>
@@ -142,7 +167,12 @@
 								<bundle>${project.build.directory}/bundles/org.apache.felix.framework.jar</bundle>
 								<bundle>${project.build.directory}/bundles/org.apache.felix.scr.jar</bundle>
 								<bundle>${project.build.directory}/bundles/org.apache.felix.http.jetty.jar</bundle>
-								<bundle>${project.build.directory}/bundles/org.apache.aries.spifly.dynamic.framework.extension.jar</bundle>
+								<bundle>${project.build.directory}/bundles/org.apache.aries.spifly.dynamic.bundle.jar</bundle>
+								<bundle>${project.build.directory}/bundles/asm.jar</bundle>
+								<bundle>${project.build.directory}/bundles/asm-commons.jar</bundle>
+								<bundle>${project.build.directory}/bundles/asm-tree.jar</bundle>
+								<bundle>${project.build.directory}/bundles/asm-analysis.jar</bundle>
+								<bundle>${project.build.directory}/bundles/asm-util.jar</bundle>
 								<bundle>${project.build.directory}/bundles/slf4j-api.jar</bundle>
 								<bundle>${project.build.directory}/bundles/slf4j-simple.jar</bundle>
 							</bundles>

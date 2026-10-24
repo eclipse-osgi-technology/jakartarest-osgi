@@ -123,7 +123,15 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.aries.spifly</groupId>
-			<artifactId>org.apache.aries.spifly.dynamic.framework.extension</artifactId>
+			<artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-util</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>jakarta.servlet</groupId>

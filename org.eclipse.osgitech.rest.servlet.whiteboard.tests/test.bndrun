@@ -33,10 +33,12 @@
 	org.eclipse.parsson.jakarta.json;version='[1.1.5,1.2)',\
 	org.osgi.util.converter;version='[1.0.9,1.1)'
 	
+# the embedded asm of the spifly framework extension cannot read Java 21+ classes, use spifly.dynamic.bundle
 -runblacklist: \
 	bnd.identity;id='org.osgi.service.cm',\
 	bnd.identity;id='org.glassfish.jersey.bundles.jaxrs-ri',\
-	bnd.identity;id='jakarta.json-api'
+	bnd.identity;id='jakarta.json-api',\
+	bnd.identity;id='org.apache.aries.spifly.dynamic.framework.extension'
 -runbundles: \
 	jakarta.activation-api;version='[2.1.2,2.1.3)',\
 	jakarta.annotation-api;version='[2.1.1,2.1.2)',\

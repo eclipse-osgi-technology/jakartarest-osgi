@@ -13,11 +13,13 @@
 	bnd.identity;id='org.apache.felix.gogo.command',\
 	bnd.identity;id='org.apache.felix.gogo.runtime'
 	
+# the embedded asm of the spifly framework extension cannot read Java 21+ classes, use spifly.dynamic.bundle
 -runblacklist: \
 	bnd.identity;id='org.osgi.service.cm',\
 	bnd.identity;id='org.glassfish.jersey.bundles.jaxrs-ri',\
 	bnd.identity;id='org.eclipse.osgitech.rest.jetty',\
-	bnd.identity;id='jakarta.json-api'
+	bnd.identity;id='jakarta.json-api',\
+	bnd.identity;id='org.apache.aries.spifly.dynamic.framework.extension'
 	
 -runbundles.junit: \
 	org.opentest4j;version='[1.3.0,2)',\
