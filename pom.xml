@@ -600,7 +600,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-gpg-plugin</artifactId>
-					<version>3.1.0</version>
+					<version>3.2.8</version>
 					<executions>
 						<execution>
 							<id>sign-artifacts</id>
@@ -608,15 +608,15 @@
 							<goals>
 								<goal>sign</goal>
 							</goals>
-							<configuration>
-                            <!-- This is necessary for gpg to not try to use the pinentry programs. This will endup with: gpg: signing failed: No pinentry -->
-	                            <gpgArguments>
-	                                <arg>--pinentry-mode</arg>
-	                                <arg>loopback</arg>
-	                            </gpgArguments>
-	                        </configuration>
 						</execution>
 					</executions>
+					<configuration>
+						<!-- This is necessary for gpg to not try to use the pinentry programs. This will endup with: gpg: signing failed: No pinentry -->
+						<gpgArguments>
+							<arg>--pinentry-mode</arg>
+							<arg>loopback</arg>
+						</gpgArguments>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -627,10 +627,21 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.sonatype.plugins</groupId>
-					<artifactId>nexus-staging-maven-plugin</artifactId>
-					<version>1.6.13</version>
+					<groupId>org.sonatype.central</groupId>
+					<artifactId>central-publishing-maven-plugin</artifactId>
+					<version>0.12.0</version>
 					<extensions>true</extensions>
+					<configuration>
+						<publishingServerId>central</publishingServerId>
+						<autoPublish>true</autoPublish>
+						<waitUntil>published</waitUntil>
+						<centralSnapshotsUrl>https://central.sonatype.com/repository/maven-snapshots/</centralSnapshotsUrl>
+						<excludeArtifacts>
+							<excludeArtifact>org.eclipse.osgitech.rest.servlet.whiteboard.tests</excludeArtifact>
+							<excludeArtifact>org.eclipse.osgitech.rest.tck</excludeArtifact>
+							<excludeArtifact>org.eclipse.osgitech.rest.tests</excludeArtifact>
+						</excludeArtifacts>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -731,9 +742,8 @@
  
 	<profiles>
 		<profile>
-			<id>release</id>
+			<id>deploy</id>
 			<properties>
-				<gpg.executable>gpg</gpg.executable>
 				<skipTests>true</skipTests>
 				<maven.test.skip>true</maven.test.skip>
 				<bnd.baseline.skip>true</bnd.baseline.skip>
@@ -755,20 +765,15 @@
 						<artifactId>maven-gpg-plugin</artifactId>
 					</plugin>
 					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<configuration>
-							<serverId>ossrh</serverId>
-							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-							<autoReleaseAfterClose>true</autoReleaseAfterClose>
-						</configuration>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
 					</plugin>
 				</plugins>
 			</build>
 			<distributionManagement>
 				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+					<id>central</id>
+					<url>https://central.sonatype.com/repository/maven-snapshots</url>
 				</snapshotRepository>
 			</distributionManagement>
 		</profile>
