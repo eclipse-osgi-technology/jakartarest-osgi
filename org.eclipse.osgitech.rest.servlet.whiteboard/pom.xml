@@ -45,10 +45,17 @@
 		<dependency>
     			<groupId>org.osgi</groupId>
     			<artifactId>org.osgi.service.condition</artifactId>
+    			<scope>provided</scope>
     	</dependency>
 		<dependency>
     			<groupId>org.osgi</groupId>
     			<artifactId>org.osgi.util.tracker</artifactId>
+    			<scope>provided</scope>
+    	</dependency>
+		<dependency>
+    			<groupId>org.osgi</groupId>
+    			<artifactId>org.osgi.framework</artifactId>
+    			<scope>provided</scope>
     	</dependency>
 	</dependencies>
 	
