@@ -25,46 +25,238 @@ env:
 defaults:
   run:
     shell: bash
-    
+
 permissions:
   contents: read
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         java:
-        - '11'
         - '17'
+        - '21'
+        - '25'
         os:
         - 'ubuntu-latest'
         include:
         - os: 'windows-latest'
           java: '17'
-        - os: 'ubuntu-latest'
-          java: '17'
-          canonical: ${{ (github.repository == 'osgi/jakartarest-osgi') && ((github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/release')) && (github.event_name != 'pull_request') }}
-        - os: 'ubuntu-latest'
-          java: '17'
-    name: JDK${{ matrix.java }} ${{ matrix.os }} ${{ matrix.mavenopts }}
+    name: JDK${{ matrix.java }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      # the test report is published as a check run
+      checks: write
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@55d479fb1c5bcad5a4f9099a5d9f37c8857b2845
+      uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1
       with:
-        egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
-        
+        egress-policy: audit
+
     - name: Git Checkout
-      uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Set up Java ${{ matrix.java }}
-      uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
       with:
         distribution: 'temurin'
         java-version: ${{ matrix.java }}
         cache: maven
     - name: Build Maven
-      id: build
-      continue-on-error: ${{ matrix.experimental }}
       run: |
-        ./.github/scripts/build.sh ${{ matrix.mavenopts }}
+        ./.github/scripts/build.sh
 
+    # unit, OSGi integration and TCK results as a check run, once per build
+    - name: Test report
+      if: always() && matrix.os == 'ubuntu-latest' && matrix.java == '17'
+      continue-on-error: true
+      uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+      with:
+        report_paths: '**/target/test-reports/**/*.xml'
+        check_name: Test results
+        require_tests: false
+        detailed_summary: true
+        include_passed: true
+        group_suite: true
+        include_time_in_summary: true
+        truncate_stack_traces: false
+    - name: Upload test reports
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: test-reports-jdk${{ matrix.java }}-${{ matrix.os }}
+        path: '**/target/test-reports/**/*.xml'
+        if-no-files-found: ignore
+
+  # Eclipse Dash license check of all published modules
+  ip-check:
+    name: Eclipse Dash IP check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1
+      with:
+        egress-policy: audit
+
+    - name: Git Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Set up Java
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: maven
+    - name: License check
+      run: |
+        ./.github/scripts/ip-check.sh
+    - name: Upload DEPENDENCIES
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: dash-dependencies
+        path: DEPENDENCIES
+        if-no-files-found: ignore
+
+  # main: deploys the SNAPSHOT to Central snapshots, even if the IP check fails.
+  # release: requires a passing IP check, deploys the version without -SNAPSHOT
+  # to Central, tags it as v<version> and opens a pull request bumping main to
+  # the next patch SNAPSHOT.
+  deploy:
+    needs: [build, ip-check]
+    if: >-
+      !cancelled()
+      && needs.build.result == 'success'
+      && (needs.ip-check.result == 'success' || github.ref != 'refs/heads/release')
+      && github.repository == 'eclipse-osgi-technology/jakartarest-osgi'
+      && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
+      && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency: deploy-${{ github.ref }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1
+      with:
+        egress-policy: audit
+
+    - name: Verify deployment secrets are configured
+      run: |
+        MISSING=""
+        if [[ -z "${SECRET_GPG_KEY}" ]]; then MISSING="${MISSING} GPG_PRIVATE_KEY"; fi
+        if [[ -z "${SECRET_GPG_PASS}" ]]; then MISSING="${MISSING} GPG_PASSPHRASE"; fi
+        if [[ -z "${SECRET_SONATYPE_USER}" ]]; then MISSING="${MISSING} CENTRAL_SONATYPE_TOKEN_USERNAME"; fi
+        if [[ -z "${SECRET_SONATYPE_PASS}" ]]; then MISSING="${MISSING} CENTRAL_SONATYPE_TOKEN_PASSWORD"; fi
+        if [[ -n "${MISSING}" ]]; then
+          echo "::error::Missing required deployment secrets:${MISSING}"
+          exit 1
+        fi
+      env:
+        SECRET_GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        SECRET_GPG_PASS: ${{ secrets.GPG_PASSPHRASE }}
+        SECRET_SONATYPE_USER: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
+        SECRET_SONATYPE_PASS: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
+    - name: Install gpg secret key
+      run: |
+        cat <(echo -e "${{ secrets.GPG_PRIVATE_KEY }}") | gpg --batch --import
+        gpg --list-secret-keys --keyid-format LONG
+    - name: Git Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Set up Java
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: maven
+        server-id: central
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_PASSWORD
+        gpg-passphrase: PASSPHRASE
+    - name: Determine version
+      id: version
+      run: |
+        REVISION=$(./mvnw -B -q help:evaluate -Dexpression=revision -DforceStdout)
+        echo "Project revision: ${REVISION}"
+        if [[ "${REVISION}" != *-SNAPSHOT ]]; then
+          echo "::error::revision must be a SNAPSHOT version, but found: ${REVISION}"
+          exit 1
+        fi
+        if [[ "${GITHUB_REF}" == "refs/heads/release" ]]; then
+          VERSION="${REVISION%-SNAPSHOT}"
+          if [[ -n "$(git ls-remote --tags origin "refs/tags/v${VERSION}")" ]]; then
+            echo "::error::Tag v${VERSION} already exists, bump the revision on main first"
+            exit 1
+          fi
+        else
+          VERSION="${REVISION}"
+        fi
+        echo "Deploying version: ${VERSION}"
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+    - name: Deploy
+      run: |
+        ./mvnw -B --no-transfer-progress -Pdeploy clean deploy -Drevision=${{ steps.version.outputs.version }}
+      env:
+        MAVEN_USERNAME: ${{ secrets.CENTRAL_SONATYPE_TOKEN_USERNAME }}
+        MAVEN_PASSWORD: ${{ secrets.CENTRAL_SONATYPE_TOKEN_PASSWORD }}
+        PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+    # uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts
+    - name: Update dependency graph
+      continue-on-error: true
+      uses: advanced-security/maven-dependency-submission-action@b275d12641ac2d2108b2cbb7598b154ad2f2cee8 # v5.0.0
+      with:
+        directory: '/'
+    - name: Upload SBOM
+      if: github.ref == 'refs/heads/release'
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: sbom
+        path: target/jakartarest-osgi-sbom.json
+    - name: Tag release
+      if: github.ref == 'refs/heads/release'
+      run: |
+        VERSION=${{ steps.version.outputs.version }}
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git tag -a "v${VERSION}" -m "Release ${VERSION}"
+        git push origin "v${VERSION}"
+    - name: Open pull request to bump main
+      if: github.ref == 'refs/heads/release'
+      run: |
+        VERSION=${{ steps.version.outputs.version }}
+        IFS=. read -r MAJOR MINOR PATCH <<< "${VERSION}"
+        NEXT="${MAJOR}.${MINOR}.$((PATCH + 1))-SNAPSHOT"
+        BRANCH="bump/${NEXT}"
+        git fetch origin main
+        git switch -c "${BRANCH}" origin/main
+        sed -i "s|<revision>${VERSION}-SNAPSHOT</revision>|<revision>${NEXT}</revision>|" pom.xml
+        if git diff --quiet; then
+          echo "::notice::main is not on ${VERSION}-SNAPSHOT anymore, no bump needed"
+          exit 0
+        fi
+        git commit -am "Bump version to ${NEXT}"
+        git push origin "${BRANCH}"
+        gh pr create --base main --head "${BRANCH}" \
+          --title "Bump version to ${NEXT}" \
+          --body "Version ${VERSION} was released and tagged as v${VERSION}."
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Stores the SBOM of a release for ingestion into https://sbom.eclipse.org.
+  # Runs once the repository/organization variable SBOM_PARENT_PROJECT_UUID
+  # holds the parent project UUID provided by the Eclipse security team.
+  store-sbom-data:
+    needs: deploy
+    if: >-
+      github.ref == 'refs/heads/release'
+      && vars.SBOM_PARENT_PROJECT_UUID != ''
+    uses: eclipse-csi/workflows/.github/workflows/store-sbom-data.yml@3d34535001cf5d48ba1e763e9b2a6fa79013d4d5
+    with:
+      projectName: 'jakartarest-osgi'
+      projectVersion: ${{ needs.deploy.outputs.version }}
+      bomArtifact: 'sbom'
+      bomFilename: 'jakartarest-osgi-sbom.json'
+      parentProject: ${{ vars.SBOM_PARENT_PROJECT_UUID }}

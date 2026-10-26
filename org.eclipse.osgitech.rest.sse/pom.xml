@@ -4,7 +4,7 @@
 	<parent>
 	        <groupId>org.eclipse.osgi-technology.rest</groupId>
 	        <artifactId>parent</artifactId>
-	        <version>1.2.3-SNAPSHOT</version>
+	        <version>${revision}</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
     
@@ -48,6 +48,7 @@
 		<dependency>
 			<groupId>biz.aQute.bnd</groupId>
 			<artifactId>biz.aQute.bnd.annotation</artifactId>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 

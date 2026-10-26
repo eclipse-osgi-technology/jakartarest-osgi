@@ -27,4 +27,4 @@ SPDX-License-Identifier: EPL-2.0
 
 The project maintains the following source code repositories:
 
- * https://github.com/osgi/jakartarest-osgi.git
+ * https://github.com/eclipse-osgi-technology/jakartarest-osgi.git

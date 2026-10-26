@@ -5,7 +5,7 @@
 	<parent>
         <groupId>org.eclipse.osgi-technology.rest</groupId>
         <artifactId>parent</artifactId>
-        <version>1.2.3-SNAPSHOT</version>
+        <version>${revision}</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
     
@@ -40,9 +40,9 @@
 		   	<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.osgi</groupId>
+			<groupId>org.osgi.tck</groupId>
 			<artifactId>org.osgi.test.cases.jakartars</artifactId>
-			<version>9.0.0-SNAPSHOT</version>
+			<version>${jakartars.spec.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -135,7 +135,15 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.aries.spifly</groupId>
-			<artifactId>org.apache.aries.spifly.dynamic.framework.extension</artifactId>
+			<artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-util</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>jakarta.servlet</groupId>
@@ -257,14 +265,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
-                </configuration>
-            </plugin>-->
 		</plugins>
 	</build>
 </project>

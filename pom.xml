@@ -4,22 +4,21 @@
 
 	<groupId>org.eclipse.osgi-technology.rest</groupId>
 	<artifactId>parent</artifactId>
-	<version>1.2.3-SNAPSHOT</version>
+	<version>${revision}</version>
 	<packaging>pom</packaging>
 	<name>Eclipse OSGi Technology Jakarta REST</name>
 	<description>Eclipse OSGi Technology Jakarta RESTful Services Whiteboard</description>
-	<url>https://github.com/osgi/jakartarest-osgi</url>
-	
+	<url>https://github.com/eclipse-osgi-technology/jakartarest-osgi</url>
+
 	<scm>
-		<url>https://github.com/osgi/jakartarest-osgi</url>
-		<connection>scm:git:git@github.com:osgi/jakartarest-osgi.git</connection>
-		<developerConnection>scm:git:git@github.com:osgi/jakartarest-osgi.git</developerConnection>
-		<tag>release</tag>		
+		<url>https://github.com/eclipse-osgi-technology/jakartarest-osgi</url>
+		<connection>scm:git:https://github.com/eclipse-osgi-technology/jakartarest-osgi.git</connection>
+		<developerConnection>scm:git:git@github.com:eclipse-osgi-technology/jakartarest-osgi.git</developerConnection>
 	</scm>
-	
+
 	<issueManagement>
  		<system>GitHub</system>
- 		<url>https://github.com/osgi/jakartarest-osgi/issues</url>
+ 		<url>https://github.com/eclipse-osgi-technology/jakartarest-osgi/issues</url>
 	 </issueManagement>
 
 	<organization>
@@ -56,19 +55,23 @@
 	</licenses>
 
 	<properties>
+		<revision>1.2.4-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
-		<bnd.version>6.4.0</bnd.version>
-		<junit-jupiter.version>5.9.2</junit-jupiter.version>
-		<assertj.version>3.24.2</assertj.version>
-		<mockito.version>5.4.0</mockito.version>
-		<osgi-test.version>1.2.1</osgi-test.version>
+		<maven.compiler.release>17</maven.compiler.release>
+		<!-- modules without Java sources set it to package, Central requires a javadoc jar -->
+		<javadoc.empty.phase>none</javadoc.empty.phase>
+		<bnd.version>7.2.1</bnd.version>
+		<junit-jupiter.version>5.14.4</junit-jupiter.version>
+		<assertj.version>3.27.7</assertj.version>
+		<mockito.version>5.24.0</mockito.version>
+		<byte-buddy.version>1.18.3</byte-buddy.version>
+		<osgi-test.version>1.4.0-SNAPSHOT</osgi-test.version>
 		<jersey.version>3.1.3</jersey.version>
 		<hk2.version>3.0.5</hk2.version>
-		<asm.version>9.5</asm.version>
+		<asm.version>9.11.1</asm.version>
 		<jackson.version>2.15.2</jackson.version>
 		<parsson.version>1.1.5</parsson.version>
+		<jakartars.spec.version>2.0.1-SNAPSHOT</jakartars.spec.version>
 	</properties>
 
 	<modules>
@@ -88,14 +91,14 @@
 	
 	<repositories>
 		<repository>
-			 <id>OSSRH</id>
-			 <name>Maven OSSRH Snapshots</name>
-			 <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			 <id>central-snapshots</id>
+			 <name>Maven Central Snapshots</name>
+			 <url>https://central.sonatype.com/repository/maven-snapshots/</url>
 			 <snapshots>
 				 <enabled>true</enabled>
 			 </snapshots>
 			 <releases>
-				 <enabled>true</enabled>
+				 <enabled>false</enabled>
 			 </releases>
 		</repository>
 	</repositories>
@@ -105,7 +108,12 @@
 			 <dependency>
 				<groupId>net.bytebuddy</groupId>
 				<artifactId>byte-buddy</artifactId>
-				<version>1.12.21</version>
+				<version>${byte-buddy.version}</version>
+			 </dependency>
+			 <dependency>
+				<groupId>net.bytebuddy</groupId>
+				<artifactId>byte-buddy-agent</artifactId>
+				<version>${byte-buddy.version}</version>
 			 </dependency>
 			 <dependency>
 				<groupId>jakarta.servlet</groupId>
@@ -217,6 +225,14 @@
 				<artifactId>jakarta.activation</artifactId>
 				<version>2.0.1</version>
 			 </dependency>
+			 <!-- before hk2-bom, which manages an older asm version -->
+			 <dependency>
+				<groupId>org.ow2.asm</groupId>
+				<artifactId>asm-bom</artifactId>
+				<version>${asm.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			 </dependency>
 			 <dependency>
 				<groupId>org.glassfish.hk2</groupId>
 				<artifactId>hk2-bom</artifactId>
@@ -239,13 +255,6 @@
 				<groupId>org.glassfish.jersey</groupId>
 				<artifactId>jersey-bom</artifactId>
 				<version>${jersey.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			 </dependency>
-			 <dependency>
-				<groupId>org.ow2.asm</groupId>
-				<artifactId>asm-bom</artifactId>
-				<version>${asm.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			 </dependency>
@@ -341,7 +350,7 @@
 			 <dependency>
 				<groupId>org.osgi</groupId>
 				<artifactId>org.osgi.service.jakartars</artifactId>
-				<version>2.0.0</version>
+				<version>${jakartars.spec.version}</version>
 			 </dependency>
 			 <dependency>
 				<groupId>org.osgi</groupId>
@@ -428,8 +437,8 @@
 			 </dependency>
 			 <dependency>
 				<groupId>org.apache.aries.spifly</groupId>
-				<artifactId>org.apache.aries.spifly.dynamic.framework.extension</artifactId>
-				<version>1.3.6</version>
+				<artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+				<version>1.3.8</version>
 			 </dependency>
 			 <dependency>
 				<groupId>org.assertj</groupId>
@@ -462,7 +471,7 @@
 			 <dependency>
 				<groupId>biz.aQute.bnd</groupId>
 				<artifactId>biz.aQute.bnd.annotation</artifactId>
-				<version>6.4.0</version>
+				<version>${bnd.version}</version>
 			 </dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -576,7 +585,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.11.0</version>
+					<version>3.16.0</version>
 					<configuration>
 						<showWarnings>true</showWarnings>
 						<showDeprecation>true</showDeprecation>
@@ -588,12 +597,12 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-resources-plugin</artifactId>
-					<version>3.3.1</version>
+					<version>3.5.0</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-gpg-plugin</artifactId>
-					<version>3.1.0</version>
+					<version>3.2.8</version>
 					<executions>
 						<execution>
 							<id>sign-artifacts</id>
@@ -601,39 +610,50 @@
 							<goals>
 								<goal>sign</goal>
 							</goals>
-							<configuration>
-                            <!-- This is necessary for gpg to not try to use the pinentry programs. This will endup with: gpg: signing failed: No pinentry -->
-	                            <gpgArguments>
-	                                <arg>--pinentry-mode</arg>
-	                                <arg>loopback</arg>
-	                            </gpgArguments>
-	                        </configuration>
 						</execution>
 					</executions>
+					<configuration>
+						<!-- This is necessary for gpg to not try to use the pinentry programs. This will endup with: gpg: signing failed: No pinentry -->
+						<gpgArguments>
+							<arg>--pinentry-mode</arg>
+							<arg>loopback</arg>
+						</gpgArguments>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.1.2</version>
+					<version>3.6.0</version>
 					<configuration>
 						<reportsDirectory>${basedir}/target/test-reports/junit</reportsDirectory>
 					</configuration>
 				</plugin>
 				<plugin>
-					<groupId>org.sonatype.plugins</groupId>
-					<artifactId>nexus-staging-maven-plugin</artifactId>
-					<version>1.6.13</version>
+					<groupId>org.sonatype.central</groupId>
+					<artifactId>central-publishing-maven-plugin</artifactId>
+					<version>0.12.0</version>
 					<extensions>true</extensions>
+					<configuration>
+						<publishingServerId>central</publishingServerId>
+						<autoPublish>true</autoPublish>
+						<waitUntil>published</waitUntil>
+						<centralSnapshotsUrl>https://central.sonatype.com/repository/maven-snapshots/</centralSnapshotsUrl>
+						<excludeArtifacts>
+							<excludeArtifact>org.eclipse.osgitech.rest.servlet.whiteboard.tests</excludeArtifact>
+							<excludeArtifact>org.eclipse.osgitech.rest.tck</excludeArtifact>
+							<excludeArtifact>org.eclipse.osgitech.rest.tests</excludeArtifact>
+						</excludeArtifacts>
+					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-install-plugin</artifactId>
-					<version>3.1.0</version>
+					<version>3.2.0</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-source-plugin</artifactId>
-					<version>3.3.0</version>
+					<version>3.4.0</version>
 					<executions>
 						<execution>
 							<id>attach-sources</id>
@@ -647,7 +667,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.5.0</version>
+					<version>3.12.0</version>
 					<executions>
 						<execution>
 							<id>attach-javadocs</id>
@@ -665,19 +685,102 @@
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
-   					<artifactId>maven-release-plugin</artifactId>
-   					<version>3.0.1</version>
-   					<configuration>
-      					<tagNameFormat>v@{project.version}</tagNameFormat>
-      					<autoVersionSubmodules>true</autoVersionSubmodules>
-      					<autoResolveSnapshots>1</autoResolveSnapshots>
-      					<releaseProfiles>release</releaseProfiles>
-      					<allowTimestampedSnapshots>true</allowTimestampedSnapshots>
-   					</configuration>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>3.5.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>3.2.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.5.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>3.11.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-archetype-plugin</artifactId>
+					<version>3.4.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-enforcer-plugin</artifactId>
+					<version>3.6.3</version>
+					<executions>
+						<execution>
+							<id>enforce-build-environment</id>
+							<goals>
+								<goal>enforce</goal>
+							</goals>
+							<configuration>
+								<rules>
+									<requireMavenVersion>
+										<version>[3.9,)</version>
+									</requireMavenVersion>
+									<!-- bnd 7 requires Java 17 -->
+									<requireJavaVersion>
+										<version>[17,)</version>
+									</requireJavaVersion>
+								</rules>
+							</configuration>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.cyclonedx</groupId>
+					<artifactId>cyclonedx-maven-plugin</artifactId>
+					<version>2.9.3</version>
+					<configuration>
+						<outputFormat>json</outputFormat>
+					</configuration>
+					<executions>
+						<execution>
+							<id>sbom</id>
+							<phase>package</phase>
+							<goals>
+								<goal>makeBom</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>flatten-maven-plugin</artifactId>
+					<version>1.7.3</version>
+					<configuration>
+						<flattenMode>oss</flattenMode>
+						<updatePomFile>true</updatePomFile>
+					</configuration>
+					<executions>
+						<execution>
+							<id>flatten</id>
+							<phase>process-resources</phase>
+							<goals>
+								<goal>flatten</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>flatten-clean</id>
+							<phase>clean</phase>
+							<goals>
+								<goal>clean</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+			</plugin>
 			<plugin>
 				<groupId>biz.aQute.bnd</groupId>
 				<artifactId>bnd-maven-plugin</artifactId>
@@ -702,14 +805,36 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.cyclonedx</groupId>
+				<artifactId>cyclonedx-maven-plugin</artifactId>
+				<executions>
+					<!-- aggregated SBOM of all published modules for sbom.eclipse.org -->
+					<execution>
+						<id>sbom-aggregate</id>
+						<phase>package</phase>
+						<goals>
+							<goal>makeAggregateBom</goal>
+						</goals>
+						<inherited>false</inherited>
+						<configuration>
+							<outputName>jakartarest-osgi-sbom</outputName>
+							<skipAttach>true</skipAttach>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
  
 	<profiles>
 		<profile>
-			<id>release</id>
+			<id>deploy</id>
 			<properties>
-				<gpg.executable>gpg</gpg.executable>
 				<skipTests>true</skipTests>
 				<maven.test.skip>true</maven.test.skip>
 				<bnd.baseline.skip>true</bnd.baseline.skip>
@@ -731,24 +856,32 @@
 						<artifactId>maven-gpg-plugin</artifactId>
 					</plugin>
 					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-release-plugin</artifactId>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
 					</plugin>
 					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<configuration>
-							<serverId>ossrh</serverId>
-							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-							<autoReleaseAfterClose>true</autoReleaseAfterClose>
-						</configuration>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-jar-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>empty-javadoc-jar</id>
+								<phase>${javadoc.empty.phase}</phase>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+								<configuration>
+									<classifier>javadoc</classifier>
+									<classesDirectory>${project.build.directory}/empty-javadoc</classesDirectory>
+								</configuration>
+							</execution>
+						</executions>
 					</plugin>
 				</plugins>
 			</build>
 			<distributionManagement>
 				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+					<id>central</id>
+					<url>https://central.sonatype.com/repository/maven-snapshots</url>
 				</snapshotRepository>
 			</distributionManagement>
 		</profile>
@@ -775,7 +908,7 @@
 					<plugin>
 						<groupId>org.eclipse.dash</groupId>
 						<artifactId>license-tool-plugin</artifactId>
-						<version>1.0.2</version>
+						<version>1.1.0</version>
 						<executions>
 							<execution>
 								<id>license-check</id>

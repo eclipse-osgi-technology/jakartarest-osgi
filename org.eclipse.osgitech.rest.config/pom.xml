@@ -4,13 +4,17 @@
 	<parent>
        	<groupId>org.eclipse.osgi-technology.rest</groupId>
        	<artifactId>parent</artifactId>
-       	<version>1.2.3-SNAPSHOT</version>
+       	<version>${revision}</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
     
 	<artifactId>org.eclipse.osgitech.rest.config</artifactId>
 	<name>JakartaREST / Jersey Default Configuration Fragment</name>
 	<description>Default configuration for the Jersey based Jakarta RESTful Web Services Whiteboard implementation</description>
+
+	<properties>
+		<javadoc.empty.phase>package</javadoc.empty.phase>
+	</properties>
     
 	<dependencies>
 		<dependency>

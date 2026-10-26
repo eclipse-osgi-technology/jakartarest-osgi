@@ -1,12 +1,18 @@
 # OSGi Technology Whiteboard Implementation for Jakarta RESTful Web Services
 
+[![CI Build](https://github.com/eclipse-osgi-technology/jakartarest-osgi/actions/workflows/cibuild.yml/badge.svg?branch=main)](https://github.com/eclipse-osgi-technology/jakartarest-osgi/actions/workflows/cibuild.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/org.eclipse.osgi-technology.rest/org.eclipse.osgitech.rest)](https://central.sonatype.com/artifact/org.eclipse.osgi-technology.rest/org.eclipse.osgitech.rest)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/eclipse-osgi-technology/jakartarest-osgi/badge)](https://securityscorecards.dev/viewer/?uri=github.com/eclipse-osgi-technology/jakartarest-osgi)
+
 This is a OSGi Whiteboard implementation for Jakarta RESTful Web Services based on Eclipse Jersey.
 
 https://docs.osgi.org/specification/osgi.cmpn/8.1.0/service.jakartars.html
 
 https://eclipse-ee4j.github.io/jersey/
 
-This implementation is **compliant** in respect to the corresponding OSGi Whiteboard specification.
+This implementation is **compliant** in respect to the corresponding OSGi Whiteboard specification. API and TCK of the specification are maintained in [osgi/org.osgi.service.jakartars](https://github.com/osgi/org.osgi.service.jakartars).
+
+It requires Java 17 or newer.
 
 It uses:
 
@@ -25,7 +31,7 @@ To use it, you will need the following bundles:
 * **org.eclipse.osgitech.rest.sse** - An optional fragment for the use of server sent events
 
 
-You will find the Release and Snapshot artifacts at Maven Central, respectively the snapshots at https://oss.sonatype.org.
+You will find the release artifacts at Maven Central and the snapshots at https://central.sonatype.com/repository/maven-snapshots/.
 
 ```
 <dependency>
@@ -101,7 +107,7 @@ The following properties are supported for configuring the Whiteboard on Jersey:
 |`jersey.jakartars.whiteboard.name`| The name of the whiteboard| Jersey REST | 
 |`jersey.disable.sessions`| Enable/disable session handling in Jetty.<br>Disabled by default as REST services are stateless. | `true` | 
 
-The definition of these properties is located in [JerseyConstants](https://github.com/osgi/jakartarest-osgi/blob/main/org.eclipse.osgitech.rest/src/main/java/org/eclipse/osgitech/rest/provider/JerseyConstants.java).
+The definition of these properties is located in [JerseyConstants](https://github.com/eclipse-osgi-technology/jakartarest-osgi/blob/main/org.eclipse.osgitech.rest/src/main/java/org/eclipse/osgitech/rest/provider/JerseyConstants.java).
 
 **_Note:_**  
 The default value for `jersey.context.path` is `/rest`. So if you don't configure a value via the _configurator.json_ file, your services will be available via the `rest` context path. This is also the case for a custom Jakarta-RS application. If you don't want to use a context path, you explicitly have to set it to an empty value.
@@ -157,7 +163,7 @@ The second block `JakartarsServletWhiteboardRuntimeComponent~demo` is used to co
 |`jersey.jakartars.whiteboard.name`| The name of the whiteboard| Jersey REST | 
 |`osgi.http.whiteboard.target`| Service property specifying the target filter to select the Http Whiteboard implementation to process the service.<br>The value is an LDAP style filter that points to the id defined in `org.apache.felix.http.runtime.init.id`. | - | 
 
-The definition of these properties is located in [JerseyConstants](https://github.com/osgi/jakartarest-osgi/blob/main/org.eclipse.osgitech.rest/src/main/java/org/eclipse/osgitech/rest/provider/JerseyConstants.java).
+The definition of these properties is located in [JerseyConstants](https://github.com/eclipse-osgi-technology/jakartarest-osgi/blob/main/org.eclipse.osgitech.rest/src/main/java/org/eclipse/osgitech/rest/provider/JerseyConstants.java).
 
 Please note, that the Felix Jetty implementation runs the OSGi HTTP Service by default at port 8080. 
 
@@ -192,13 +198,12 @@ The module *org.eclipse.osgitech.rest.archetype* contains a Maven template to cr
 To create a sample project call:
 
 ```bash
-mvn archetype:generate 
--DarchetypeGroupId=org.eclipse.osgi-technology.rest 
--DarchetypeArtifactId=org.eclipse.osgitech.rest.archetype 
--DarchetypeVersion=1.0.0-SNAPSHOT 
--DgroupId=<your-group-id> 
--DartifactId=<your-artifact-id>
-
+mvn archetype:generate \
+  -DarchetypeGroupId=org.eclipse.osgi-technology.rest \
+  -DarchetypeArtifactId=org.eclipse.osgitech.rest.archetype \
+  -DarchetypeVersion=${version} \
+  -DgroupId=<your-group-id> \
+  -DartifactId=<your-artifact-id>
 ```
 
 The generated project contains a ready to run [example](org.eclipse.osgitech.rest.archetype/src/main/resources/archetype-resources/readme.md).
@@ -231,3 +236,34 @@ Furthermore this dependency brings three bndtools project templates:
 3. Jakarta REST Resource with a configuration for the use with the OSGI Servlet Whiteboard
 
 All these projects can be imported using the bndtools project wizard.
+
+## Build
+
+You need Java 17 or newer:
+
+```bash
+./mvnw clean install
+```
+
+This builds all modules and runs the unit tests, the OSGi integration tests and the TCK of the specification.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Release
+
+The version lives in exactly one place, the `revision` property in the root `pom.xml`.
+On `main` it is always a `-SNAPSHOT` version.
+
+The CI build deploys:
+
+* every push to `main` as SNAPSHOT to the Central snapshots repository,
+* every push to `release` as release to Maven Central.
+
+A release requires a passing Eclipse Dash IP check. To release e.g. `1.2.4` while `main` is on `1.2.4-SNAPSHOT`:
+
+1. Merge `main` into `release` (a fast forward, there are no commits of its own on `release`) and push it.
+2. The CI build deploys the version without `-SNAPSHOT`, i.e. `1.2.4`, tags the commit as `v1.2.4` and opens a pull request that bumps `main` to `1.2.5-SNAPSHOT`.
+3. Merge that pull request. For a minor or major release, set the `revision` on `main` accordingly before.
+
+The release fails when the tag already exists, so a version can only be released once.
+
+**Note:** Releases up to 1.2.3 were made with the maven-release-plugin, so `release` still contains commits of its own. Before the first release with this process, reset `release` once to `main` (`git push --force origin main:release`).

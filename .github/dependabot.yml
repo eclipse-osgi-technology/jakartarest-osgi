@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      # Jupiter and Platform only work together: one pull request
+      junit:
+        patterns:
+          - "org.junit*"
+      jersey:
+        patterns:
+          - "org.glassfish.jersey*"
+          - "org.glassfish.hk2*"
+      asm:
+        patterns:
+          - "org.ow2.asm*"
+      bnd:
+        patterns:
+          - "biz.aQute.bnd*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"

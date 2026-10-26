@@ -4,7 +4,7 @@
 	<parent>
 	        <groupId>org.eclipse.osgi-technology.rest</groupId>
 	        <artifactId>parent</artifactId>
-	        <version>1.2.3-SNAPSHOT</version>
+	        <version>${revision}</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
     
@@ -49,14 +49,17 @@
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.framework</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.resource</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.dto</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
@@ -65,10 +68,12 @@
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.util.tracker</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.service.condition</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.osgi</groupId>
@@ -89,6 +94,7 @@
 		<dependency>
 			<groupId>biz.aQute.bnd</groupId>
 			<artifactId>biz.aQute.bnd.annotation</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.felix</groupId>
@@ -128,5 +134,30 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- load Mockito as agent at startup, self-attaching fails on Java 21+ -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>dependency-properties</id>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

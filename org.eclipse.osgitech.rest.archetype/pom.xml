@@ -4,7 +4,7 @@
 	<parent>
 	    <groupId>org.eclipse.osgi-technology.rest</groupId>
 	    <artifactId>parent</artifactId>
-	    <version>1.2.3-SNAPSHOT</version>
+	    <version>${revision}</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	
@@ -13,17 +13,33 @@
 	<name>JakartaREST / Jersey Whiteboard Example Archetype</name>
   
 	<properties>
+		<javadoc.empty.phase>package</javadoc.empty.phase>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>11</maven.compiler.target>
 	</properties>  
 	
 	<build>
+		<!-- versions of this build go into the generated pom as @...@, ${...} is left to the archetype -->
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>archetype-resources/pom.xml</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>archetype-resources/pom.xml</exclude>
+				</excludes>
+			</resource>
+		</resources>
 		<extensions>
 			<extension>
 				<groupId>org.apache.maven.archetype</groupId>
 				<artifactId>archetype-packaging</artifactId>
-				<version>3.1.1</version>
+				<version>3.4.1</version>
 			</extension>
 		</extensions>
 		<plugins>
@@ -32,6 +48,16 @@
 				<artifactId>bnd-maven-plugin</artifactId>
 				<configuration>
 					<skip>true</skip>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<configuration>
+					<useDefaultDelimiters>false</useDefaultDelimiters>
+					<delimiters>
+						<delimiter>@</delimiter>
+					</delimiters>
 				</configuration>
 			</plugin>
 		</plugins>

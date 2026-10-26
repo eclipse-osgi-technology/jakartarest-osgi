@@ -1,21 +1,23 @@
 name: license
 
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: '*'
+    branches-ignore:
+    - 'dependabot/**'
   pull_request:
-    branches: '*'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check License Header
-        uses: apache/skywalking-eyes@438e4ea5682269933ea2c8b5608662e52af26959  # always prefer to use a hash instead of `main` or `v0.0.4`.
+        uses: apache/skywalking-eyes@a196742f472feaffafea537ce5a2a4c3c53a8de4 # v0.9.0
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # needed only when you want License-Eye to comment on the pull request.
