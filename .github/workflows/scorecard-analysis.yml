@@ -1,6 +1,6 @@
-# The Scorecard API verifies this file, so it must follow the scorecard-action
-# workflow restrictions: no top-level env or defaults, no workflow-level write
-# permissions, id-token: write only on this job and only approved actions.
+# Managed by the otterdog blueprint
+# https://github.com/eclipse-osgi-technology/.eclipsefdn/blob/main/otterdog/blueprints/scorecard.yml
+# change it there; the logic lives in eclipse-osgi-technology/.github.
 name: Scorecard analysis
 on:
   branch_protection_rule:
@@ -8,29 +8,10 @@ on:
     - cron: '43 5 * * 2'
   push:
     branches: [ main ]
-
 permissions: read-all
-
 jobs:
   analysis:
-    runs-on: ubuntu-latest
     permissions:
       security-events: write
       id-token: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Run analysis
-        uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
-        with:
-          results_file: results.sarif
-          results_format: sarif
-          publish_results: true
-
-      - name: Upload to code-scanning
-        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
-        with:
-          sarif_file: results.sarif
+    uses: eclipse-osgi-technology/.github/.github/workflows/scorecard.yml@main
