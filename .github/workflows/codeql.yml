@@ -1,3 +1,6 @@
+# Managed by the otterdog blueprint
+# https://github.com/eclipse-osgi-technology/.eclipsefdn/blob/main/otterdog/blueprints/codeql.yml
+# change it there; the logic lives in eclipse-osgi-technology/.github.
 name: CodeQL
 on:
   push:
@@ -6,30 +9,11 @@ on:
     branches: [ main ]
   schedule:
     - cron: '17 4 * * 3'
-
 permissions:
   contents: read
-
 jobs:
   analyze:
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      # build-mode none needs no working Maven build
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
-        with:
-          languages: java
-          build-mode: none
-
-      - name: Analyze
-        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
-        with:
-          category: "/language:java"
+    uses: eclipse-osgi-technology/.github/.github/workflows/codeql.yml@main
