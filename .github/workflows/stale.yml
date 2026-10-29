@@ -1,0 +1,17 @@
+# Managed by the otterdog blueprint
+# https://github.com/eclipse-osgi-technology/.eclipsefdn/blob/main/otterdog/blueprints/stale.yml
+# change it there; the logic lives in eclipse-osgi-technology/.github.
+name: Stale
+on:
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stale:
+    # a called workflow gets at most what this job grants
+    permissions:
+      issues: write
+      pull-requests: write
+    uses: eclipse-osgi-technology/.github/.github/workflows/stale.yml@main
