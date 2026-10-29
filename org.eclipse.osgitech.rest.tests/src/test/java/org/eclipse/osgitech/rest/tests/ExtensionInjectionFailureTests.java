@@ -11,22 +11,23 @@
  */
 package org.eclipse.osgitech.rest.tests;
 
+import static org.eclipse.osgitech.rest.tests.RuntimeDTOs.defaultApplicationHasExtension;
+import static org.eclipse.osgitech.rest.tests.RuntimeDTOs.defaultApplicationHasResource;
+import static org.eclipse.osgitech.rest.tests.RuntimeDTOs.hasFailedExtension;
+import static org.eclipse.osgitech.rest.tests.RuntimeDTOs.serviceId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.jakartars.runtime.JakartarsServiceRuntime;
 import org.osgi.service.jakartars.runtime.dto.DTOConstants;
@@ -38,7 +39,6 @@ import org.osgi.test.common.annotation.Property;
 import org.osgi.test.common.annotation.config.WithConfiguration;
 import org.osgi.test.junit5.context.BundleContextExtension;
 import org.osgi.test.junit5.service.ServiceExtension;
-import org.osgi.util.tracker.ServiceTracker;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -66,10 +66,8 @@ public class ExtensionInjectionFailureTests {
 
 	private static final String EXTENSION_NAME = "RequestContextMapper";
 
-	private BundleContext ctx;
-	
-	private ServiceTracker<JakartarsServiceRuntime, Semaphore> tracker;
-	
+	private static final Duration TIMEOUT = Duration.ofSeconds(10);
+
 	private Hashtable<String, Object> resourceProps() {
 		return new Hashtable<>(Map.of("osgi.jakartars.resource", true));
 	}
@@ -78,81 +76,42 @@ public class ExtensionInjectionFailureTests {
 		return new Hashtable<>(Map.of("osgi.jakartars.extension", true, "osgi.jakartars.name", EXTENSION_NAME));
 	}
 	
-	private JakartarsServiceRuntime getRuntime() {
-		return ctx.getService(tracker.getServiceReference());
-	}
-
-	@BeforeEach
-	public void before(@InjectBundleContext BundleContext ctx) {
-		this.ctx = ctx;
-		
-		this.tracker = new ServiceTracker<>(ctx, JakartarsServiceRuntime.class, null) {
-
-			@Override
-			public Semaphore addingService(ServiceReference<JakartarsServiceRuntime> reference) {
-				return new Semaphore(1);
-			}
-
-			@Override
-			public void modifiedService(ServiceReference<JakartarsServiceRuntime> reference, Semaphore service) {
-				service.release();
-			}
-
-			@Override
-			public void removedService(ServiceReference<JakartarsServiceRuntime> reference, Semaphore service) {
-				service.release();
-			}
-		};
-		
-		tracker.open();
-	}
-	
 	@Test
-	public void testExtensionWithRequestScopedContextFieldIsFailedNotFatal(@InjectService ClientBuilder cb) throws Exception {
+	public void testExtensionWithRequestScopedContextFieldIsFailedNotFatal(@InjectBundleContext BundleContext ctx,
+			@InjectService(timeout = 10000) JakartarsServiceRuntime runtime,
+			@InjectService ClientBuilder cb) throws Exception {
 		
-		Semaphore semaphore = tracker.waitForService(5000);
-		assertNotNull(semaphore);
+		ServiceRegistration<?> resourceReg = ctx.registerService(Object.class, new ScopesResource(), resourceProps());
+		long resourceServiceId = serviceId(resourceReg);
 		
-		while(semaphore.tryAcquire(200, TimeUnit.MILLISECONDS));
-		
-		ctx.registerService(Object.class, new ScopesResource(), resourceProps());
-		
-		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
+		RuntimeDTOs.await(runtime, TIMEOUT, dto -> defaultApplicationHasResource(dto, resourceServiceId));
 		
 		String target = "http://localhost:8080/scopes";
 		assertEquals("scopes", cb.build().target(target).request().get(String.class));
 		
-		while(semaphore.tryAcquire(200, TimeUnit.MILLISECONDS));
-		
 		ServiceRegistration<?> extensionReg = ctx.registerService(ExceptionMapper.class.getName(), 
 				new RequestContextMapper(), extensionProps());
+		long extensionServiceId = serviceId(extensionReg);
 		
-		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
+		// The extension must be reported as failed ...
+		RuntimeDTO runtimeDTO = RuntimeDTOs.await(runtime, TIMEOUT, dto -> hasFailedExtension(dto, extensionServiceId));
+		
+		Optional<FailedExtensionDTO> failed = Arrays.stream(runtimeDTO.failedExtensionDTOs)
+				.filter(f -> f.serviceId == extensionServiceId)
+				.findFirst();
+		assertTrue(failed.isPresent());
+		assertEquals(EXTENSION_NAME, failed.get().name);
+		assertEquals(DTOConstants.FAILURE_REASON_UNKNOWN, failed.get().failureReason);
+		
+		// ... and not as a healthy part of the application
+		assertFalse(defaultApplicationHasExtension(runtimeDTO, extensionServiceId),
+				"The failed extension is still listed in the application DTO");
+		assertTrue(defaultApplicationHasResource(runtimeDTO, resourceServiceId));
 		
 		// The application must still be served by Jersey
 		Response response = cb.build().target(target).request().get();
 		assertEquals(200, response.getStatus(), "The application went down after registering the extension");
 		assertEquals("scopes", response.readEntity(String.class));
-		
-		long extensionServiceId = (Long) extensionReg.getReference().getProperty("service.id");
-		
-		RuntimeDTO runtimeDTO = getRuntime().getRuntimeDTO();
-		
-		// The extension must be reported as failed ...
-		assertNotNull(runtimeDTO.failedExtensionDTOs);
-		Optional<FailedExtensionDTO> failed = Arrays.stream(runtimeDTO.failedExtensionDTOs)
-				.filter(f -> f.serviceId == extensionServiceId)
-				.findFirst();
-		assertTrue(failed.isPresent(), "The extension is not reported as a failed extension");
-		assertEquals(EXTENSION_NAME, failed.get().name);
-		assertEquals(DTOConstants.FAILURE_REASON_UNKNOWN, failed.get().failureReason);
-		
-		// ... and not as a healthy part of the application
-		assertNotNull(runtimeDTO.defaultApplication);
-		assertNotNull(runtimeDTO.defaultApplication.extensionDTOs);
-		assertTrue(Arrays.stream(runtimeDTO.defaultApplication.extensionDTOs)
-				.noneMatch(e -> e.serviceId == extensionServiceId), 
-				"The failed extension is still listed in the application DTO");
 	}
 
 	@Path("scopes")
