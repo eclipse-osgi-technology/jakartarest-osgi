@@ -11,21 +11,20 @@
  */
 package org.eclipse.osgitech.rest.tests;
 
+import static org.eclipse.osgitech.rest.tests.RuntimeDTOs.defaultApplicationHasExtension;
+import static org.eclipse.osgitech.rest.tests.RuntimeDTOs.defaultApplicationHasResource;
+import static org.eclipse.osgitech.rest.tests.RuntimeDTOs.serviceId;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.jakartars.runtime.JakartarsServiceRuntime;
 import org.osgi.test.common.annotation.InjectBundleContext;
 import org.osgi.test.common.annotation.InjectService;
@@ -33,7 +32,6 @@ import org.osgi.test.common.annotation.Property;
 import org.osgi.test.common.annotation.config.WithConfiguration;
 import org.osgi.test.junit5.context.BundleContextExtension;
 import org.osgi.test.junit5.service.ServiceExtension;
-import org.osgi.util.tracker.ServiceTracker;
 
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.GET;
@@ -57,10 +55,8 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 )
 public class ExtensionPriorityTests {
 
-	private BundleContext ctx;
-	
-	private ServiceTracker<JakartarsServiceRuntime, Semaphore> tracker;
-	
+	private static final Duration TIMEOUT = Duration.ofSeconds(10);
+
 	private Hashtable<String, Object> resourceProps() {
 		return new Hashtable<>(Map.of("osgi.jakartars.resource", true));
 	}
@@ -69,47 +65,25 @@ public class ExtensionPriorityTests {
 		return new Hashtable<>(Map.of("osgi.jakartars.extension", true, "service.ranking", ranking));
 	}
 	
-	@BeforeEach
-	public void before(@InjectBundleContext BundleContext ctx) {
-		this.ctx = ctx;
-		
-		this.tracker = new ServiceTracker<>(ctx, JakartarsServiceRuntime.class, null) {
-
-			@Override
-			public Semaphore addingService(ServiceReference<JakartarsServiceRuntime> reference) {
-				return new Semaphore(1);
-			}
-
-			@Override
-			public void modifiedService(ServiceReference<JakartarsServiceRuntime> reference, Semaphore service) {
-				service.release();
-			}
-
-			@Override
-			public void removedService(ServiceReference<JakartarsServiceRuntime> reference, Semaphore service) {
-				service.release();
-			}
-		};
-		
-		tracker.open();
-	}
-	
 	@Test
-	public void testPriorityAnnotation(@InjectService ClientBuilder cb) throws Exception {
+	public void testPriorityAnnotation(@InjectBundleContext BundleContext ctx,
+			@InjectService(timeout = 10000) JakartarsServiceRuntime runtime,
+			@InjectService ClientBuilder cb) throws Exception {
 		
-		Semaphore semaphore = tracker.waitForService(5000);
-		assertNotNull(semaphore);
-		semaphore.drainPermits();
-		
-		ctx.registerService(ContainerResponseFilter.class, 
+		ServiceRegistration<?> lowReg = ctx.registerService(ContainerResponseFilter.class, 
 				new LowPrioritySwapper("Bam", "Boom"), extensionProps(1L));
 		
-		ctx.registerService(ContainerResponseFilter.class, 
+		ServiceRegistration<?> highReg = ctx.registerService(ContainerResponseFilter.class, 
 				new HighPrioritySwapper("BamBam", "WhamBam"), extensionProps(-1L));
 
-		ctx.registerService(Object.class, new BamBamResource(), resourceProps());
+		ServiceRegistration<?> resourceReg = ctx.registerService(Object.class, new BamBamResource(), resourceProps());
 		
-		assertTrue(semaphore.tryAcquire(5, TimeUnit.SECONDS));
+		// The registrations may be dispatched in one or in several updates, wait for all of them
+		long low = serviceId(lowReg);
+		long high = serviceId(highReg);
+		long resource = serviceId(resourceReg);
+		RuntimeDTOs.await(runtime, TIMEOUT, dto -> defaultApplicationHasResource(dto, resource)
+				&& defaultApplicationHasExtension(dto, low) && defaultApplicationHasExtension(dto, high));
 		
 		assertEquals("WhamBoom", cb.build().target("http://localhost:8080/bam")
 			.request().get(String.class));
