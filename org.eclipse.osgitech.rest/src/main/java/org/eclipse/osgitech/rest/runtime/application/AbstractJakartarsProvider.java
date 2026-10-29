@@ -160,7 +160,7 @@ public abstract class AbstractJakartarsProvider<T> implements JakartarsConstants
 	 * Returns the internal status of the provider
 	 * @return the internal status of the provider
 	 */
-	protected int getProviderStatus() {
+	public int getProviderStatus() {
 		return status;
 	}
 

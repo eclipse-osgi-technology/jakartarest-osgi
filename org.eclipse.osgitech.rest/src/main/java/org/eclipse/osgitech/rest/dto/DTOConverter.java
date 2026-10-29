@@ -169,6 +169,10 @@ public class DTOConverter {
 
 			for (JerseyApplicationContentProvider contentProvider : applicationProvider.getContentProviders()) {
 
+				if (contentProvider.isFailed()) {
+					// reported as a FailedResourceDTO / FailedExtensionDTO by the runtime instead
+					continue;
+				}
 				if (contentProvider instanceof JerseyResourceProvider) {
 					ResourceDTO resDTO = toResourceDTO((JerseyResourceProvider) contentProvider);
 					rdtos.add(resDTO);

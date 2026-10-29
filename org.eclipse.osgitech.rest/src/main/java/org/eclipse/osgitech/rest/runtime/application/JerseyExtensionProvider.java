@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -167,7 +168,26 @@ public class JerseyExtensionProvider extends JerseyApplicationContentProvider {
 					" and contracts" + Arrays.stream(contracts).map(Class::getName).collect(Collectors.joining(", ")));
 			return null;
 		}
-		InjectionManagerProvider.getInjectionManager(context).inject(service);
+		try {
+			InjectionManagerProvider.getInjectionManager(context).inject(service);
+		} catch (RuntimeException e) {
+			/*
+			 * 151.5.5: a singleton extension must not rely on fields being injected by the whiteboard.
+			 * The injection happens while the application is configured, i.e. outside of any request,
+			 * so e.g. a non proxiable request scoped @Context field (ContainerRequestContext) fails here.
+			 * Such an extension is reported as failed and left out of the application instead of
+			 * letting the exception abort the configuration of the whole application (#60).
+			 */
+			logger.log(Level.SEVERE, "Injecting the extension " + getName() + " (service.id " + getServiceId()
+					+ ") failed. The extension is reported as failed and not registered with the application.", e);
+			try {
+				getProviderObject().ungetService(service);
+			} catch (IllegalArgumentException | IllegalStateException releaseFailure) {
+				// the service may already be gone
+			}
+			updateStatus(DTOConstants.FAILURE_REASON_UNKNOWN);
+			return null;
+		}
 		return new JerseyExtension(service);
 	}
 	

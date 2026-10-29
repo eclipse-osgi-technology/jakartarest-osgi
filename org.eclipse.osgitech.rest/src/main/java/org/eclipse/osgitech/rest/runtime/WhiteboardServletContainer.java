@@ -18,6 +18,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.osgitech.rest.annotations.RequireJerseyServlet;
 import org.eclipse.osgitech.rest.provider.jakartars.RuntimeDelegateService;
@@ -42,6 +44,8 @@ public class WhiteboardServletContainer extends ServletContainer {
 	 * 
 	 */
 	private static final long serialVersionUID = 6509888299005723799L;
+
+	private static final Logger logger = Logger.getLogger("jersey.servletContainer");
 
 	private ResourceConfig initialConfig = null;;
 
@@ -114,8 +118,13 @@ public class WhiteboardServletContainer extends ServletContainer {
 							this.initialConfig = configuration;
 							init();
 						} catch (ServletException e) {
+							logger.log(Level.SEVERE, "Re-initialising the servlet container after a failed reload of the "
+									+ "Jakarta REST application failed as well", e);
+							ise.addSuppressed(e);
 							throw ise;
 						}
+					} else {
+						logger.log(Level.SEVERE, "Reloading the Jakarta REST application failed", ise);
 					}
 				}
 			} else {

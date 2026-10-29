@@ -372,6 +372,8 @@ public class JerseyServiceRuntime<C extends Container> {
 		try {
 			doDispatch(runtimeProperties, applications, extensions, resources);
 			
+			propagateContentFailures(applications, extensions, resources);
+			
 			RuntimeDTO dto = getUpdatedRuntimeDTO(runtimeProperties, applications, extensions, resources);
 			
 			synchronized (lock) {
@@ -400,6 +402,29 @@ public class JerseyServiceRuntime<C extends Container> {
 		} 
 	}
 	
+	/**
+	 * The applications work on copies of the content providers (see {@link #assignContent}).
+	 * A failure that is only detected while an application is configured, e.g. a failed
+	 * injection into an extension (#60), is therefore only known to the copy held by the
+	 * application. Propagate such failures to the providers the {@link RuntimeDTO} is built
+	 * from, so that the content is reported as failed instead of as healthy.
+	 */
+	private void propagateContentFailures(List<JerseyApplicationProvider> applications,
+			List<JerseyExtensionProvider> extensions, List<JerseyResourceProvider> resources) {
+		Map<String, AbstractJakartarsProvider<?>> byId = concat(extensions.stream(), resources.stream())
+				.collect(toMap(AbstractJakartarsProvider::getId, identity(), (a, b) -> a));
+		applications.stream()
+			.filter(not(AbstractJakartarsProvider::isFailed))
+			.flatMap(jap -> jap.getContentProviders().stream())
+			.filter(AbstractJakartarsProvider::isFailed)
+			.forEach(copy -> {
+				AbstractJakartarsProvider<?> source = byId.get(copy.getId());
+				if (source != null && !source.isFailed()) {
+					source.updateStatus(copy.getProviderStatus());
+				}
+			});
+	}
+
 	/**
 	 * Merges all available properties and adds a fitting changecount
 	 * @return the properties that can be assigned to the changecount
@@ -530,7 +555,7 @@ public class JerseyServiceRuntime<C extends Container> {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Error dispatching the whiteboard content to the applications", e);
 		}
 	}
 	
