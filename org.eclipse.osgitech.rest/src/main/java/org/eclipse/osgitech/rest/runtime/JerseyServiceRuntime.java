@@ -527,16 +527,25 @@ public class JerseyServiceRuntime<C extends Container> {
 			// We now have our full set of applications
 			
 			for(JerseyApplicationProvider jap : applicationCandidates) {
-				C c = containersByPath.get(jap.getPath());
-				if(c == null) {
-					c = containerFactory.apply(jap.getPath(), jap.getJakartarsApplication());
-					containersByPath.put(jap.getPath(), c);
-					continue;
-				}
-				
-				Application application = c.getConfiguration().getApplication();
-				if(jap.isChanged(application)) {
-					c.reload(jap.getJakartarsApplication());
+				try {
+					C c = containersByPath.get(jap.getPath());
+					if(c == null) {
+						c = containerFactory.apply(jap.getPath(), jap.getJakartarsApplication());
+						containersByPath.put(jap.getPath(), c);
+						continue;
+					}
+					
+					Application application = c.getConfiguration().getApplication();
+					if(jap.isChanged(application)) {
+						c.reload(jap.getJakartarsApplication());
+					}
+				} catch (RuntimeException e) {
+					// The application cannot be served, e.g. because an extension failed while it was
+					// configured (#70). Report it as failed and go on with the other applications,
+					// the next update will try again.
+					logger.log(Level.SEVERE, "Loading the application " + jap.getName() + " at path " + jap.getPath()
+							+ " failed. The application is reported as failed.", e);
+					jap.updateStatus(DTOConstants.FAILURE_REASON_UNKNOWN);
 				}
 			}
 			Set<String> paths = applicationCandidates.stream()
