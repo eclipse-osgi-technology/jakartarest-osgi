@@ -72,6 +72,7 @@
 		<jackson.version>2.15.2</jackson.version>
 		<parsson.version>1.1.5</parsson.version>
 		<jakartars.spec.version>2.0.1-SNAPSHOT</jakartars.spec.version>
+		<crac.version>1.5.0</crac.version>
 	</properties>
 
 	<modules>
@@ -473,6 +474,12 @@
 				<artifactId>biz.aQute.bnd.annotation</artifactId>
 				<version>${bnd.version}</version>
 			 </dependency>
+			 <dependency>
+				<groupId>org.crac</groupId>
+				<artifactId>crac</artifactId>
+				<version>${crac.version}</version>
+				<scope>provided</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
